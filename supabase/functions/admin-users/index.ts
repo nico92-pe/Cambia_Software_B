@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
       }
     );
 
-    // Verify the request is from an admin
+    // Verify the request is from a super admin
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
@@ -46,8 +46,8 @@ Deno.serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    if (profileError || profile.role !== 'ADMINISTRADOR') {
-      throw new Error('Unauthorized');
+    if (profileError || profile.role !== 'SUPER_ADMIN') {
+      throw new Error('Unauthorized - Only Super Admin can access this resource');
     }
 
     // Handle different HTTP methods
