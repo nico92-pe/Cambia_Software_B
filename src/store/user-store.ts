@@ -22,7 +22,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // First check if current user has admin role
+      // First check if current user has super_admin role
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
       
@@ -33,8 +33,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         .single();
         
       if (profileError) throw profileError;
-      if (profile.role !== 'ADMINISTRADOR') {
-        throw new Error('Acceso no autorizado');
+      if (profile.role !== 'super_admin') {
+        throw new Error('Acceso no autorizado - Solo Super Admin puede acceder a esta función');
       }
       
       // Get users through edge function
@@ -103,7 +103,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
       
       // Validate role is one of the allowed values
-      if (!['ADMINISTRADOR', 'LOGISTICA', 'ASESOR_VENTAS'].includes(userData.role)) {
+      if (!['super_admin', 'admin', 'asesor_ventas'].includes(userData.role)) {
         throw new Error('Rol no válido');
       }
       
@@ -134,8 +134,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         isLoading: false
       }));
       
-      // TODO: Enviar email con credenciales
-      console.log('Credenciales temporales:', {
+      // TODO: Send email with credentials
+      console.log('Temporary credentials:', {
         email: userData.email,
         password: tempPassword
       });
