@@ -85,18 +85,14 @@ Deno.serve(async (req) => {
           throw new Error('Missing required fields');
         }
 
-        // Check if user exists by email
-        const { data: existingUsers, error: searchError } = await supabaseAdmin
-          .from('auth.users')
-          .select('email')
-          .eq('email', email)
-          .maybeSingle();
-
-        if (searchError) {
-          throw new Error(`Failed to check existing user: ${searchError.message}`);
+        // Check if user exists using admin.listUsers()
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        if (listError) {
+          throw new Error(`Failed to check existing users: ${listError.message}`);
         }
 
-        if (existingUsers) {
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
           throw new Error('Usuario ya existe');
         }
 
