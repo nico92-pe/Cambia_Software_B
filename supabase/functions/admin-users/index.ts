@@ -109,10 +109,10 @@ Deno.serve(async (req) => {
         }
 
         try {
-          // Create profile
+          // Create or update profile using upsert
           const { error: profileError } = await supabaseAdmin
             .from('profiles')
-            .insert({
+            .upsert({
               id: data.user.id,
               full_name: metadata.full_name,
               phone: metadata.phone,
@@ -120,6 +120,9 @@ Deno.serve(async (req) => {
               cargo: metadata.cargo,
               role: metadata.role,
               must_change_password: true,
+            }, {
+              onConflict: 'id',
+              ignoreDuplicates: false
             });
 
           if (profileError) {
