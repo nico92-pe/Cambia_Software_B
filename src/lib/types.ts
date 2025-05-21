@@ -10,9 +10,9 @@ export type User = {
 };
 
 export enum UserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  ASESOR_VENTAS = 'ASESOR_VENTAS'
+  SUPER_ADMIN = 'super_admin',
+  ADMIN = 'admin',
+  ASESOR_VENTAS = 'asesor_ventas'
 }
 
 export type Client = {
