@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      throw new Error('Unauthorized - Invalid token');
     }
 
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -46,7 +46,11 @@ Deno.serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    if (profileError || profile.role !== 'SUPER_ADMIN') {
+    if (profileError) {
+      throw new Error('Failed to fetch user profile');
+    }
+
+    if (profile.role !== 'super_admin') {
       throw new Error('Unauthorized - Only Super Admin can access this resource');
     }
 
@@ -54,12 +58,17 @@ Deno.serve(async (req) => {
     switch (req.method) {
       case 'GET': {
         const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
-        if (usersError) throw usersError;
+        if (usersError) {
+          throw new Error(`Failed to list users: ${usersError.message}`);
+        }
 
         const { data: profiles, error: profilesError } = await supabaseAdmin
           .from('profiles')
           .select('*');
-        if (profilesError) throw profilesError;
+          
+        if (profilesError) {
+          throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
+        }
 
         return new Response(
           JSON.stringify({ users, profiles }),
@@ -72,13 +81,20 @@ Deno.serve(async (req) => {
       case 'POST': {
         const { email, password, metadata } = await req.json();
 
+        if (!email || !password || !metadata) {
+          throw new Error('Missing required fields');
+        }
+
         const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
           email_confirm: true,
           user_metadata: metadata,
         });
-        if (createError) throw createError;
+
+        if (createError) {
+          throw new Error(`Failed to create user: ${createError.message}`);
+        }
 
         const { error: profileError } = await supabaseAdmin
           .from('profiles')
@@ -86,10 +102,11 @@ Deno.serve(async (req) => {
             id: data.user.id,
             ...metadata,
           });
+
         if (profileError) {
           // Rollback user creation if profile creation fails
           await supabaseAdmin.auth.admin.deleteUser(data.user.id);
-          throw profileError;
+          throw new Error(`Failed to create profile: ${profileError.message}`);
         }
 
         return new Response(
@@ -102,10 +119,14 @@ Deno.serve(async (req) => {
 
       case 'DELETE': {
         const userId = new URL(req.url).pathname.split('/').pop();
-        if (!userId) throw new Error('User ID is required');
+        if (!userId) {
+          throw new Error('User ID is required');
+        }
 
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          throw new Error(`Failed to delete user: ${deleteError.message}`);
+        }
 
         return new Response(
           JSON.stringify({ success: true }),
@@ -116,13 +137,21 @@ Deno.serve(async (req) => {
       }
 
       default:
-        return new Response('Method not allowed', { status: 405 });
+        return new Response('Method not allowed', { 
+          status: 405,
+          headers: corsHeaders
+        });
     }
   } catch (error) {
+    console.error('Error in admin-users function:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        details: error instanceof Error ? error.stack : undefined
+      }),
       {
-        status: 400,
+        status: error.message.includes('Unauthorized') ? 403 : 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
