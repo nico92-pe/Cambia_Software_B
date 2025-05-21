@@ -85,6 +85,15 @@ Deno.serve(async (req) => {
           throw new Error('Missing required fields');
         }
 
+        // First check if user already exists
+        const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
+        const userExists = existingUser.users.find(u => u.email === email);
+
+        if (userExists) {
+          throw new Error('User with this email already exists');
+        }
+
+        // Create auth user first
         const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
@@ -96,25 +105,43 @@ Deno.serve(async (req) => {
           throw new Error(`Failed to create user: ${createError.message}`);
         }
 
-        const { error: profileError } = await supabaseAdmin
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            ...metadata,
-          });
+        try {
+          // Then create profile
+          const { error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              full_name: metadata.full_name,
+              phone: metadata.phone,
+              birthday: metadata.birthday,
+              cargo: metadata.cargo,
+              role: metadata.role,
+              must_change_password: true,
+            });
 
-        if (profileError) {
-          // Rollback user creation if profile creation fails
-          await supabaseAdmin.auth.admin.deleteUser(data.user.id);
-          throw new Error(`Failed to create profile: ${profileError.message}`);
-        }
-
-        return new Response(
-          JSON.stringify({ user: data.user, profile: metadata }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          if (profileError) {
+            // If profile creation fails, delete the auth user
+            await supabaseAdmin.auth.admin.deleteUser(data.user.id);
+            throw new Error(`Failed to create profile: ${profileError.message}`);
           }
-        );
+
+          return new Response(
+            JSON.stringify({ 
+              user: data.user,
+              profile: {
+                id: data.user.id,
+                ...metadata,
+              }
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        } catch (error) {
+          // If anything fails after user creation, clean up by deleting the user
+          await supabaseAdmin.auth.admin.deleteUser(data.user.id);
+          throw error;
+        }
       }
 
       case 'DELETE': {
