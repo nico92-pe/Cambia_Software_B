@@ -73,14 +73,21 @@ export async function getCurrentUser() {
 
 // Admin operations through edge functions
 export async function adminListUsers() {
+  const session = await getCurrentSession();
+  if (!session) {
+    throw new Error('No authenticated session');
+  }
+
   const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, {
     headers: {
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
     },
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch users');
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch users');
   }
 
   return response.json();
@@ -91,32 +98,45 @@ export async function adminCreateUser(userData: {
   password: string;
   metadata: any;
 }) {
+  const session = await getCurrentSession();
+  if (!session) {
+    throw new Error('No authenticated session');
+  }
+
   const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      Authorization: `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(userData),
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create user');
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create user');
   }
 
   return response.json();
 }
 
 export async function adminDeleteUser(userId: string) {
+  const session = await getCurrentSession();
+  if (!session) {
+    throw new Error('No authenticated session');
+  }
+
   const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users/${userId}`, {
     method: 'DELETE',
     headers: {
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
     },
   });
 
   if (!response.ok) {
-    throw new Error('Failed to delete user');
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete user');
   }
 
   return response.json();
