@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { User, UserRole } from '../lib/types';
-import { supabase, adminListUsers, adminCreateUser, adminDeleteUser } from '../lib/supabase';
+import { supabase, adminListUsers, adminCreateUser, adminDeleteUser, getCurrentSession } from '../lib/supabase';
 
 interface UserState {
   users: User[];
@@ -107,8 +107,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         throw new Error('Rol no válido');
       }
       
-      // Generate a random password
-      const tempPassword = Math.random().toString(36).slice(-8);
+      // Generate a temporary password using email
+      const tempPassword = userData.email.split('@')[0];
       
       // Create user through edge function
       const { user, profile } = await adminCreateUser({
@@ -133,12 +133,39 @@ export const useUserStore = create<UserState>((set, get) => ({
         users: [...state.users, newUser],
         isLoading: false
       }));
-      
-      // TODO: Send email with credentials
-      console.log('Temporary credentials:', {
-        email: userData.email,
-        password: tempPassword
+
+      // Send welcome email with credentials
+      const session = await getCurrentSession();
+      if (!session) {
+        throw new Error('No authenticated session');
+      }
+
+      const functionUrl = new URL('/functions/v1/send-email', import.meta.env.VITE_SUPABASE_URL).toString();
+      const emailResult = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          subject: 'Bienvenido a Cambia - Credenciales de acceso',
+          content: `
+            <h2>Bienvenido a Cambia</h2>
+            <p>Se ha creado una cuenta para ti en el sistema Cambia. Aquí están tus credenciales de acceso:</p>
+            <p><strong>Email:</strong> ${userData.email}</p>
+            <p><strong>Contraseña temporal:</strong> ${tempPassword}</p>
+            <p>Por razones de seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
+            <p>Si tienes alguna pregunta, no dudes en contactar al administrador del sistema.</p>
+          `
+        })
       });
+
+      if (!emailResult.ok) {
+        const error = await emailResult.json();
+        console.error('Failed to send welcome email:', error);
+        // We don't throw here since the user was created successfully
+      }
       
       return newUser;
     } catch (error) {
