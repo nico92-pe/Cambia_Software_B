@@ -55,6 +55,19 @@ export function Profile() {
       // Error handled by store
     }
   };
+
+  const getRoleDisplay = (role: string): string => {
+    switch (role) {
+      case 'super_admin':
+        return 'Super Administrador';
+      case 'admin':
+        return 'Administrador';
+      case 'asesor_ventas':
+        return 'Asesor de Ventas';
+      default:
+        return role;
+    }
+  };
   
   return (
     <div className="max-w-3xl mx-auto">
@@ -235,9 +248,7 @@ export function Profile() {
                   <input
                     type="text"
                     className="input bg-gray-50"
-                    value={user?.role === 'ADMINISTRADOR' ? 'Administrador' : 
-                           user?.role === 'LOGISTICA' ? 'Logística' : 
-                           user?.role === 'ASESOR_VENTAS' ? 'Asesor de Ventas' : ''}
+                    value={user?.role ? getRoleDisplay(user.role) : ''}
                     disabled
                   />
                 </div>
