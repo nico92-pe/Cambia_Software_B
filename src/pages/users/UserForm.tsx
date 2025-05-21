@@ -229,8 +229,7 @@ export function UserForm() {
                   })}
                 >
                   <option value="">Seleccionar rol</option>
-                  <option value={UserRole.ADMINISTRADOR}>Administrador</option>
-                  <option value={UserRole.LOGISTICA}>Logística</option>
+                  <option value={UserRole.ADMIN}>Administrador</option>
                   <option value={UserRole.ASESOR_VENTAS}>Asesor de Ventas</option>
                 </select>
                 {errors.role && (
