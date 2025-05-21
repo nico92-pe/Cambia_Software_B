@@ -85,15 +85,22 @@ Deno.serve(async (req) => {
           throw new Error('Missing required fields');
         }
 
-        // First check if user already exists
-        const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
-        const userExists = existingUser.users.find(u => u.email === email);
+        // Check if user exists by email
+        const { data: existingUsers, error: searchError } = await supabaseAdmin
+          .from('auth.users')
+          .select('email')
+          .eq('email', email)
+          .maybeSingle();
 
-        if (userExists) {
-          throw new Error('User with this email already exists');
+        if (searchError) {
+          throw new Error(`Failed to check existing user: ${searchError.message}`);
         }
 
-        // Create auth user first
+        if (existingUsers) {
+          throw new Error('Usuario ya existe');
+        }
+
+        // Create auth user
         const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
@@ -106,7 +113,7 @@ Deno.serve(async (req) => {
         }
 
         try {
-          // Then create profile
+          // Create profile
           const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .insert({
@@ -120,7 +127,7 @@ Deno.serve(async (req) => {
             });
 
           if (profileError) {
-            // If profile creation fails, delete the auth user
+            // Clean up auth user if profile creation fails
             await supabaseAdmin.auth.admin.deleteUser(data.user.id);
             throw new Error(`Failed to create profile: ${profileError.message}`);
           }
@@ -138,7 +145,7 @@ Deno.serve(async (req) => {
             }
           );
         } catch (error) {
-          // If anything fails after user creation, clean up by deleting the user
+          // Clean up auth user if anything fails
           await supabaseAdmin.auth.admin.deleteUser(data.user.id);
           throw error;
         }
