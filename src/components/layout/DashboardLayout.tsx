@@ -46,8 +46,8 @@ export function DashboardLayout() {
     { icon: <ShoppingCart size={20} />, label: 'Pedidos', path: '/orders' },
   ];
 
-  // Add Users management for Admin
-  if (user?.role === UserRole.ADMINISTRADOR) {
+  // Add Users management for Super Admin only
+  if (user?.role === UserRole.SUPER_ADMIN) {
     navItems.push({ icon: <UserPlus size={20} />, label: 'Usuarios', path: '/users' });
   }
   

@@ -10,8 +10,8 @@ export type User = {
 };
 
 export enum UserRole {
-  ADMINISTRADOR = 'ADMINISTRADOR',
-  LOGISTICA = 'LOGISTICA',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
   ASESOR_VENTAS = 'ASESOR_VENTAS'
 }
 
