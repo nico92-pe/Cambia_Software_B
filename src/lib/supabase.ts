@@ -78,7 +78,9 @@ export async function adminListUsers() {
     throw new Error('No authenticated session');
   }
 
-  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, {
+  const functionUrl = new URL('/functions/v1/admin-users', import.meta.env.VITE_SUPABASE_URL).toString();
+  
+  const response = await fetch(functionUrl, {
     headers: {
       Authorization: `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
@@ -103,7 +105,9 @@ export async function adminCreateUser(userData: {
     throw new Error('No authenticated session');
   }
 
-  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, {
+  const functionUrl = new URL('/functions/v1/admin-users', import.meta.env.VITE_SUPABASE_URL).toString();
+
+  const response = await fetch(functionUrl, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${session.access_token}`,
@@ -126,7 +130,9 @@ export async function adminDeleteUser(userId: string) {
     throw new Error('No authenticated session');
   }
 
-  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users/${userId}`, {
+  const functionUrl = new URL(`/functions/v1/admin-users/${userId}`, import.meta.env.VITE_SUPABASE_URL).toString();
+
+  const response = await fetch(functionUrl, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${session.access_token}`,
