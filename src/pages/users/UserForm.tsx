@@ -8,7 +8,6 @@ import { useUserStore } from '../../store/user-store';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
-import { formatPhoneNumber } from '../../lib/utils';
 
 type UserFormData = Omit<User, 'id'>;
 
@@ -157,17 +156,10 @@ export function UserForm() {
                     id="phone"
                     type="text"
                     className={`input pl-10 ${errors.phone ? 'border-destructive' : ''}`}
+                    placeholder="+51 999 888 777"
                     {...register('phone', {
                       required: 'El celular es requerido',
-                      pattern: {
-                        value: /^\+51\s\d{3}\s\d{3}\s\d{3}$/,
-                        message: 'Formato: +51 ### ### ###',
-                      },
                     })}
-                    onChange={(e) => {
-                      const formatted = formatPhoneNumber(e.target.value);
-                      e.target.value = formatted;
-                    }}
                   />
                 </div>
                 {errors.phone && (
