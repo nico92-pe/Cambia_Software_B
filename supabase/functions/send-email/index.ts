@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.39.3';
-import sgMail from 'npm:@sendgrid/mail@8.1.1';
+import { Resend } from 'npm:resend@2.1.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,25 +56,32 @@ Deno.serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
-    // Initialize SendGrid
-    const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
-    if (!sendgridApiKey) {
-      throw new Error('SendGrid API key not configured');
+    // Initialize Resend
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      throw new Error('Resend API key not configured');
     }
 
-    sgMail.setApiKey(sendgridApiKey);
+    const resend = new Resend(resendApiKey);
 
-    const msg = {
-      to: email,
-      from: Deno.env.get('SENDGRID_FROM_EMAIL') || '',
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'contacto@griferiascambia.com';
+
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: [email],
       subject: subject,
       html: content,
-    };
+    });
 
-    await sgMail.send(msg);
+    if (error) {
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
 
     return new Response(
-      JSON.stringify({ message: 'Email sent successfully' }), 
+      JSON.stringify({ 
+        message: 'Email sent successfully',
+        id: data?.id 
+      }), 
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
