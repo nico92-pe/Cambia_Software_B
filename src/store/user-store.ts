@@ -141,30 +141,39 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
 
       const functionUrl = new URL('/functions/v1/send-email', import.meta.env.VITE_SUPABASE_URL).toString();
-      const emailResult = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          email: userData.email,
-          subject: 'Bienvenido a Cambia - Credenciales de acceso',
-          content: `
-            <h2>Bienvenido a Cambia</h2>
-            <p>Se ha creado una cuenta para ti en el sistema Cambia. Aquí están tus credenciales de acceso:</p>
-            <p><strong>Email:</strong> ${userData.email}</p>
-            <p><strong>Contraseña temporal:</strong> ${tempPassword}</p>
-            <p>Por razones de seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
-            <p>Si tienes alguna pregunta, no dudes en contactar al administrador del sistema.</p>
-          `
-        })
-      });
+      try {
+        const emailResult = await fetch(functionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            email: userData.email,
+            subject: 'Bienvenido a Cambia - Credenciales de acceso',
+            content: `
+              <h2>Bienvenido a Cambia</h2>
+              <p>Se ha creado una cuenta para ti en el sistema Cambia. Aquí están tus credenciales de acceso:</p>
+              <p><strong>Email:</strong> ${userData.email}</p>
+              <p><strong>Contraseña temporal:</strong> ${tempPassword}</p>
+              <p>Por razones de seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
+              <p>Si tienes alguna pregunta, no dudes en contactar al administrador del sistema.</p>
+            `
+          })
+        });
 
-      if (!emailResult.ok) {
-        const error = await emailResult.json();
-        console.error('Failed to send welcome email:', error);
-        // We don't throw here since the user was created successfully
+        if (!emailResult.ok) {
+          const error = await emailResult.json();
+          console.warn('No se pudo enviar el email de bienvenida:', error);
+          
+          // Show a warning but don't fail the user creation
+          if (error.error?.includes('SendGrid API key not configured')) {
+            console.warn('SendGrid no está configurado. El usuario fue creado exitosamente pero no se envió el email de bienvenida.');
+          }
+        }
+      } catch (emailError) {
+        console.warn('Error al enviar email de bienvenida:', emailError);
+        // Don't throw here since the user was created successfully
       }
       
       return newUser;
