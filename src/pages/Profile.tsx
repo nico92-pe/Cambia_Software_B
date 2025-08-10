@@ -5,7 +5,6 @@ import { useAuthStore } from '../store/auth-store';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { Avatar } from '../components/ui/Avatar';
-import { formatPhoneNumber } from '../lib/utils';
 
 interface ProfileFormData {
   fullName: string;
@@ -187,15 +186,9 @@ export function Profile() {
                       id="phone"
                       type="text"
                       className={`input pl-10 ${errors.phone ? 'border-destructive' : ''}`}
+                      placeholder="+51 999 888 777"
                       {...register('phone', {
                         required: 'El celular es requerido',
-                        pattern: {
-                          value: /^\+51\s\d{3}\s\d{3}\s\d{3}$/,
-                          message: 'Formato: +51 ### ### ###',
-                        },
-                        onChange: (e) => {
-                          e.target.value = formatPhoneNumber(e.target.value);
-                        },
                       })}
                     />
                   </div>
