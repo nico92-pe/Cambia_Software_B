@@ -247,11 +247,10 @@ export function Profile() {
                   <input
                     id="cargo"
                     type="text"
+                    className={`input ${errors.cargo ? 'border-destructive' : ''}`}
+                    {...register('cargo', {
+                      required: 'El cargo es requerido',
                     })}
-                    onChange={(e) => {
-                      const formatted = formatPhoneNumber(e.target.value);
-                      e.target.value = formatted;
-                    }}
                   />
                   {errors.cargo && (
                     <p className="text-destructive text-sm mt-1">
