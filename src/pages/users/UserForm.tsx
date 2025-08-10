@@ -163,10 +163,11 @@ export function UserForm() {
                         value: /^\+51\s\d{3}\s\d{3}\s\d{3}$/,
                         message: 'Formato: +51 ### ### ###',
                       },
-                      onChange: (e) => {
-                        e.target.value = formatPhoneNumber(e.target.value);
-                      },
                     })}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      e.target.value = formatted;
+                    }}
                   />
                 </div>
                 {errors.phone && (

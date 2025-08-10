@@ -39,21 +39,17 @@ export function formatPhoneNumber(value: string): string {
   // Remove all non-digit characters
   const digits = value.replace(/\D/g, '');
   
-  // Format as +51 ### ### ###
-  if (digits.length <= 9) {
-    return digits
-      .slice(0, 9)
-      .replace(/(\d{3})(\d{3})?(\d{3})?/, (_, p1, p2, p3) => {
-        let parts = ['+51'];
-        if (p1) parts.push(p1);
-        if (p2) parts.push(p2);
-        if (p3) parts.push(p3);
-        return parts.join(' ');
-      });
-  }
+  // Limit to 9 digits maximum
+  const limitedDigits = digits.slice(0, 9);
   
-  // If more than 9 digits, truncate and format
-  return digits
-    .slice(0, 9)
-    .replace(/(\d{3})(\d{3})(\d{3})/, '+51 $1 $2 $3');
+  // Format as +51 ### ### ###
+  if (limitedDigits.length === 0) {
+    return '+51 ';
+  } else if (limitedDigits.length <= 3) {
+    return `+51 ${limitedDigits}`;
+  } else if (limitedDigits.length <= 6) {
+    return `+51 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3)}`;
+  } else {
+    return `+51 ${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3, 6)} ${limitedDigits.slice(6)}`;
+  }
 }
