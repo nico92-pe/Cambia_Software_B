@@ -25,7 +25,7 @@ export function OrderList() {
     
     const loadSalespeople = async () => {
       try {
-        const salespeople = await getUsersByRole(UserRole.SALESPERSON);
+        const salespeople = await getUsersByRole('asesor_ventas' as UserRole);
         setSalespeople(salespeople.map(s => ({ id: s.id, fullName: s.fullName })));
       } catch (error) {
         console.error('Error loading salespeople:', error);

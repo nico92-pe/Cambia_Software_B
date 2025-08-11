@@ -221,6 +221,10 @@ export const useUserStore = create<UserState>((set, get) => ({
       });
       
       if (!updatedUser) throw new Error('Usuario no encontrado');
+      
+      // Refresh the users list to ensure UI is updated
+      await get().getUsers();
+      
       return updatedUser;
     } catch (error) {
       set({

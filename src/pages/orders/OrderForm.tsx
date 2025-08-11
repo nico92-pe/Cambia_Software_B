@@ -31,7 +31,7 @@ export function OrderForm() {
         setIsLoading(true);
         
         // Load salespeople
-        const salespeople = await getUsersByRole(UserRole.SALESPERSON);
+        const salespeople = await getUsersByRole('asesor_ventas' as UserRole);
         setSalespeople(salespeople.map(s => ({ id: s.id, fullName: s.fullName })));
         
         // Load products
