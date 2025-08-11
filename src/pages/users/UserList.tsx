@@ -45,14 +45,10 @@ export function UserList() {
     switch (role) {
       case UserRole.SUPER_ADMIN:
         return <Badge variant="primary">Super Admin</Badge>;
-      case UserRole.SALESPERSON:
-        return <Badge variant="success">Vendedor</Badge>;
-      case UserRole.LOGISTICS:
-        return <Badge variant="secondary">Logística</Badge>;
-      case UserRole.FINANCE:
-        return <Badge>Finanzas</Badge>;
-      case UserRole.CUSTOMER_SERVICE:
-        return <Badge variant="warning">Atención al Cliente</Badge>;
+      case UserRole.ADMIN:
+        return <Badge variant="secondary">Administrador</Badge>;
+      case UserRole.ASESOR_VENTAS:
+        return <Badge variant="success">Asesor de Ventas</Badge>;
       default:
         return <Badge>Usuario</Badge>;
     }
@@ -62,7 +58,7 @@ export function UserList() {
     (user) =>
       user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.position.toLowerCase().includes(searchTerm.toLowerCase())
+      user.cargo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -160,7 +156,7 @@ export function UserList() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">{user.position}</div>
+                      <div className="text-sm">{user.cargo}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getRoleBadge(user.role)}
