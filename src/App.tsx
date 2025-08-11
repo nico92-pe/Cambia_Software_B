@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthLayout } from './components/layout/AuthLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
+import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
@@ -25,6 +26,9 @@ function App() {
 
   return (
     <Routes>
+      {/* Landing page */}
+      <Route path="/" element={<LandingPage />} />
+      
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
       
@@ -58,7 +62,7 @@ function App() {
       </Route>
       
       {/* Redirect to dashboard if logged in, otherwise to login */}
-      <Route path="*" element={<Navigate to="/dashboard" />} />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }
