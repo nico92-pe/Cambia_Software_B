@@ -43,11 +43,11 @@ export function UserList() {
 
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
-      case UserRole.SUPER_ADMIN:
+      case 'super_admin':
         return <Badge variant="primary">Super Admin</Badge>;
-      case UserRole.ADMIN:
+      case 'admin':
         return <Badge variant="secondary">Administrador</Badge>;
-      case UserRole.ASESOR_VENTAS:
+      case 'asesor_ventas':
         return <Badge variant="success">Asesor de Ventas</Badge>;
       default:
         return <Badge>Usuario</Badge>;
