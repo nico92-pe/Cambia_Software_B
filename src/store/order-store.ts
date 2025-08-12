@@ -327,18 +327,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('order_status_logs')
         .insert({
           order_id: id,
-        
-        // We don't need createdByUser for the list view
-        order.createdByUser = null;
-        
-        // Map order items
           status,
           observations,
-          orderItem.product = item.products || null;
+          has_observations: hasObservations,
           created_by: user.id,
         });
-        
-        console.log('Processed order:', order);
         
       if (logError) throw logError;
       
