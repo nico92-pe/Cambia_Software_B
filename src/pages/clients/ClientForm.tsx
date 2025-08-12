@@ -35,7 +35,9 @@ export function ClientForm() {
   useEffect(() => {
     const loadSalespeople = async () => {
       try {
-        const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
+        console.log('Loading salespeople...');
+        const salespeople = await getUsersByRole('asesor_ventas' as UserRole);
+        console.log('Salespeople loaded:', salespeople);
         setSalespeople(salespeople.map(s => ({ id: s.id, fullName: s.fullName })));
       } catch (error) {
         console.error('Error loading salespeople:', error);
@@ -45,14 +47,16 @@ export function ClientForm() {
     const loadClient = async () => {
       if (id) {
         try {
+          setFormError(null);
           const client = await getClientById(id);
           if (client) {
             reset(client);
           } else {
+            setFormError('Cliente no encontrado');
             navigate('/clients');
           }
         } catch (error) {
-          console.error('Error loading client:', error);
+          setFormError('Error al cargar el cliente');
         }
       }
     };

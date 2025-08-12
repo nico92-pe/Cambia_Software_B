@@ -67,9 +67,11 @@ export const useUserStore = create<UserState>((set, get) => ({
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', role);
+        .eq('role', 'asesor_ventas');
         
       if (error) throw error;
+      
+      console.log('Profiles found with asesor_ventas role:', profiles);
       
       // Get all auth users to get email addresses
       let authUsers = [];
