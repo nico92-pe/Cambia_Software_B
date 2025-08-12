@@ -150,6 +150,42 @@ Deno.serve(async (req) => {
         }
       }
 
+      case 'PATCH': {
+        const url = new URL(req.url);
+        const userId = url.pathname.split('/').pop();
+        
+        if (!userId) {
+          throw new Error('User ID is required');
+        }
+
+        const { profile_data } = await req.json();
+        if (!profile_data) {
+          throw new Error('Profile data is required');
+        }
+
+        // Update profile in database
+        const { data: updatedProfile, error: updateError } = await supabaseAdmin
+          .from('profiles')
+          .update({
+            ...profile_data,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId)
+          .select()
+          .single();
+
+        if (updateError) {
+          throw new Error(`Failed to update profile: ${updateError.message}`);
+        }
+
+        return new Response(
+          JSON.stringify({ profile: updatedProfile }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
       case 'DELETE': {
         const userId = new URL(req.url).pathname.split('/').pop();
         if (!userId) {
