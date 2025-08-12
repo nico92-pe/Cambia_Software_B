@@ -84,13 +84,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      console.log('Fetching orders with relations...');
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
-          client:clients(*),
-          salesperson:profiles!orders_salesperson_id_fkey(*),
-          created_by_user:profiles!orders_created_by_fkey(*),
+          client:clients!orders_client_id_fkey(*),
+          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
+          created_by_user:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -98,37 +99,73 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         `)
         .order('created_at', { ascending: false });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+      
+      console.log('Raw orders data:', data);
       
       const orders = data.map(row => {
+        console.log('Processing order row:', row);
         const order = mapDbRowToOrder(row);
-        order.client = row.client || null;
+        
+        // Map client data
+        if (row.client) {
+          order.client = {
+            id: row.client.id,
+            ruc: row.client.ruc,
+            businessName: row.client.business_name,
+            commercialName: row.client.commercial_name,
+            address: row.client.address,
+            district: row.client.district,
+            province: row.client.province,
+            salespersonId: row.client.salesperson_id,
+            transport: row.client.transport,
+            transportAddress: row.client.transport_address,
+            transportDistrict: row.client.transport_district,
+            createdAt: row.client.created_at,
+            updatedAt: row.client.updated_at,
+          };
+        } else {
+          order.client = null;
+        }
+        
+        // Map salesperson data
         order.salesperson = row.salesperson ? {
           id: row.salesperson.id,
           fullName: row.salesperson.full_name,
-          email: '', // Not needed for display
+          email: '',
           phone: row.salesperson.phone,
-          birthday: row.salesperson.birthday,
+          birthday: row.salesperson.birthday || '',
           cargo: row.salesperson.cargo,
           role: row.salesperson.role,
         } : null;
+        
+        // Map created by user data
         order.createdByUser = row.created_by_user ? {
           id: row.created_by_user.id,
           fullName: row.created_by_user.full_name,
-          email: '', // Not needed for display
+          email: '',
           phone: row.created_by_user.phone,
-          birthday: row.created_by_user.birthday,
+          birthday: row.created_by_user.birthday || '',
           cargo: row.created_by_user.cargo,
           role: row.created_by_user.role,
         } : null;
+        
+        // Map order items
         order.items = (row.order_items || []).map(item => {
           const orderItem = mapDbRowToOrderItem(item);
           orderItem.product = item.product || null;
           return orderItem;
         });
+        
+        console.log('Processed order:', order);
         return order;
       });
       
+      console.log('Final orders:', orders);
+      console.log('Final orders:', orders);
       set({ orders, isLoading: false });
     } catch (error) {
       set({
@@ -290,11 +327,18 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('order_status_logs')
         .insert({
           order_id: id,
+        
+        // We don't need createdByUser for the list view
+        order.createdByUser = null;
+        
+        // Map order items
           status,
           observations,
-          has_observations: hasObservations,
+          orderItem.product = item.products || null;
           created_by: user.id,
         });
+        
+        console.log('Processed order:', order);
         
       if (logError) throw logError;
       
