@@ -2,9 +2,9 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { AtSign, Calendar, Phone, User } from 'lucide-react';
 import { useAuthStore } from '../store/auth-store';
+import { UserRole } from '../lib/types';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
-import { Avatar } from '../components/ui/Avatar';
 
 interface ProfileFormData {
   fullName: string;
@@ -17,6 +17,7 @@ interface ProfileFormData {
 export function Profile() {
   const { user, updateProfile, isLoading, error } = useAuthStore();
   const [success, setSuccess] = React.useState<string | null>(null);
+  const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
   
   const {
     register,
@@ -76,43 +77,8 @@ export function Profile() {
         </Alert>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-2xl mx-auto">
         <div className="animate-in fade-in duration-500">
-          <div className="card">
-            <div className="card-content flex flex-col items-center pt-6">
-              <Avatar 
-                name={user?.fullName} 
-                size="xl" 
-                className="mb-4" 
-              />
-              <h2 className="text-xl font-semibold">{user?.fullName}</h2>
-              <p className="text-muted-foreground">{user?.cargo}</p>
-              
-              <div className="w-full mt-6 pt-6 border-t border-gray-100">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm">
-                    <AtSign className="h-4 w-4 text-muted-foreground" />
-                    <span>{user?.email}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{user?.phone || 'No especificado'}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {user?.birthday
-                        ? new Date(user.birthday).toLocaleDateString('es-PE')
-                        : 'No especificado'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="md:col-span-2 animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
           <div className="card">
             <div className="card-header">
               <h2 className="card-title">Datos Personales</h2>
@@ -237,18 +203,31 @@ export function Profile() {
                   <label htmlFor="cargo" className="block text-sm font-medium">
                     Cargo
                   </label>
-                  <input
-                    id="cargo"
-                    type="text"
-                    className={`input ${errors.cargo ? 'border-destructive' : ''}`}
-                    {...register('cargo', {
-                      required: 'El cargo es requerido',
-                    })}
-                  />
-                  {errors.cargo && (
-                    <p className="text-destructive text-sm mt-1">
-                      {errors.cargo.message}
-                    </p>
+                  {isAsesorVentas ? (
+                    <input
+                      id="cargo"
+                      type="text"
+                      className="input bg-gray-50"
+                      value={user?.cargo || ''}
+                      disabled
+                      readOnly
+                    />
+                  ) : (
+                    <>
+                      <input
+                        id="cargo"
+                        type="text"
+                        className={`input ${errors.cargo ? 'border-destructive' : ''}`}
+                        {...register('cargo', {
+                          required: 'El cargo es requerido',
+                        })}
+                      />
+                      {errors.cargo && (
+                        <p className="text-destructive text-sm mt-1">
+                          {errors.cargo.message}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
                 
