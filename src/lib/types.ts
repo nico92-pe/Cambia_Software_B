@@ -49,9 +49,10 @@ export type Product = {
   cashPrice: number;
   unitsPerBox: number;
   categoryId: string;
+  stock?: number;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
-  stock?: number;
 };
 
 export type Order = {

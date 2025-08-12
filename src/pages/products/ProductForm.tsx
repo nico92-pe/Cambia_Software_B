@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Barcode, DollarSign, Package, Save } from 'lucide-react';
+import { ArrowLeft, Barcode, DollarSign, Package, Save, Upload, X } from 'lucide-react';
 import { Product } from '../../lib/types';
 import { useProductStore } from '../../store/product-store';
 import { Button } from '../../components/ui/Button';
@@ -15,6 +15,7 @@ export function ProductForm() {
   const navigate = useNavigate();
   const { products, categories, getCategories, createProduct, updateProduct, isLoading, error } = useProductStore();
   const [formError, setFormError] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const isEditMode = Boolean(id);
 
   const {
@@ -22,6 +23,7 @@ export function ProductForm() {
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm<ProductFormData>();
 
   useEffect(() => {
@@ -32,6 +34,9 @@ export function ProductForm() {
         const product = products.find(p => p.id === id);
         if (product) {
           reset(product);
+          if (product.imageUrl) {
+            setImagePreview(product.imageUrl);
+          }
         } else {
           navigate('/products');
         }
@@ -40,6 +45,26 @@ export function ProductForm() {
 
     loadData();
   }, [id, products, getCategories, reset, navigate]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // For demo purposes, we'll use a placeholder URL
+      // In a real app, you would upload to a storage service like Supabase Storage
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setImagePreview(result);
+        setValue('imageUrl', result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setValue('imageUrl', '');
+  };
 
   const onSubmit = async (data: ProductFormData) => {
     try {
@@ -53,6 +78,7 @@ export function ProductForm() {
         creditPrice: Number(data.creditPrice),
         cashPrice: Number(data.cashPrice),
         unitsPerBox: Number(data.unitsPerBox),
+        stock: Number(data.stock || 0),
       };
       
       if (isEditMode && id) {
@@ -115,6 +141,58 @@ export function ProductForm() {
         <div className="card-content">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Image Upload Section */}
+              <div className="space-y-2 md:col-span-2">
+                <label className="block text-sm font-medium">
+                  Imagen del Producto
+                </label>
+                <div className="flex items-start gap-4">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-32 h-32 object-cover rounded-lg border"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Seleccionar imagen
+                    </label>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Formatos soportados: JPG, PNG, GIF. Tamaño máximo: 5MB
+                    </p>
+                  </div>
+                </div>
+                <input
+                  type="hidden"
+                  {...register('imageUrl')}
+                />
+              </div>
+
               <div className="space-y-2">
                 <label htmlFor="code" className="block text-sm font-medium">
                   Código *
@@ -367,6 +445,29 @@ export function ProductForm() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="stock" className="block text-sm font-medium">
+                  Stock Inicial
+                </label>
+                <input
+                  id="stock"
+                  type="number"
+                  className={`input ${errors.stock ? 'border-destructive' : ''}`}
+                  placeholder="0"
+                  {...register('stock', {
+                    min: {
+                      value: 0,
+                      message: 'El stock no puede ser negativo',
+                    },
+                  })}
+                />
+                {errors.stock && (
+                  <p className="text-destructive text-sm mt-1">
+                    {errors.stock.message}
+                  </p>
+                )}
               </div>
             </div>
 

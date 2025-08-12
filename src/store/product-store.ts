@@ -1,55 +1,52 @@
 import { create } from 'zustand';
 import { Product, Category } from '../lib/types';
-import { delay } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
-// Mock initial data
-const INITIAL_CATEGORIES: Category[] = [
-  {
-    id: '1',
-    name: 'Electrónicos',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    name: 'Hogar',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+// Helper function to map database row to Category type
+const mapDbRowToCategory = (row: any): Category => ({
+  id: row.id,
+  name: row.name,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
 
-const INITIAL_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    code: 'E001',
-    name: 'Televisor Smart 55"',
-    wholesalePrice: 1500,
-    retailPrice: 2000,
-    distributorPrice: 1700,
-    creditPrice: 2200,
-    cashPrice: 1900,
-    unitsPerBox: 1,
-    categoryId: '1',
-    stock: 25,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    code: 'H001',
-    name: 'Juego de Ollas Premium',
-    wholesalePrice: 300,
-    retailPrice: 450,
-    distributorPrice: 350,
-    creditPrice: 500,
-    cashPrice: 400,
-    unitsPerBox: 4,
-    categoryId: '2',
-    stock: 40,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+// Helper function to map database row to Product type
+const mapDbRowToProduct = (row: any): Product => ({
+  id: row.id,
+  code: row.code,
+  name: row.name,
+  wholesalePrice: parseFloat(row.wholesale_price),
+  retailPrice: parseFloat(row.retail_price),
+  distributorPrice: parseFloat(row.distributor_price),
+  creditPrice: parseFloat(row.credit_price),
+  cashPrice: parseFloat(row.cash_price),
+  unitsPerBox: row.units_per_box,
+  categoryId: row.category_id,
+  stock: row.stock,
+  imageUrl: row.image_url,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+// Helper function to map Category type to database format
+const mapCategoryToDbFormat = (category: Partial<Category>) => ({
+  name: category.name,
+});
+
+// Helper function to map Product type to database format
+const mapProductToDbFormat = (product: Partial<Product>) => ({
+  code: product.code,
+  name: product.name,
+  wholesale_price: product.wholesalePrice,
+  retail_price: product.retailPrice,
+  distributor_price: product.distributorPrice,
+  credit_price: product.creditPrice,
+  cash_price: product.cashPrice,
+  units_per_box: product.unitsPerBox,
+  category_id: product.categoryId,
+  stock: product.stock,
+  image_url: product.imageUrl,
+});
 
 interface ProductState {
   products: Product[];
@@ -72,8 +69,8 @@ interface ProductState {
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
-  products: INITIAL_PRODUCTS,
-  categories: INITIAL_CATEGORIES,
+  products: [],
+  categories: [],
   isLoading: false,
   error: null,
   
@@ -82,11 +79,15 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(500);
-      // In a real app, we would fetch from an API
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-      set({ isLoading: false });
+      const categories = data.map(mapDbRowToCategory);
+      set({ categories, isLoading: false });
     } catch (error) {
       set({
         isLoading: false,
@@ -99,18 +100,20 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(800);
+      const dbData = mapCategoryToDbFormat({ name });
       
-      const newCategory: Category = {
-        id: Date.now().toString(),
-        name,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('categories')
+        .insert(dbData)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      const newCategory = mapDbRowToCategory(data);
       
       set(state => ({
-        categories: [...state.categories, newCategory],
+        categories: [newCategory, ...state.categories],
         isLoading: false
       }));
       
@@ -128,33 +131,25 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(800);
+      const dbData = mapCategoryToDbFormat({ name });
       
-      let updatedCategory: Category | undefined;
-      
-      set(state => {
-        const updatedCategories = state.categories.map(category => {
-          if (category.id === id) {
-            updatedCategory = {
-              ...category,
-              name,
-              updatedAt: new Date().toISOString()
-            };
-            return updatedCategory;
-          }
-          return category;
-        });
+      const { data, error } = await supabase
+        .from('categories')
+        .update(dbData)
+        .eq('id', id)
+        .select()
+        .single();
         
-        return {
-          categories: updatedCategories,
-          isLoading: false
-        };
-      });
+      if (error) throw error;
       
-      if (!updatedCategory) {
-        throw new Error('Categoría no encontrada');
-      }
+      const updatedCategory = mapDbRowToCategory(data);
+      
+      set(state => ({
+        categories: state.categories.map(category => 
+          category.id === id ? updatedCategory : category
+        ),
+        isLoading: false
+      }));
       
       return updatedCategory;
     } catch (error) {
@@ -170,15 +165,12 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(800);
-      
-      // Check if category has products
-      const hasProducts = get().products.some(product => product.categoryId === id);
-      
-      if (hasProducts) {
-        throw new Error('No se puede eliminar una categoría que tiene productos asociados');
-      }
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
       
       set(state => ({
         categories: state.categories.filter(category => category.id !== id),
@@ -198,11 +190,15 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(800);
-      // In a real app, we would fetch from an API
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-      set({ isLoading: false });
+      const products = data.map(mapDbRowToProduct);
+      set({ products, isLoading: false });
     } catch (error) {
       set({
         isLoading: false,
@@ -215,13 +211,18 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(500);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('category_id', categoryId)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-      const filteredProducts = get().products.filter(p => p.categoryId === categoryId);
+      const products = data.map(mapDbRowToProduct);
       set({ isLoading: false });
       
-      return filteredProducts;
+      return products;
     } catch (error) {
       set({
         isLoading: false,
@@ -235,18 +236,20 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(1000);
+      const dbData = mapProductToDbFormat(productData);
       
-      const newProduct: Product = {
-        ...productData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('products')
+        .insert(dbData)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      const newProduct = mapDbRowToProduct(data);
       
       set(state => ({
-        products: [...state.products, newProduct],
+        products: [newProduct, ...state.products],
         isLoading: false
       }));
       
@@ -264,33 +267,25 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(1000);
+      const dbData = mapProductToDbFormat(productData);
       
-      let updatedProduct: Product | undefined;
-      
-      set(state => {
-        const updatedProducts = state.products.map(product => {
-          if (product.id === id) {
-            updatedProduct = {
-              ...product,
-              ...productData,
-              updatedAt: new Date().toISOString()
-            };
-            return updatedProduct;
-          }
-          return product;
-        });
+      const { data, error } = await supabase
+        .from('products')
+        .update(dbData)
+        .eq('id', id)
+        .select()
+        .single();
         
-        return {
-          products: updatedProducts,
-          isLoading: false
-        };
-      });
+      if (error) throw error;
       
-      if (!updatedProduct) {
-        throw new Error('Producto no encontrado');
-      }
+      const updatedProduct = mapDbRowToProduct(data);
+      
+      set(state => ({
+        products: state.products.map(product => 
+          product.id === id ? updatedProduct : product
+        ),
+        isLoading: false
+      }));
       
       return updatedProduct;
     } catch (error) {
@@ -306,8 +301,12 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(1000);
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
       
       set(state => ({
         products: state.products.filter(product => product.id !== id),
