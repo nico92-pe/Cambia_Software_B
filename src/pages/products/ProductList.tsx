@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Box, Edit, Package, Plus, Search, Tag, Trash } from 'lucide-react';
 import { useProductStore } from '../../store/product-store';
+import { ProductDetailModal } from '../../components/products/ProductDetailModal';
+import { Product } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
@@ -14,6 +16,8 @@ export function ProductList() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     getProducts();
@@ -49,6 +53,16 @@ export function ProductList() {
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     return category ? category.name : '';
+  };
+
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
   };
 
   const filteredProducts = products.filter(
@@ -180,18 +194,32 @@ export function ProductList() {
                         <img
                           src={product.imageUrl}
                           alt={product.name}
-                          className="w-12 h-12 object-cover rounded-lg"
+                          className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleProductClick(product)}
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div 
+                          className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                          onClick={() => handleProductClick(product)}
+                        >
                           <Package className="h-6 w-6 text-gray-400" />
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-sm text-muted-foreground">Código: {product.code}</div>
+                        <div 
+                          className="font-medium cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => handleProductClick(product)}
+                        >
+                          {product.name}
+                        </div>
+                        <div 
+                          className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => handleProductClick(product)}
+                        >
+                          Código: {product.code}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -230,6 +258,13 @@ export function ProductList() {
           )}
         </div>
       </div>
+      
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        categoryName={selectedProduct ? getCategoryName(selectedProduct.categoryId) : ''}
+      />
     </div>
   );
 }
