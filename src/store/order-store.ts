@@ -132,26 +132,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         }
         
         // Map salesperson data
-        order.salesperson = row.salesperson ? {
-          id: row.salesperson.id,
-          fullName: row.salesperson.full_name,
-          email: '',
-          phone: row.salesperson.phone,
-          birthday: row.salesperson.birthday || '',
-          cargo: row.salesperson.cargo,
-          role: row.salesperson.role,
-        } : null;
+        if (row.profiles) {
+          order.salesperson = {
+            id: row.profiles.id,
+            fullName: row.profiles.full_name,
+            email: '',
+            phone: row.profiles.phone,
+            birthday: row.profiles.birthday || '',
+            cargo: row.profiles.cargo,
+            role: row.profiles.role,
+          };
+        } else {
+          order.salesperson = null;
+        }
         
-        // Map created by user data
-        order.createdByUser = row.created_by_user ? {
-          id: row.created_by_user.id,
-          fullName: row.created_by_user.full_name,
-          email: '',
-          phone: row.created_by_user.phone,
-          birthday: row.created_by_user.birthday || '',
-          cargo: row.created_by_user.cargo,
-          role: row.created_by_user.role,
-        } : null;
+        // We don't need createdByUser for the list view
+        order.createdByUser = null;
         
         // Map order items
         order.items = (row.order_items || []).map(item => {
@@ -329,7 +325,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order_id: id,
           status,
           observations,
-          has_observations: hasObservations,
           created_by: user.id,
         });
         
