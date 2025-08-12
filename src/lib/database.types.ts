@@ -91,6 +91,53 @@ export interface Database {
           updated_at?: string
         }
       }
+      clients: {
+        Row: {
+          id: string
+          ruc: string
+          business_name: string
+          commercial_name: string
+          address: string
+          district: string
+          province: string
+          salesperson_id: string | null
+          transport: string | null
+          transport_address: string | null
+          transport_district: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          ruc: string
+          business_name: string
+          commercial_name: string
+          address: string
+          district: string
+          province: string
+          salesperson_id?: string | null
+          transport?: string | null
+          transport_address?: string | null
+          transport_district?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          ruc?: string
+          business_name?: string
+          commercial_name?: string
+          address?: string
+          district?: string
+          province?: string
+          salesperson_id?: string | null
+          transport?: string | null
+          transport_address?: string | null
+          transport_district?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }
