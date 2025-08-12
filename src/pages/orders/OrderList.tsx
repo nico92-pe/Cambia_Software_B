@@ -182,7 +182,7 @@ export function OrderList() {
                       <div className="text-sm font-medium">{order.client?.commercialName || 'Cliente no encontrado'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">{order.salesperson?.fullName || 'Vendedor no encontrado'}</div>
+                      <div className="text-sm">{order.salesperson || 'Vendedor no encontrado'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-muted-foreground">
