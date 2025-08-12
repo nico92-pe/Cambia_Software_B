@@ -63,6 +63,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      // Get profiles with the specified role
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
@@ -70,12 +71,19 @@ export const useUserStore = create<UserState>((set, get) => ({
         
       if (error) throw error;
       
-      const { users } = await adminListUsers();
+      // Get all auth users to get email addresses
+      let authUsers = [];
+      try {
+        const { users } = await adminListUsers();
+        authUsers = users;
+      } catch (adminError) {
+        console.warn('Could not fetch auth users, using profiles only:', adminError);
+      }
       
       const formattedUsers: User[] = profiles.map(profile => ({
         id: profile.id,
         fullName: profile.full_name,
-        email: users.find(u => u.id === profile.id)?.email || '',
+        email: authUsers.find(u => u.id === profile.id)?.email || 'No disponible',
         phone: profile.phone,
         birthday: profile.birthday,
         cargo: profile.cargo,
@@ -190,6 +198,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      // Update user profile in Supabase
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -198,6 +207,7 @@ export const useUserStore = create<UserState>((set, get) => ({
           birthday: userData.birthday,
           cargo: userData.cargo,
           role: userData.role,
+          updated_at: new Date().toISOString()
         })
         .eq('id', id);
       
