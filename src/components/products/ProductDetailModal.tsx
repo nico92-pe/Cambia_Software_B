@@ -21,11 +21,11 @@ export function ProductDetailModal({
   if (!product) return null;
 
   const priceItems = [
-    { label: 'Precio Mayorista', value: product.wholesalePrice, color: 'text-blue-600' },
-    { label: 'Precio Minorista', value: product.retailPrice, color: 'text-green-600' },
-    { label: 'Precio Distribuidor', value: product.distributorPrice, color: 'text-purple-600' },
-    { label: 'Precio Crédito', value: product.creditPrice, color: 'text-orange-600' },
-    { label: 'Precio Contado', value: product.cashPrice, color: 'text-red-600' },
+    { label: 'Precio Mayorista', value: product.wholesalePrice },
+    { label: 'Precio Minorista', value: product.retailPrice },
+    { label: 'Precio Distribuidor', value: product.distributorPrice },
+    { label: 'Precio Crédito', value: product.creditPrice },
+    { label: 'Precio Contado', value: product.cashPrice },
   ];
 
   return (
@@ -38,7 +38,7 @@ export function ProductDetailModal({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Image Section */}
         <div className="space-y-4">
-          <div className="aspect-square w-full bg-gray-100 rounded-lg overflow-hidden">
+          <div className="aspect-square w-80 mx-auto bg-gray-100 rounded-lg overflow-hidden">
             {product.imageUrl ? (
               <img
                 src={product.imageUrl}
@@ -88,7 +88,7 @@ export function ProductDetailModal({
                   className="bg-gray-50 rounded-lg p-4 border border-gray-200"
                 >
                   <div className="text-sm text-gray-600 mb-1">{item.label}</div>
-                  <div className={`text-xl font-bold ${item.color}`}>
+                  <div className="text-xl font-bold text-gray-900">
                     {formatCurrency(item.value)}
                   </div>
                 </div>
