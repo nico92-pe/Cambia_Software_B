@@ -5,6 +5,7 @@ import { ArrowLeft, Building, Building2, MapPin, Save } from 'lucide-react';
 import { Client } from '../../lib/types';
 import { useClientStore } from '../../store/client-store';
 import { useUserStore } from '../../store/user-store';
+import { useAuthStore } from '../../store/auth-store';
 import { UserRole } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
@@ -17,9 +18,11 @@ export function ClientForm() {
   const navigate = useNavigate();
   const { getClientById, createClient, updateClient, isLoading, error } = useClientStore();
   const { users, getUsers } = useUserStore();
+  const { user: currentUser } = useAuthStore();
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const isEditMode = Boolean(id);
+  const isCurrentUserSalesperson = currentUser?.role === UserRole.ASESOR_VENTAS;
 
   const {
     register,
@@ -56,6 +59,11 @@ export function ClientForm() {
         } catch (error) {
           setFormError('Error al cargar el cliente');
         }
+      } else if (isCurrentUserSalesperson && currentUser) {
+        // For new clients, pre-fill salesperson if current user is a salesperson
+        reset({
+          salespersonId: currentUser.id,
+        } as ClientFormData);
       }
     };
 
@@ -170,20 +178,42 @@ export function ClientForm() {
                 <label htmlFor="salespersonId" className="block text-sm font-medium">
                   Vendedor Asignado *
                 </label>
-                <select
-                  id="salespersonId"
-                  className={`select ${errors.salespersonId ? 'border-destructive' : ''}`}
-                  {...register('salespersonId', {
-                    required: 'El vendedor es requerido',
-                  })}
-                >
-                  <option value="">Seleccionar vendedor</option>
-                  {salespeople.map((salesperson) => (
-                    <option key={salesperson.id} value={salesperson.id}>
-                      {salesperson.fullName}
-                    </option>
-                  ))}
-                </select>
+                {isCurrentUserSalesperson ? (
+                  <div>
+                    <input
+                      type="text"
+                      className="input bg-gray-50"
+                      value={currentUser?.fullName || ''}
+                      disabled
+                      readOnly
+                    />
+                    <input
+                      type="hidden"
+                      {...register('salespersonId', {
+                        required: 'El vendedor es requerido',
+                      })}
+                      value={currentUser?.id || ''}
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Como asesor de ventas, serás asignado automáticamente
+                    </p>
+                  </div>
+                ) : (
+                  <select
+                    id="salespersonId"
+                    className={`select ${errors.salespersonId ? 'border-destructive' : ''}`}
+                    {...register('salespersonId', {
+                      required: 'El vendedor es requerido',
+                    })}
+                  >
+                    <option value="">Seleccionar vendedor</option>
+                    {salespeople.map((salesperson) => (
+                      <option key={salesperson.id} value={salesperson.id}>
+                        {salesperson.fullName}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {salespeople.length === 0 && (
                   <p className="text-sm text-muted-foreground mt-1">
                     No hay asesores de ventas disponibles
