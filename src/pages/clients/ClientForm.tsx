@@ -194,9 +194,6 @@ export function ClientForm() {
                       })}
                       value={currentUser?.id || ''}
                     />
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Como asesor de ventas, serás asignado automáticamente
-                    </p>
                   </div>
                 ) : (
                   <select
@@ -213,11 +210,6 @@ export function ClientForm() {
                       </option>
                     ))}
                   </select>
-                )}
-                {salespeople.length === 0 && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    No hay asesores de ventas disponibles
-                  </p>
                 )}
                 {errors.salespersonId && (
                   <p className="text-destructive text-sm mt-1">
