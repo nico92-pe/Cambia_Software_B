@@ -108,13 +108,25 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }
       
       console.log('Raw orders data:', data);
+      console.log('=== DEBUGGING ORDER DATA ===');
+      if (data && data.length > 0) {
+        console.log('First order raw data:', data[0]);
+        console.log('First order clients data:', data[0].clients);
+        console.log('First order salesperson data:', data[0].salesperson);
+        console.log('First order salesperson_id:', data[0].salesperson_id);
+      }
       
       const orders = data.map(row => {
         console.log('Processing order row:', row);
+        console.log('Row clients:', row.clients);
+        console.log('Row salesperson:', row.salesperson);
+        console.log('Row salesperson_id:', row.salesperson_id);
+        
         const order = mapDbRowToOrder(row);
         
         // Map client data
         if (row.clients) {
+          console.log('Mapping client data:', row.clients);
           order.client = {
             id: row.clients.id, 
             ruc: row.clients.ruc,
@@ -131,11 +143,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             updatedAt: row.clients.updated_at,
           };
         } else {
+          console.log('No client data found for order:', order.id);
           order.client = null;
         }
         
         // Map salesperson data directly from the query
         if (row.salesperson) {
+          console.log('Mapping salesperson data:', row.salesperson);
           order.salesperson = {
             id: row.salesperson.id,
             fullName: row.salesperson.full_name,
@@ -145,8 +159,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             cargo: row.salesperson.cargo,
             role: row.salesperson.role,
           };
+          console.log('Mapped salesperson:', order.salesperson);
         } else {
-          console.warn(`Salesperson not found for order: ${order.id}`);
+          console.warn(`Salesperson not found for order: ${order.id}, salesperson_id: ${row.salesperson_id}`);
           order.salesperson = null;
         }
         
@@ -160,6 +175,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         });
         
         console.log('Processed order:', order);
+        console.log('Final order client:', order.client);
+        console.log('Final order salesperson:', order.salesperson);
         return order;
       });
       
