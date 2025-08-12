@@ -1,37 +1,6 @@
 import { create } from 'zustand';
 import { Client } from '../lib/types';
-import { delay } from '../lib/utils';
-
-// Mock initial data
-const INITIAL_CLIENTS: Client[] = [
-  {
-    id: '1',
-    ruc: '20123456789',
-    businessName: 'Comercial Los Andes S.A.C.',
-    commercialName: 'Comercial Los Andes',
-    address: 'Av. Industrial 567',
-    district: 'San Juan de Lurigancho',
-    province: 'Lima',
-    salespersonId: '1',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    ruc: '20987654321',
-    businessName: 'Distribuidora Norte Peruano E.I.R.L.',
-    commercialName: 'Disnorpe',
-    address: 'Jr. Lambayeque 234',
-    district: 'Chiclayo Centro',
-    province: 'Chiclayo',
-    salespersonId: '2',
-    transport: 'Transportes Chiclayo',
-    transportAddress: 'Av. Bolognesi 789',
-    transportDistrict: 'Chiclayo',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+import { supabase } from '../lib/supabase';
 
 interface ClientState {
   clients: Client[];
@@ -45,8 +14,39 @@ interface ClientState {
   deleteClient: (id: string) => Promise<void>;
 }
 
+// Helper function to map database row to Client type
+const mapDbRowToClient = (row: any): Client => ({
+  id: row.id,
+  ruc: row.ruc,
+  businessName: row.business_name,
+  commercialName: row.commercial_name,
+  address: row.address,
+  district: row.district,
+  province: row.province,
+  salespersonId: row.salesperson_id,
+  transport: row.transport,
+  transportAddress: row.transport_address,
+  transportDistrict: row.transport_district,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+// Helper function to map Client type to database insert/update format
+const mapClientToDbFormat = (client: Partial<Client>) => ({
+  ruc: client.ruc,
+  business_name: client.businessName,
+  commercial_name: client.commercialName,
+  address: client.address,
+  district: client.district,
+  province: client.province,
+  salesperson_id: client.salespersonId,
+  transport: client.transport,
+  transport_address: client.transportAddress,
+  transport_district: client.transportDistrict,
+});
+
 export const useClientStore = create<ClientState>((set, get) => ({
-  clients: INITIAL_CLIENTS,
+  clients: [],
   isLoading: false,
   error: null,
   
@@ -54,12 +54,15 @@ export const useClientStore = create<ClientState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(800);
-      // In a real app, we would fetch from an API
-      // No need to modify state here as we're using the initial data
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-      set({ isLoading: false });
+      const clients = data.map(mapDbRowToClient);
+      set({ clients, isLoading: false });
     } catch (error) {
       set({
         isLoading: false,
@@ -72,18 +75,30 @@ export const useClientStore = create<ClientState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(500);
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned
+          set({ isLoading: false });
+          return undefined;
+        }
+        throw error;
+      }
       
-      const client = get().clients.find(c => c.id === id);
+      const client = mapDbRowToClient(data);
       set({ isLoading: false });
-      
       return client;
     } catch (error) {
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Error al buscar cliente'
       });
+      return undefined;
     }
   },
   
@@ -91,13 +106,17 @@ export const useClientStore = create<ClientState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(500);
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('salesperson_id', salespersonId)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-      const filteredClients = get().clients.filter(c => c.salespersonId === salespersonId);
+      const clients = data.map(mapDbRowToClient);
       set({ isLoading: false });
-      
-      return filteredClients;
+      return clients;
     } catch (error) {
       set({
         isLoading: false,
@@ -111,18 +130,20 @@ export const useClientStore = create<ClientState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(1000);
+      const dbData = mapClientToDbFormat(clientData);
       
-      const newClient: Client = {
-        ...clientData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('clients')
+        .insert(dbData)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      const newClient = mapDbRowToClient(data);
       
       set(state => ({
-        clients: [...state.clients, newClient],
+        clients: [newClient, ...state.clients],
         isLoading: false
       }));
       
@@ -140,33 +161,25 @@ export const useClientStore = create<ClientState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(1000);
+      const dbData = mapClientToDbFormat(clientData);
       
-      let updatedClient: Client | undefined;
-      
-      set(state => {
-        const updatedClients = state.clients.map(client => {
-          if (client.id === id) {
-            updatedClient = {
-              ...client,
-              ...clientData,
-              updatedAt: new Date().toISOString()
-            };
-            return updatedClient;
-          }
-          return client;
-        });
+      const { data, error } = await supabase
+        .from('clients')
+        .update(dbData)
+        .eq('id', id)
+        .select()
+        .single();
         
-        return {
-          clients: updatedClients,
-          isLoading: false
-        };
-      });
+      if (error) throw error;
       
-      if (!updatedClient) {
-        throw new Error('Cliente no encontrado');
-      }
+      const updatedClient = mapDbRowToClient(data);
+      
+      set(state => ({
+        clients: state.clients.map(client => 
+          client.id === id ? updatedClient : client
+        ),
+        isLoading: false
+      }));
       
       return updatedClient;
     } catch (error) {
@@ -182,8 +195,12 @@ export const useClientStore = create<ClientState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(1000);
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
       
       set(state => ({
         clients: state.clients.filter(client => client.id !== id),
