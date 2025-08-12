@@ -143,14 +143,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order.client = null;
         }
         
-        // Map salesperson data using the same method as ClientForm
-        const salesperson = salespeopleMap.get(order.salespersonId);
-        if (salesperson) {
-          order.salesperson = {
-            ...salesperson
-          };
+        // Map salesperson data - use client's salespersonId to get the salesperson
+        if (order.client && order.client.salespersonId) {
+          const salesperson = salespeopleMap.get(order.client.salespersonId);
+          if (salesperson) {
+            order.salesperson = {
+              ...salesperson
+            };
+            console.log(`Salesperson found: ${salesperson.fullName} for client: ${order.client.commercialName}`);
+          } else {
+            console.warn(`Salesperson not found for ID: ${order.client.salespersonId}`);
+            order.salesperson = null;
+          }
         } else {
-          console.warn(`Salesperson not found for ID: ${order.salespersonId}`);
+          console.warn('No client or salespersonId found for order');
+          order.salesperson = null;
         }
         
         // We don't need createdByUser for the list view
@@ -473,12 +480,37 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         console.error('Error fetching orders:', error);
         throw error;
       }
+        console.log('Processing order row:', row);
+      
+        
+        // Map client data
+        if (row.client) {
+          order.client = {
+            id: row.client.id,
+            ruc: row.client.ruc,
+            businessName: row.client.business_name,
+            commercialName: row.client.commercial_name,
+            address: row.client.address,
+            district: row.client.district,
+            province: row.client.province,
+            salespersonId: row.client.salesperson_id,
+            transport: row.client.transport,
+            transportAddress: row.client.transport_address,
+            transportDistrict: row.client.transport_district,
+            createdAt: row.client.created_at,
+            updatedAt: row.client.updated_at,
+          };
+        } else {
+          order.client = null;
+        }
+        
+        // Map salesperson data
       
       const logs: OrderStatusLog[] = data.map(row => ({
         id: row.id,
-        orderId: row.order_id,
+          email: '',
         status: row.status,
-        observations: row.observations,
+          birthday: row.salesperson.birthday || '',
         hasObservations: row.has_observations,
         createdBy: row.created_by,
         createdAt: row.created_at,
@@ -486,20 +518,40 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         // Map created by user data
         createdByUser: {
           id: row.created_by_user.id,
+      console.log('Final orders:', orders);
+          fullName: row.created_by_user.full_name,
+            console.warn(`Salesperson not found for ID: ${order.salespersonId} (after fallback)`);
+            order.salesperson = null; // Ensure it's explicitly null if not found
+          }
+        }
+          email: '',
+        // We don't need createdByUser for the list view
+        // Use the directly joined data if available
+        order.createdByUser = row.created_by_user ? {
+          id: row.created_by_user.id,
           fullName: row.created_by_user.full_name,
           email: '',
           phone: row.created_by_user.phone,
           birthday: row.created_by_user.birthday || '',
           cargo: row.created_by_user.cargo,
           role: row.created_by_user.role,
+        } : null;
+          cargo: row.created_by_user.cargo,
+          role: row.created_by_user.role,
         },
+        
+        // Map order items
       }));
       
       set({ isLoading: false });
+        console.log('Processed order:', order);
       return logs;
     } catch (error) {
       set({
+      console.log('Final orders:', orders);
         isLoading: false,
+        
+        console.log('Processed order:', order);
         error: error instanceof Error ? error.message : 'Error al cargar historial de estados'
       });
       return [];
