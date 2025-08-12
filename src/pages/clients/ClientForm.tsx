@@ -16,7 +16,7 @@ export function ClientForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getClientById, createClient, updateClient, isLoading, error } = useClientStore();
-  const { getUsersByRole } = useUserStore();
+  const { users, getUsers } = useUserStore();
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const isEditMode = Boolean(id);
@@ -33,14 +33,12 @@ export function ClientForm() {
   const isLima = province === 'Lima';
 
   useEffect(() => {
-    const loadSalespeople = async () => {
+    const loadData = async () => {
       try {
-        console.log('Loading salespeople...');
-        const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
-        console.log('Salespeople loaded:', salespeople);
-        setSalespeople(salespeople.map(s => ({ id: s.id, fullName: s.fullName })));
+        // Load all users first
+        await getUsers();
       } catch (error) {
-        console.error('Error loading salespeople:', error);
+        console.error('Error loading users:', error);
       }
     };
 
@@ -61,9 +59,20 @@ export function ClientForm() {
       }
     };
 
-    loadSalespeople();
+    loadData();
     loadClient();
-  }, [id, getClientById, getUsersByRole, reset, navigate]);
+  }, [id, getClientById, getUsers, reset, navigate]);
+
+  // Filter salespeople from loaded users
+  useEffect(() => {
+    const filteredSalespeople = users
+      .filter(user => user.role === UserRole.ASESOR_VENTAS)
+      .map(s => ({ id: s.id, fullName: s.fullName }));
+    
+    console.log('All users:', users);
+    console.log('Filtered salespeople:', filteredSalespeople);
+    setSalespeople(filteredSalespeople);
+  }, [users]);
 
   const onSubmit = async (data: ClientFormData) => {
     try {
