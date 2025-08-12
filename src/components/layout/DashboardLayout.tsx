@@ -54,43 +54,40 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen flex bg-gray-50">
       {/* Sidebar */}
-      <aside 
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative",
-          !isSidebarOpen && "-translate-x-full"
-        )}
-      >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-          <div className="font-bold text-xl text-primary">Cambia</div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="md:hidden"
-          >
-            <X size={20} />
-          </Button>
-        </div>
-        <nav className="p-4 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-md transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'text-gray-700 hover:bg-gray-100'
-                )
-              }
+      {isSidebarOpen && (
+        <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+            <div className="font-bold text-xl text-primary">Cambia</div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="md:hidden"
             >
-              {item.icon}
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
+              <X size={20} />
+            </Button>
+          </div>
+          <nav className="p-4 space-y-1">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-md transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground font-medium'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  )
+                }
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </aside>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -103,7 +100,7 @@ export function DashboardLayout() {
               onClick={toggleSidebar}
               aria-label={isSidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
             >
-              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              <Menu size={20} />
             </Button>
             
             <div className="relative ml-auto">
