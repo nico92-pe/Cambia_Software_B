@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { Order, OrderItem, OrderStatus, OrderStatusLog } from '../lib/types';
 import { supabase } from '../lib/supabase';
-import { useUserStore } from './user-store';
 
 // Helper function to map database row to Order type
 const mapDbRowToOrder = (row: any): Order => ({
@@ -86,13 +85,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     
     try {
       console.log('Fetching orders with relations...');
-      
-      // First get orders with basic relations
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
-          clients!inner(*),
+          client:clients!orders_client_id_fkey(*),
+          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
+          created_by_user:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -107,52 +106,66 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       
       console.log('Raw orders data:', data);
       
-      // Get all salespeople using the same method as ClientForm
-      const salespeople = await useUserStore.getState().getUsersByRole('asesor_ventas');
-      console.log('Salespeople found:', salespeople);
-      
-      // Create a map for quick lookup
-      const salespeopleMap = new Map();
-      salespeople.forEach(sp => {
-        salespeopleMap.set(sp.id, sp);
-      });
-      
       const orders = data.map(row => {
         console.log('Processing order row:', row);
         const order = mapDbRowToOrder(row);
         
         // Map client data
-        if (row.clients) {
+        // Use row.client directly as it's aliased in the select query
+        if (row.client) {
           order.client = {
-            id: row.clients.id, 
-            ruc: row.clients.ruc,
-            businessName: row.clients.business_name,
-            commercialName: row.clients.commercial_name,
-            address: row.clients.address,
-            district: row.clients.district,
-            province: row.clients.province,
-            salespersonId: row.clients.salesperson_id,
-            transport: row.clients.transport,
-            transportAddress: row.clients.transport_address,
-            transportDistrict: row.clients.transport_district,
-            createdAt: row.clients.created_at,
-            updatedAt: row.clients.updated_at,
+            id: row.client.id,
+            ruc: row.client.ruc,
+            businessName: row.client.business_name,
+            commercialName: row.client.commercial_name,
+            address: row.client.address,
+            district: row.client.district,
+            province: row.client.province,
+            salespersonId: row.client.salesperson_id,
+            transport: row.client.transport,
+            transportAddress: row.client.transport_address,
+            transportDistrict: row.client.transport_district,
+            createdAt: row.client.created_at,
+            updatedAt: row.client.updated_at,
           };
         } else {
           order.client = null;
         }
         
         // Map salesperson data using the same method as ClientForm
-        const salesperson = salespeopleMap.get(order.salespersonId);
-        if (salesperson) {
+        // First, try to use the directly joined data (row.salesperson)
+        if (row.salesperson) {
           order.salesperson = {
-            ...salesperson
+            id: row.salesperson.id,
+            fullName: row.salesperson.full_name,
+            email: '', // Email is not selected in the join, so leave empty or fetch separately if needed
+            phone: row.salesperson.phone,
+            birthday: row.salesperson.birthday || '',
+            cargo: row.salesperson.cargo,
+            role: row.salesperson.role,
           };
         } else {
-          console.warn(`Salesperson not found for ID: ${order.salespersonId}`);
+          // If direct join failed (e.g., due to RLS), try to get from the pre-fetched list
+          const fallbackSalesperson = salespeopleMap.get(order.salespersonId);
+          if (fallbackSalesperson) {
+            order.salesperson = { ...fallbackSalesperson };
+          } else {
+            console.warn(`Salesperson not found for ID: ${order.salespersonId} (after fallback)`);
+            order.salesperson = null; // Ensure it's explicitly null if not found
+          }
         }
         
         // We don't need createdByUser for the list view
+        // Use the directly joined data if available
+        order.createdByUser = row.created_by_user ? {
+          id: row.created_by_user.id,
+          fullName: row.created_by_user.full_name,
+          email: '',
+          phone: row.created_by_user.phone,
+          birthday: row.created_by_user.birthday || '',
+          cargo: row.created_by_user.cargo,
+          role: row.created_by_user.role,
+        } : null;
         
         // Map order items
         order.items = (row.order_items || []).map(item => {
@@ -161,12 +174,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           return orderItem;
         });
         
-        console.log('Processed order:', order);
         return order;
       });
       
-      console.log('Final orders:', orders);
-      console.log('Final orders:', orders);
       set({ orders, isLoading: false });
     } catch (error) {
       set({
@@ -330,7 +340,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order_id: id,
           status,
           observations,
-          has_observations: hasObservations,
           created_by: user.id,
         });
         
