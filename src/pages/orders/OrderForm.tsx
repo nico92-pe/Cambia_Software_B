@@ -1,105 +1,181 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, Save, User, Users } from 'lucide-react';
-import { useUserStore } from '../../store/user-store';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Search, Plus, Trash2, Save, FileText, AlertTriangle } from 'lucide-react';
+import { useOrderStore } from '../../store/order-store';
 import { useClientStore } from '../../store/client-store';
 import { useProductStore } from '../../store/product-store';
-import { OrderStatus, UserRole } from '../../lib/types';
+import { useAuthStore } from '../../store/auth-store';
+import { OrderStatus, Client, Product, OrderItem } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
+import { Modal } from '../../components/ui/Modal';
 import { formatCurrency } from '../../lib/utils';
 
+interface OrderFormItem {
+  productId: string;
+  product?: Product;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
 export function OrderForm() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getUsersByRole } = useUserStore();
-  const { getClientsBySalesperson } = useClientStore();
-  const { getProducts } = useProductStore();
+  const { user } = useAuthStore();
+  const { createOrder, updateOrder, deleteOrder, isLoading, error } = useOrderStore();
+  const { clients, getClients } = useClientStore();
+  const { products, categories, getProducts, getCategories } = useProductStore();
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [salespeople, setSalespeople] = useState<Array<{ id: string; fullName: string }>>([]);
-  const [clients, setClients] = useState<Array<{ id: string; commercialName: string }>>([]);
-  const [products, setProducts] = useState<Array<any>>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientResults, setShowClientResults] = useState(false);
   
-  const [selectedSalesperson, setSelectedSalesperson] = useState<string>('');
-  const [selectedClient, setSelectedClient] = useState<string>('');
+  const [productSearch, setProductSearch] = useState('');
+  const [showProductResults, setShowProductResults] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
   
+  const [orderItems, setOrderItems] = useState<OrderFormItem[]>([]);
+  const [observations, setObservations] = useState('');
+  
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'draft' | 'delete' | 'confirm' | null>(null);
+  
+  const isEditMode = Boolean(id);
+
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Load salespeople
-        const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
-        setSalespeople(salespeople.map(s => ({ id: s.id, fullName: s.fullName })));
-        
-        // Load products
-        const products = await getProducts();
-        setProducts(products || []);
-        
-        setIsLoading(false);
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError('Error al cargar datos iniciales');
-        }
-        setIsLoading(false);
-      }
+    getClients();
+    getProducts();
+    getCategories();
+  }, [getClients, getProducts, getCategories]);
+
+  // Filter clients based on search
+  const filteredClients = clients.filter(client => 
+    client.ruc.includes(clientSearch) ||
+    client.commercialName.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    client.businessName.toLowerCase().includes(clientSearch.toLowerCase())
+  );
+
+  // Filter products based on search and category
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                         product.code.toLowerCase().includes(productSearch.toLowerCase());
+    const matchesCategory = selectedCategory === '' || product.categoryId === selectedCategory;
+    const notInOrder = !orderItems.some(item => item.productId === product.id);
+    
+    return matchesSearch && matchesCategory && notInOrder;
+  });
+
+  const handleClientSelect = (client: Client) => {
+    setSelectedClient(client);
+    setClientSearch(client.commercialName);
+    setShowClientResults(false);
+  };
+
+  const handleProductSelect = (product: Product) => {
+    const newItem: OrderFormItem = {
+      productId: product.id,
+      product,
+      quantity: 1,
+      unitPrice: product.retailPrice,
+      subtotal: product.retailPrice,
     };
     
-    loadInitialData();
-  }, [getUsersByRole, getProducts]);
-  
-  useEffect(() => {
-    const loadClients = async () => {
-      if (selectedSalesperson) {
-        try {
-          setIsLoading(true);
-          const clients = await getClientsBySalesperson(selectedSalesperson);
-          setClients(clients.map(c => ({ id: c.id, commercialName: c.commercialName })));
-          setIsLoading(false);
-        } catch (error) {
-          if (error instanceof Error) {
-            setError(error.message);
-          } else {
-            setError('Error al cargar clientes');
-          }
-          setIsLoading(false);
-        }
+    setOrderItems([...orderItems, newItem]);
+    setProductSearch('');
+    setShowProductResults(false);
+  };
+
+  const updateOrderItem = (index: number, field: 'quantity' | 'unitPrice', value: number) => {
+    const updatedItems = [...orderItems];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [field]: value,
+      subtotal: field === 'quantity' 
+        ? value * updatedItems[index].unitPrice
+        : updatedItems[index].quantity * value
+    };
+    setOrderItems(updatedItems);
+  };
+
+  const removeOrderItem = (index: number) => {
+    setOrderItems(orderItems.filter((_, i) => i !== index));
+  };
+
+  // Calculate totals
+  const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const subtotal = total / 1.18;
+  const igv = subtotal * 0.18;
+
+  const handleAction = (action: 'draft' | 'delete' | 'confirm') => {
+    setConfirmAction(action);
+    setShowConfirmModal(true);
+  };
+
+  const executeAction = async () => {
+    if (!confirmAction || !selectedClient || !user) return;
+
+    try {
+      const orderData = {
+        clientId: selectedClient.id,
+        salespersonId: selectedClient.salespersonId,
+        status: confirmAction === 'confirm' ? OrderStatus.TOMADO : OrderStatus.BORRADOR,
+        observations,
+        createdBy: user.id,
+      };
+
+      if (confirmAction === 'delete') {
+        // Clear form
+        setSelectedClient(null);
+        setClientSearch('');
+        setOrderItems([]);
+        setObservations('');
       } else {
-        setClients([]);
+        const order = await createOrder(orderData);
+        
+        // Add order items
+        for (const item of orderItems) {
+          await useOrderStore.getState().addOrderItem(order.id, {
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          });
+        }
       }
-    };
-    
-    loadClients();
-  }, [selectedSalesperson, getClientsBySalesperson]);
-  
-  const handleSalespersonChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedSalesperson(e.target.value);
-    setSelectedClient('');
+      
+      navigate('/orders');
+    } catch (error) {
+      // Error handled by store
+    } finally {
+      setShowConfirmModal(false);
+      setConfirmAction(null);
+    }
   };
-  
-  const handleClientChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedClient(e.target.value);
+
+  const getActionText = () => {
+    switch (confirmAction) {
+      case 'draft': return 'guardar como borrador';
+      case 'delete': return 'eliminar';
+      case 'confirm': return 'confirmar';
+      default: return '';
+    }
   };
-  
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader size="lg" />
-      </div>
-    );
-  }
-  
+
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    return category ? category.name : '';
+  };
+
   return (
     <div>
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-in fade-in duration-500">
         <div>
-          <h1 className="text-3xl font-bold">Nuevo Pedido</h1>
+          <h1 className="text-3xl font-bold">
+            {isEditMode ? 'Editar Pedido' : 'Nuevo Pedido'}
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Crea un nuevo pedido para un cliente
+            {isEditMode ? 'Actualiza la información del pedido' : 'Crea un nuevo pedido para un cliente'}
           </p>
         </div>
         <Button
@@ -110,134 +186,337 @@ export function OrderForm() {
           Volver
         </Button>
       </header>
-      
+
       {error && (
         <Alert variant="destructive" className="mb-6 animate-in fade-in duration-300">
           {error}
         </Alert>
       )}
-      
-      <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
-        <div className="card-header">
-          <h2 className="card-title text-xl">Información del Pedido</h2>
-          <p className="card-description">
-            Selecciona el vendedor y el cliente para el pedido
-          </p>
-        </div>
-        <div className="card-content">
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label htmlFor="salesperson" className="block text-sm font-medium">
-                  Vendedor *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                    <User size={18} />
-                  </div>
-                  <select
-                    id="salesperson"
-                    className="select pl-10"
-                    value={selectedSalesperson}
-                    onChange={handleSalespersonChange}
-                  >
-                    <option value="">Seleccionar vendedor</option>
-                    {salespeople.map((salesperson) => (
-                      <option key={salesperson.id} value={salesperson.id}>
-                        {salesperson.fullName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {selectedSalesperson === '' && (
-                  <p className="text-muted-foreground text-sm mt-1">
-                    Primero debes seleccionar un vendedor
-                  </p>
-                )}
+
+      <div className="space-y-6">
+        {/* Client Selection */}
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">Seleccionar Cliente</h2>
+            <p className="card-description">
+              Busca por RUC, nombre comercial o razón social
+            </p>
+          </div>
+          <div className="card-content">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                <Search size={18} />
               </div>
+              <input
+                type="text"
+                className="input pl-10"
+                placeholder="Buscar cliente..."
+                value={clientSearch}
+                onChange={(e) => {
+                  setClientSearch(e.target.value);
+                  setShowClientResults(true);
+                  if (!e.target.value) {
+                    setSelectedClient(null);
+                  }
+                }}
+                onFocus={() => setShowClientResults(true)}
+              />
               
-              <div className="space-y-2">
-                <label htmlFor="client" className="block text-sm font-medium">
-                  Cliente *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                    <Users size={18} />
-                  </div>
-                  <select
-                    id="client"
-                    className="select pl-10"
-                    value={selectedClient}
-                    onChange={handleClientChange}
-                    disabled={!selectedSalesperson}
-                  >
-                    <option value="">Seleccionar cliente</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.commercialName}
-                      </option>
-                    ))}
-                  </select>
+              {showClientResults && clientSearch && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {filteredClients.length > 0 ? (
+                    filteredClients.map((client) => (
+                      <button
+                        key={client.id}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        onClick={() => handleClientSelect(client)}
+                      >
+                        <div className="font-medium">{client.commercialName}</div>
+                        <div className="text-sm text-gray-500">{client.businessName}</div>
+                        <div className="text-sm text-gray-500">RUC: {client.ruc}</div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-gray-500">No se encontraron clientes</div>
+                  )}
                 </div>
-                {selectedSalesperson && clients.length === 0 && (
-                  <p className="text-muted-foreground text-sm mt-1">
-                    Este vendedor no tiene clientes asignados
-                  </p>
-                )}
-              </div>
+              )}
             </div>
             
             {selectedClient && (
-              <div className="border-t border-gray-100 pt-6 animate-in fade-in duration-300">
-                <h3 className="font-medium text-lg mb-4">Productos Disponibles</h3>
-                <div className="bg-muted/50 p-8 rounded-lg text-center">
-                  <Package className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
-                  <h3 className="mt-4 text-lg font-medium">Sistema de Pedidos - Desarrollo Futuro</h3>
-                  <p className="mt-1 text-muted-foreground max-w-md mx-auto">
-                    Esta pantalla servirá como base para construir un sistema de pedidos más avanzado en desarrollos futuros.
-                  </p>
-                  <div className="mt-6">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Se han seleccionado:
-                    </p>
-                    <div className="flex justify-center gap-6">
-                      <div>
-                        <span className="text-xl font-bold text-primary">
-                          {selectedSalesperson ? '1' : '0'}
-                        </span>
-                        <p className="text-xs text-muted-foreground">Vendedor</p>
-                      </div>
-                      <div>
-                        <span className="text-xl font-bold text-primary">
-                          {selectedClient ? '1' : '0'}
-                        </span>
-                        <p className="text-xs text-muted-foreground">Cliente</p>
-                      </div>
-                    </div>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium mb-2">Cliente Seleccionado</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Nombre Comercial:</span> {selectedClient.commercialName}
+                  </div>
+                  <div>
+                    <span className="font-medium">RUC:</span> {selectedClient.ruc}
+                  </div>
+                  <div>
+                    <span className="font-medium">Razón Social:</span> {selectedClient.businessName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Dirección:</span> {selectedClient.address}, {selectedClient.district}, {selectedClient.province}
                   </div>
                 </div>
               </div>
             )}
-            
-            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-100">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/orders')}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                icon={<Save size={18} />}
-                disabled={!selectedClient}
-              >
-                Guardar Pedido
-              </Button>
-            </div>
           </div>
         </div>
+
+        {/* Product Selection */}
+        {selectedClient && (
+          <div className="card animate-in fade-in duration-300">
+            <div className="card-header">
+              <h2 className="card-title">Agregar Productos</h2>
+              <p className="card-description">
+                Busca productos por categoría, nombre o código
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                    <Search size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    className="input pl-10"
+                    placeholder="Buscar producto..."
+                    value={productSearch}
+                    onChange={(e) => {
+                      setProductSearch(e.target.value);
+                      setShowProductResults(true);
+                    }}
+                    onFocus={() => setShowProductResults(true)}
+                  />
+                </div>
+                
+                <select
+                  className="select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="">Todas las categorías</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {showProductResults && productSearch && (
+                <div className="border border-gray-200 rounded-md max-h-60 overflow-y-auto mb-4">
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => (
+                      <button
+                        key={product.id}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        onClick={() => handleProductSelect(product)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-sm text-gray-500">
+                              Código: {product.code} | Categoría: {getCategoryName(product.categoryId)}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{formatCurrency(product.retailPrice)}</div>
+                            <div className="text-sm text-gray-500">Stock: {product.stock || 0}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-gray-500">No se encontraron productos</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Order Items */}
+        {orderItems.length > 0 && (
+          <div className="card animate-in fade-in duration-300">
+            <div className="card-header">
+              <h2 className="card-title">Productos del Pedido</h2>
+            </div>
+            <div className="card-content">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Producto
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cantidad
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Precio Unitario
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Subtotal
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {orderItems.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="font-medium">{item.product?.name}</div>
+                            <div className="text-sm text-gray-500">Código: {item.product?.code}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="number"
+                            min="1"
+                            className="input w-20"
+                            value={item.quantity}
+                            onChange={(e) => updateOrderItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            className="input w-32"
+                            value={item.unitPrice}
+                            onChange={(e) => updateOrderItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap font-medium">
+                          {formatCurrency(item.subtotal)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Trash2 size={16} />}
+                            onClick={() => removeOrderItem(index)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Totals */}
+              <div className="mt-6 border-t pt-4">
+                <div className="flex justify-end">
+                  <div className="w-80 space-y-2">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span className="font-medium">{formatCurrency(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>IGV (18%):</span>
+                      <span className="font-medium">{formatCurrency(igv)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold border-t pt-2">
+                      <span>Total:</span>
+                      <span>{formatCurrency(total)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Observations */}
+        {selectedClient && (
+          <div className="card animate-in fade-in duration-300">
+            <div className="card-header">
+              <h2 className="card-title">Observaciones</h2>
+            </div>
+            <div className="card-content">
+              <textarea
+                className="input resize-none"
+                rows={4}
+                placeholder="Observaciones del pedido..."
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        {selectedClient && (
+          <div className="flex justify-end space-x-4 animate-in fade-in duration-300">
+            <Button
+              variant="outline"
+              onClick={() => handleAction('delete')}
+              disabled={isLoading}
+            >
+              Eliminar
+            </Button>
+            <Button
+              variant="outline"
+              icon={<Save size={18} />}
+              onClick={() => handleAction('draft')}
+              disabled={isLoading || orderItems.length === 0}
+            >
+              Guardar Borrador
+            </Button>
+            <Button
+              icon={<FileText size={18} />}
+              onClick={() => handleAction('confirm')}
+              disabled={isLoading || orderItems.length === 0}
+            >
+              Confirmar Pedido
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        title="Confirmar Acción"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-warning" />
+            <div>
+              <h3 className="font-medium">¿Estás seguro?</h3>
+              <p className="text-sm text-muted-foreground">
+                Esta acción va a {getActionText()} este pedido.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmAction === 'delete' ? 'destructive' : 'primary'}
+              onClick={executeAction}
+              loading={isLoading}
+            >
+              Confirmar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -1,52 +1,82 @@
 import { create } from 'zustand';
-import { Order, OrderItem, OrderStatus } from '../lib/types';
-import { delay } from '../lib/utils';
+import { Order, OrderItem, OrderStatus, OrderStatusLog } from '../lib/types';
+import { supabase } from '../lib/supabase';
 
-// Mock initial data
-const INITIAL_ORDERS: Order[] = [
-  {
-    id: '1',
-    clientId: '1',
-    salespersonId: '2',
-    status: OrderStatus.PENDING,
-    total: 3500,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    items: [
-      {
-        id: '1',
-        orderId: '1',
-        productId: '1',
-        quantity: 1,
-        price: 1700,
-        subtotal: 1700
-      },
-      {
-        id: '2',
-        orderId: '1',
-        productId: '2',
-        quantity: 4,
-        price: 450,
-        subtotal: 1800
-      }
-    ]
-  }
-];
+// Helper function to map database row to Order type
+const mapDbRowToOrder = (row: any): Order => ({
+  id: row.id,
+  clientId: row.client_id,
+  salespersonId: row.salesperson_id,
+  status: row.status as OrderStatus,
+  subtotal: parseFloat(row.subtotal),
+  igv: parseFloat(row.igv),
+  total: parseFloat(row.total),
+  observations: row.observations,
+  createdBy: row.created_by,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  items: [],
+  // Populated fields will be added separately
+});
+
+// Helper function to map database row to OrderItem type
+const mapDbRowToOrderItem = (row: any): OrderItem => ({
+  id: row.id,
+  orderId: row.order_id,
+  productId: row.product_id,
+  quantity: row.quantity,
+  unitPrice: parseFloat(row.unit_price),
+  subtotal: parseFloat(row.subtotal),
+  createdAt: row.created_at,
+});
+
+// Helper function to map Order type to database format
+const mapOrderToDbFormat = (order: Partial<Order>) => ({
+  client_id: order.clientId,
+  salesperson_id: order.salespersonId,
+  status: order.status,
+  observations: order.observations,
+  created_by: order.createdBy,
+});
+
+// Helper function to map OrderItem type to database format
+const mapOrderItemToDbFormat = (item: Partial<OrderItem>) => ({
+  order_id: item.orderId,
+  product_id: item.productId,
+  quantity: item.quantity,
+  unit_price: item.unitPrice,
+});
 
 interface OrderState {
   orders: Order[];
+  currentOrder: Order | null;
   isLoading: boolean;
   error: string | null;
+  
+  // Order operations
   getOrders: () => Promise<void>;
-  getOrdersByClient: (clientId: string) => Promise<Order[]>;
-  getOrdersBySalesperson: (salespersonId: string) => Promise<Order[]>;
-  createOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Order>;
-  updateOrderStatus: (id: string, status: OrderStatus) => Promise<Order>;
+  getOrderById: (id: string) => Promise<Order | undefined>;
+  createOrder: (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'subtotal' | 'igv' | 'total' | 'items'>) => Promise<Order>;
+  updateOrder: (id: string, orderData: Partial<Order>) => Promise<Order>;
+  updateOrderStatus: (id: string, status: OrderStatus, observations?: string, hasObservations?: boolean) => Promise<Order>;
   deleteOrder: (id: string) => Promise<void>;
+  
+  // Order item operations
+  addOrderItem: (orderId: string, item: Omit<OrderItem, 'id' | 'orderId' | 'subtotal' | 'createdAt'>) => Promise<OrderItem>;
+  updateOrderItem: (id: string, itemData: Partial<OrderItem>) => Promise<OrderItem>;
+  removeOrderItem: (id: string) => Promise<void>;
+  
+  // Status log operations
+  getOrderStatusLogs: (orderId: string) => Promise<OrderStatusLog[]>;
+  
+  // Utility
+  clearCurrentOrder: () => void;
+  setCurrentOrder: (order: Order | null) => void;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
-  orders: INITIAL_ORDERS,
+  orders: [],
+  currentOrder: null,
   isLoading: false,
   error: null,
   
@@ -54,11 +84,52 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(800);
-      // In a real app, we would fetch from an API
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          client:clients(*),
+          salesperson:profiles!orders_salesperson_id_fkey(*),
+          created_by_user:profiles!orders_created_by_fkey(*),
+          order_items(
+            *,
+            product:products(*)
+          )
+        `)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-      set({ isLoading: false });
+      const orders = data.map(row => {
+        const order = mapDbRowToOrder(row);
+        order.client = row.client;
+        order.salesperson = {
+          id: row.salesperson.id,
+          fullName: row.salesperson.full_name,
+          email: '', // Not needed for display
+          phone: row.salesperson.phone,
+          birthday: row.salesperson.birthday,
+          cargo: row.salesperson.cargo,
+          role: row.salesperson.role,
+        };
+        order.createdByUser = {
+          id: row.created_by_user.id,
+          fullName: row.created_by_user.full_name,
+          email: '', // Not needed for display
+          phone: row.created_by_user.phone,
+          birthday: row.created_by_user.birthday,
+          cargo: row.created_by_user.cargo,
+          role: row.created_by_user.role,
+        };
+        order.items = row.order_items.map(item => {
+          const orderItem = mapDbRowToOrderItem(item);
+          orderItem.product = item.product;
+          return orderItem;
+        });
+        return order;
+      });
+      
+      set({ orders, isLoading: false });
     } catch (error) {
       set({
         isLoading: false,
@@ -67,43 +138,67 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
   
-  getOrdersByClient: async (clientId) => {
+  getOrderById: async (id) => {
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(500);
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          client:clients(*),
+          salesperson:profiles!orders_salesperson_id_fkey(*),
+          created_by_user:profiles!orders_created_by_fkey(*),
+          order_items(
+            *,
+            product:products(*)
+          )
+        `)
+        .eq('id', id)
+        .single();
+        
+      if (error) {
+        if (error.code === 'PGRST116') {
+          set({ isLoading: false });
+          return undefined;
+        }
+        throw error;
+      }
       
-      const filteredOrders = get().orders.filter(o => o.clientId === clientId);
+      const order = mapDbRowToOrder(data);
+      order.client = data.client;
+      order.salesperson = {
+        id: data.salesperson.id,
+        fullName: data.salesperson.full_name,
+        email: '',
+        phone: data.salesperson.phone,
+        birthday: data.salesperson.birthday,
+        cargo: data.salesperson.cargo,
+        role: data.salesperson.role,
+      };
+      order.createdByUser = {
+        id: data.created_by_user.id,
+        fullName: data.created_by_user.full_name,
+        email: '',
+        phone: data.created_by_user.phone,
+        birthday: data.created_by_user.birthday,
+        cargo: data.created_by_user.cargo,
+        role: data.created_by_user.role,
+      };
+      order.items = data.order_items.map(item => {
+        const orderItem = mapDbRowToOrderItem(item);
+        orderItem.product = item.product;
+        return orderItem;
+      });
+      
       set({ isLoading: false });
-      
-      return filteredOrders;
+      return order;
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Error al buscar pedidos'
+        error: error instanceof Error ? error.message : 'Error al buscar pedido'
       });
-      return [];
-    }
-  },
-  
-  getOrdersBySalesperson: async (salespersonId) => {
-    set({ isLoading: true, error: null });
-    
-    try {
-      // Simulate API call
-      await delay(500);
-      
-      const filteredOrders = get().orders.filter(o => o.salespersonId === salespersonId);
-      set({ isLoading: false });
-      
-      return filteredOrders;
-    } catch (error) {
-      set({
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Error al buscar pedidos'
-      });
-      return [];
+      return undefined;
     }
   },
   
@@ -111,18 +206,20 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(1000);
+      const dbData = mapOrderToDbFormat(orderData);
       
-      const newOrder: Order = {
-        ...orderData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('orders')
+        .insert(dbData)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      const newOrder = mapDbRowToOrder(data);
       
       set(state => ({
-        orders: [...state.orders, newOrder],
+        orders: [newOrder, ...state.orders],
         isLoading: false
       }));
       
@@ -136,37 +233,29 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
   
-  updateOrderStatus: async (id, status) => {
+  updateOrder: async (id, orderData) => {
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(800);
+      const dbData = mapOrderToDbFormat(orderData);
       
-      let updatedOrder: Order | undefined;
-      
-      set(state => {
-        const updatedOrders = state.orders.map(order => {
-          if (order.id === id) {
-            updatedOrder = {
-              ...order,
-              status,
-              updatedAt: new Date().toISOString()
-            };
-            return updatedOrder;
-          }
-          return order;
-        });
+      const { data, error } = await supabase
+        .from('orders')
+        .update(dbData)
+        .eq('id', id)
+        .select()
+        .single();
         
-        return {
-          orders: updatedOrders,
-          isLoading: false
-        };
-      });
+      if (error) throw error;
       
-      if (!updatedOrder) {
-        throw new Error('Pedido no encontrado');
-      }
+      const updatedOrder = mapDbRowToOrder(data);
+      
+      set(state => ({
+        orders: state.orders.map(order => 
+          order.id === id ? updatedOrder : order
+        ),
+        isLoading: false
+      }));
       
       return updatedOrder;
     } catch (error) {
@@ -178,12 +267,66 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
   
+  updateOrderStatus: async (id, status, observations, hasObservations = false) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+      
+      // Update order status
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+        
+      if (orderError) throw orderError;
+      
+      // Log status change
+      const { error: logError } = await supabase
+        .from('order_status_logs')
+        .insert({
+          order_id: id,
+          status,
+          observations,
+          has_observations: hasObservations,
+          created_by: user.id,
+        });
+        
+      if (logError) throw logError;
+      
+      const updatedOrder = mapDbRowToOrder(orderData);
+      
+      set(state => ({
+        orders: state.orders.map(order => 
+          order.id === id ? { ...order, status } : order
+        ),
+        isLoading: false
+      }));
+      
+      return updatedOrder;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al actualizar estado del pedido'
+      });
+      throw error;
+    }
+  },
+  
   deleteOrder: async (id) => {
     set({ isLoading: true, error: null });
     
     try {
-      // Simulate API call
-      await delay(1000);
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
       
       set(state => ({
         orders: state.orders.filter(order => order.id !== id),
@@ -196,5 +339,134 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       });
       throw error;
     }
-  }
+  },
+  
+  addOrderItem: async (orderId, itemData) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const dbData = mapOrderItemToDbFormat({ ...itemData, orderId });
+      
+      const { data, error } = await supabase
+        .from('order_items')
+        .insert(dbData)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      const newItem = mapDbRowToOrderItem(data);
+      
+      set({ isLoading: false });
+      return newItem;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al agregar producto'
+      });
+      throw error;
+    }
+  },
+  
+  updateOrderItem: async (id, itemData) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const dbData = mapOrderItemToDbFormat(itemData);
+      
+      const { data, error } = await supabase
+        .from('order_items')
+        .update(dbData)
+        .eq('id', id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      const updatedItem = mapDbRowToOrderItem(data);
+      
+      set({ isLoading: false });
+      return updatedItem;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al actualizar producto'
+      });
+      throw error;
+    }
+  },
+  
+  removeOrderItem: async (id) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { error } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      set({ isLoading: false });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al eliminar producto'
+      });
+      throw error;
+    }
+  },
+  
+  getOrderStatusLogs: async (orderId) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase
+        .from('order_status_logs')
+        .select(`
+          *,
+          created_by_user:profiles!order_status_logs_created_by_fkey(*)
+        `)
+        .eq('order_id', orderId)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      const logs: OrderStatusLog[] = data.map(row => ({
+        id: row.id,
+        orderId: row.order_id,
+        status: row.status,
+        observations: row.observations,
+        hasObservations: row.has_observations,
+        createdBy: row.created_by,
+        createdAt: row.created_at,
+        createdByUser: {
+          id: row.created_by_user.id,
+          fullName: row.created_by_user.full_name,
+          email: '',
+          phone: row.created_by_user.phone,
+          birthday: row.created_by_user.birthday,
+          cargo: row.created_by_user.cargo,
+          role: row.created_by_user.role,
+        },
+      }));
+      
+      set({ isLoading: false });
+      return logs;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al cargar historial de estados'
+      });
+      return [];
+    }
+  },
+  
+  clearCurrentOrder: () => {
+    set({ currentOrder: null });
+  },
+  
+  setCurrentOrder: (order) => {
+    set({ currentOrder: order });
+  },
 }));

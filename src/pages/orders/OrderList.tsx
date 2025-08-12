@@ -1,39 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, FileText, Plus, Search, ShoppingCart } from 'lucide-react';
+import { Clock, FileText, Plus, Search, ShoppingCart, Eye } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
-import { useClientStore } from '../../store/client-store';
-import { useUserStore } from '../../store/user-store';
+import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
 import { Badge } from '../../components/ui/Badge';
-import { OrderStatus, UserRole } from '../../lib/types';
+import { OrderStatus } from '../../lib/types';
 import { formatCurrency } from '../../lib/utils';
 
 export function OrderList() {
-  const { orders, getOrders, isLoading, error } = useOrderStore();
-  const { clients, getClients } = useClientStore();
-  const { getUsersByRole } = useUserStore();
-  const [salespeople, setSalespeople] = useState<Array<{ id: string; fullName: string }>>([]);
+  const { orders, getOrders, deleteOrder, isLoading, error } = useOrderStore();
+  const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   useEffect(() => {
     getOrders();
-    getClients();
-    
-    const loadSalespeople = async () => {
-      try {
-        const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
-        setSalespeople(salespeople.map(s => ({ id: s.id, fullName: s.fullName })));
-      } catch (error) {
-        console.error('Error loading salespeople:', error);
-      }
-    };
-    
-    loadSalespeople();
-  }, [getOrders, getClients, getUsersByRole]);
+  }, [getOrders]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -43,30 +29,30 @@ export function OrderList() {
     setStatusFilter(e.target.value);
   };
 
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? client.commercialName : 'Cliente no encontrado';
+  const handleDelete = async (id: string) => {
+    if (confirm('¿Está seguro de eliminar este pedido?')) {
+      try {
+        setDeleteLoading(id);
+        await deleteOrder(id);
+      } catch (error) {
+        // Error handled by store
+      } finally {
+        setDeleteLoading(null);
+      }
+    }
   };
-
-  const getSalespersonName = (salespersonId: string) => {
-    const salesperson = salespeople.find(s => s.id === salespersonId);
-    return salesperson ? salesperson.fullName : 'Vendedor no encontrado';
-  };
-
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
-      case OrderStatus.DRAFT:
+      case OrderStatus.BORRADOR:
         return <Badge variant="default">Borrador</Badge>;
-      case OrderStatus.PENDING:
-        return <Badge variant="warning">Pendiente</Badge>;
-      case OrderStatus.PROCESSING:
-        return <Badge variant="primary">En proceso</Badge>;
-      case OrderStatus.SHIPPED:
-        return <Badge variant="secondary">Enviado</Badge>;
-      case OrderStatus.DELIVERED:
-        return <Badge variant="success">Entregado</Badge>;
-      case OrderStatus.CANCELED:
-        return <Badge variant="destructive">Cancelado</Badge>;
+      case OrderStatus.TOMADO:
+        return <Badge variant="warning">Tomado</Badge>;
+      case OrderStatus.CONFIRMADO:
+        return <Badge variant="primary">Confirmado</Badge>;
+      case OrderStatus.EN_PREPARACION:
+        return <Badge variant="secondary">En Preparación</Badge>;
+      case OrderStatus.DESPACHADO:
+        return <Badge variant="success">Despachado</Badge>;
       default:
         return <Badge>Desconocido</Badge>;
     }
@@ -74,8 +60,8 @@ export function OrderList() {
 
   const filteredOrders = orders.filter(
     (order) => {
-      const clientName = getClientName(order.clientId).toLowerCase();
-      const salespersonName = getSalespersonName(order.salespersonId).toLowerCase();
+      const clientName = order.client?.commercialName?.toLowerCase() || '';
+      const salespersonName = order.salesperson?.fullName?.toLowerCase() || '';
       
       const matchesSearch = 
         clientName.includes(searchTerm.toLowerCase()) ||
@@ -130,16 +116,11 @@ export function OrderList() {
                 onChange={handleStatusFilter}
               >
                 <option value="">Todos los estados</option>
-                {Object.values(OrderStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {status === OrderStatus.DRAFT && 'Borrador'}
-                    {status === OrderStatus.PENDING && 'Pendiente'}
-                    {status === OrderStatus.PROCESSING && 'En proceso'}
-                    {status === OrderStatus.SHIPPED && 'Enviado'}
-                    {status === OrderStatus.DELIVERED && 'Entregado'}
-                    {status === OrderStatus.CANCELED && 'Cancelado'}
-                  </option>
-                ))}
+                <option value={OrderStatus.BORRADOR}>Borrador</option>
+                <option value={OrderStatus.TOMADO}>Tomado</option>
+                <option value={OrderStatus.CONFIRMADO}>Confirmado</option>
+                <option value={OrderStatus.EN_PREPARACION}>En Preparación</option>
+                <option value={OrderStatus.DESPACHADO}>Despachado</option>
               </select>
             </div>
           </div>
@@ -169,7 +150,7 @@ export function OrderList() {
               <thead className="bg-muted">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Código
+                    Pedido
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Cliente
@@ -195,13 +176,13 @@ export function OrderList() {
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-muted/30">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium">#{order.id}</div>
+                      <div className="font-medium">#{order.id.slice(0, 8)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium">{getClientName(order.clientId)}</div>
+                      <div className="text-sm font-medium">{order.client?.commercialName || 'Cliente no encontrado'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">{getSalespersonName(order.salespersonId)}</div>
+                      <div className="text-sm">{order.salesperson?.fullName || 'Vendedor no encontrado'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-muted-foreground">
@@ -216,11 +197,23 @@ export function OrderList() {
                       <div className="text-sm font-medium">{formatCurrency(order.total)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <Link to={`/orders/${order.id}`}>
-                        <Button variant="outline" size="sm" icon={<FileText size={16} />}>
-                          Ver detalles
+                      <div className="flex items-center justify-end space-x-2">
+                        <Link to={`/orders/view/${order.id}`}>
+                          <Button variant="outline" size="sm" icon={<Eye size={16} />}>
+                            Ver
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<FileText size={16} />}
+                          onClick={() => handleDelete(order.id)}
+                          loading={deleteLoading === order.id}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          Eliminar
                         </Button>
-                      </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

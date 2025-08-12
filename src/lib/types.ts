@@ -55,15 +55,31 @@ export type Product = {
   updatedAt: string;
 };
 
+export enum OrderStatus {
+  BORRADOR = 'borrador',
+  TOMADO = 'tomado',
+  CONFIRMADO = 'confirmado',
+  EN_PREPARACION = 'en_preparacion',
+  DESPACHADO = 'despachado',
+}
+
 export type Order = {
   id: string;
   clientId: string;
   salespersonId: string;
   status: OrderStatus;
+  subtotal: number;
+  igv: number;
   total: number;
+  observations?: string;
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
+  // Populated fields
+  client?: Client;
+  salesperson?: User;
+  createdByUser?: User;
 };
 
 export type OrderItem = {
@@ -71,15 +87,21 @@ export type OrderItem = {
   orderId: string;
   productId: string;
   quantity: number;
-  price: number;
+  unitPrice: number;
   subtotal: number;
+  createdAt: string;
+  // Populated fields
+  product?: Product;
 };
 
-export enum OrderStatus {
-  DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-  CANCELED = 'CANCELED',
-}
+export type OrderStatusLog = {
+  id: string;
+  orderId: string;
+  status: string;
+  observations?: string;
+  hasObservations: boolean;
+  createdBy: string;
+  createdAt: string;
+  // Populated fields
+  createdByUser?: User;
+};
