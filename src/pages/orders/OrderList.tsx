@@ -176,7 +176,7 @@ export function OrderList() {
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-muted/30">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium">#{order.id.slice(0, 8)}</div>
+                      <div className="font-medium">#{order.id?.slice(0, 8) || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium">{order.client?.commercialName || 'Cliente no encontrado'}</div>
@@ -187,14 +187,14 @@ export function OrderList() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Clock className="h-4 w-4 mr-1" />
-                        {new Date(order.createdAt).toLocaleDateString('es-PE')}
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-PE') : 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(order.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium">{formatCurrency(order.total)}</div>
+                      <div className="text-sm font-medium">{formatCurrency(order.total || 0)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end space-x-2">
@@ -207,7 +207,7 @@ export function OrderList() {
                           variant="ghost"
                           size="sm"
                           icon={<FileText size={16} />}
-                          onClick={() => handleDelete(order.id)}
+                          onClick={() => order.id && handleDelete(order.id)}
                           loading={deleteLoading === order.id}
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         >

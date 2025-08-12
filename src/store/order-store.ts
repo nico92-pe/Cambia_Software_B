@@ -4,17 +4,17 @@ import { supabase } from '../lib/supabase';
 
 // Helper function to map database row to Order type
 const mapDbRowToOrder = (row: any): Order => ({
-  id: row.id,
+  id: row.id || '',
   clientId: row.client_id,
   salespersonId: row.salesperson_id,
   status: row.status as OrderStatus,
-  subtotal: parseFloat(row.subtotal),
-  igv: parseFloat(row.igv),
-  total: parseFloat(row.total),
+  subtotal: parseFloat(row.subtotal || '0'),
+  igv: parseFloat(row.igv || '0'),
+  total: parseFloat(row.total || '0'),
   observations: row.observations,
   createdBy: row.created_by,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
+  createdAt: row.created_at || '',
+  updatedAt: row.updated_at || '',
   items: [],
   // Populated fields will be added separately
 });
@@ -102,8 +102,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       
       const orders = data.map(row => {
         const order = mapDbRowToOrder(row);
-        order.client = row.client;
-        order.salesperson = {
+        order.client = row.client || null;
+        order.salesperson = row.salesperson ? {
           id: row.salesperson.id,
           fullName: row.salesperson.full_name,
           email: '', // Not needed for display
@@ -111,8 +111,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           birthday: row.salesperson.birthday,
           cargo: row.salesperson.cargo,
           role: row.salesperson.role,
-        };
-        order.createdByUser = {
+        } : null;
+        order.createdByUser = row.created_by_user ? {
           id: row.created_by_user.id,
           fullName: row.created_by_user.full_name,
           email: '', // Not needed for display
@@ -120,10 +120,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           birthday: row.created_by_user.birthday,
           cargo: row.created_by_user.cargo,
           role: row.created_by_user.role,
-        };
-        order.items = row.order_items.map(item => {
+        } : null;
+        order.items = (row.order_items || []).map(item => {
           const orderItem = mapDbRowToOrderItem(item);
-          orderItem.product = item.product;
+          orderItem.product = item.product || null;
           return orderItem;
         });
         return order;
