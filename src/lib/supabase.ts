@@ -124,6 +124,34 @@ export async function adminCreateUser(userData: {
   return response.json();
 }
 
+export async function adminUpdateUser(userId: string, profileData: any, email?: string) {
+  const session = await getCurrentSession();
+  if (!session) {
+    throw new Error('No authenticated session');
+  }
+
+  const functionUrl = new URL(`/functions/v1/admin-users/${userId}`, import.meta.env.VITE_SUPABASE_URL).toString();
+
+  const response = await fetch(functionUrl, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      profile_data: profileData,
+      email: email
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update user');
+  }
+
+  return response.json();
+}
+
 export async function adminDeleteUser(userId: string) {
   const session = await getCurrentSession();
   if (!session) {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { User, UserRole } from '../lib/types';
-import { supabase, adminListUsers, adminCreateUser, adminDeleteUser, getCurrentSession } from '../lib/supabase';
+import { supabase, adminListUsers, adminCreateUser, adminUpdateUser, adminDeleteUser, getCurrentSession } from '../lib/supabase';
 
 interface UserState {
   users: User[];
@@ -197,43 +197,26 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Update user profile in Supabase - only allow updating certain fields
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: userData.fullName,
-          phone: userData.phone,
-          birthday: userData.birthday,
-          cargo: userData.cargo,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
+      // Update user profile through edge function
+      const { profile } = await adminUpdateUser(id, {
+        full_name: userData.fullName,
+        phone: userData.phone,
+        birthday: userData.birthday,
+        cargo: userData.cargo,
+      });
       
-      if (error) throw error;
-      
-      console.log('User updated in Supabase:', data);
+      console.log('User updated in Supabase:', profile);
       
       let updatedUser: User | undefined;
       
-      set(state => {
-        const updatedUsers = state.users.map(user => {
-          if (user.id === id) {
-            updatedUser = { ...user, ...userData };
-            return updatedUser;
-          }
-          return user;
-        });
-        
-        return {
-          users: updatedUsers,
-          isLoading: false
-        };
-      });
+      // Refresh the users list to get updated data
+      await get().getUsers();
       
+      // Find the updated user in the refreshed list
+      updatedUser = get().users.find(user => user.id === id);
       if (!updatedUser) throw new Error('Usuario no encontrado');
       
+      set({ isLoading: false });
       return updatedUser;
     } catch (error) {
       console.error('Error updating user:', error);
