@@ -194,9 +194,11 @@ export function ProductList() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Stock
                   </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Acciones
-                  </th>
+                  {!isAsesorVentas && (
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -252,25 +254,23 @@ export function ProductList() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium">{product.stock || 0}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <div className="flex items-center justify-end space-x-2">
-                        {!isAsesorVentas && (
-                          <>
-                            <Link to={`/products/edit/${product.id}`}>
-                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              icon={<Trash size={16} />}
-                              onClick={() => handleDelete(product.id)}
-                              loading={deleteLoading === product.id}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            />
-                          </>
-                        )}
-                      </div>
-                    </td>
+                    {!isAsesorVentas && (
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Link to={`/products/edit/${product.id}`}>
+                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Trash size={16} />}
+                            onClick={() => handleDelete(product.id)}
+                            loading={deleteLoading === product.id}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          />
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
