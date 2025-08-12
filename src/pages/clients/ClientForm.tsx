@@ -36,7 +36,7 @@ export function ClientForm() {
     const loadSalespeople = async () => {
       try {
         console.log('Loading salespeople...');
-        const salespeople = await getUsersByRole('asesor_ventas' as UserRole);
+        const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
         console.log('Salespeople loaded:', salespeople);
         setSalespeople(salespeople.map(s => ({ id: s.id, fullName: s.fullName })));
       } catch (error) {
@@ -175,6 +175,11 @@ export function ClientForm() {
                     </option>
                   ))}
                 </select>
+                {salespeople.length === 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    No hay asesores de ventas disponibles
+                  </p>
+                )}
                 {errors.salespersonId && (
                   <p className="text-destructive text-sm mt-1">
                     {errors.salespersonId.message}

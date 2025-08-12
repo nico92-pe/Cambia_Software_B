@@ -222,6 +222,7 @@ export function UserForm() {
                   })}
                 >
                   <option value="">Seleccionar rol</option>
+                  <option value={UserRole.SUPER_ADMIN}>Super Administrador</option>
                   <option value={UserRole.ADMIN}>Administrador</option>
                   <option value={UserRole.ASESOR_VENTAS}>Asesor de Ventas</option>
                 </select>

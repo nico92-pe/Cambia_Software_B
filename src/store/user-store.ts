@@ -60,18 +60,18 @@ export const useUserStore = create<UserState>((set, get) => ({
   },
   
   getUsersByRole: async (role) => {
-    set({ isLoading: true, error: null });
+    console.log('getUsersByRole called with role:', role);
     
     try {
       // Get profiles with the specified role
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'asesor_ventas');
+        .eq('role', role);
         
       if (error) throw error;
       
-      console.log('Profiles found with asesor_ventas role:', profiles);
+      console.log(`Profiles found with ${role} role:`, profiles);
       
       // Get all auth users to get email addresses
       let authUsers = [];
@@ -92,13 +92,10 @@ export const useUserStore = create<UserState>((set, get) => ({
         role: profile.role as UserRole,
       }));
       
-      set({ isLoading: false });
+      console.log('Formatted users:', formattedUsers);
       return formattedUsers;
     } catch (error) {
-      set({
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Error al buscar usuarios'
-      });
+      console.error('Error in getUsersByRole:', error);
       return [];
     }
   },
@@ -200,20 +197,23 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Update user profile in Supabase
-      const { error } = await supabase
+      // Update user profile in Supabase - only allow updating certain fields
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           full_name: userData.fullName,
           phone: userData.phone,
           birthday: userData.birthday,
           cargo: userData.cargo,
-          role: userData.role,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
       
       if (error) throw error;
+      
+      console.log('User updated in Supabase:', data);
       
       let updatedUser: User | undefined;
       
@@ -234,11 +234,9 @@ export const useUserStore = create<UserState>((set, get) => ({
       
       if (!updatedUser) throw new Error('Usuario no encontrado');
       
-      // Refresh the users list to ensure UI is updated
-      await get().getUsers();
-      
       return updatedUser;
     } catch (error) {
+      console.error('Error updating user:', error);
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Error al actualizar usuario'
