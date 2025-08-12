@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Plus, Tag, Trash } from 'lucide-react';
 import { useProductStore } from '../../store/product-store';
+import { useAuthStore } from '../../store/auth-store';
+import { UserRole } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
@@ -9,12 +11,15 @@ import { Loader } from '../../components/ui/Loader';
 export function CategoryList() {
   const navigate = useNavigate();
   const { categories, getCategories, createCategory, updateCategory, deleteCategory, isLoading, error } = useProductStore();
+  const { user } = useAuthStore();
   
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  
+  const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
 
   useEffect(() => {
     getCategories();
@@ -114,51 +119,55 @@ export function CategoryList() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="card animate-in fade-in duration-500">
-          <div className="card-header">
-            <h2 className="card-title text-xl">Nueva Categoría</h2>
-            <p className="card-description">
-              Añade una nueva categoría para tus productos
-            </p>
-          </div>
-          <div className="card-content">
-            <form onSubmit={handleCreateCategory} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="newCategory" className="block text-sm font-medium">
-                  Nombre de la Categoría
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                    <Tag size={18} />
+        {!isAsesorVentas && (
+          <div className="card animate-in fade-in duration-500">
+            <div className="card-header">
+              <h2 className="card-title text-xl">Nueva Categoría</h2>
+              <p className="card-description">
+                Añade una nueva categoría para tus productos
+              </p>
+            </div>
+            <div className="card-content">
+              <form onSubmit={handleCreateCategory} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="newCategory" className="block text-sm font-medium">
+                    Nombre de la Categoría
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                      <Tag size={18} />
+                    </div>
+                    <input
+                      id="newCategory"
+                      type="text"
+                      className="input pl-10"
+                      placeholder="Nombre de la categoría"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      required
+                    />
                   </div>
-                  <input
-                    id="newCategory"
-                    type="text"
-                    className="input pl-10"
-                    placeholder="Nombre de la categoría"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    required
-                  />
                 </div>
-              </div>
-              <Button
-                type="submit"
-                icon={<Plus size={18} />}
-                loading={actionLoading}
-                disabled={!newCategoryName.trim()}
-              >
-                Crear Categoría
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  icon={<Plus size={18} />}
+                  loading={actionLoading}
+                  disabled={!newCategoryName.trim()}
+                >
+                  Crear Categoría
+                </Button>
+              </form>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
+        <div className={`card animate-in fade-in duration-500 ${isAsesorVentas ? 'md:col-span-2' : ''}`} style={{ animationDelay: '100ms' }}>
           <div className="card-header">
-            <h2 className="card-title text-xl">Categorías Existentes</h2>
+            <h2 className="card-title text-xl">
+              {isAsesorVentas ? 'Categorías' : 'Categorías Existentes'}
+            </h2>
             <p className="card-description">
-              Administra las categorías de tu catálogo
+              {isAsesorVentas ? 'Visualiza las categorías del catálogo' : 'Administra las categorías de tu catálogo'}
             </p>
           </div>
           <div className="card-content">
@@ -207,22 +216,24 @@ export function CategoryList() {
                     ) : (
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{category.name}</span>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={<Edit size={16} />}
-                            onClick={() => startEdit(category)}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={<Trash size={16} />}
-                            onClick={() => handleDeleteCategory(category.id)}
-                            loading={actionLoading}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          />
-                        </div>
+                        {!isAsesorVentas && (
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Edit size={16} />}
+                              onClick={() => startEdit(category)}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Trash size={16} />}
+                              onClick={() => handleDeleteCategory(category.id)}
+                              loading={actionLoading}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </li>

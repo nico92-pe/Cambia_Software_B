@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Box, Edit, Package, Plus, Search, Tag, Trash } from 'lucide-react';
 import { useProductStore } from '../../store/product-store';
+import { useAuthStore } from '../../store/auth-store';
 import { ProductDetailModal } from '../../components/products/ProductDetailModal';
-import { Product } from '../../lib/types';
+import { Product, UserRole } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
@@ -12,12 +13,15 @@ import { formatCurrency } from '../../lib/utils';
 
 export function ProductList() {
   const { products, categories, getProducts, getCategories, deleteProduct, isLoading, error } = useProductStore();
+  const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
 
   useEffect(() => {
     getProducts();
@@ -90,9 +94,11 @@ export function ProductList() {
               Categorías
             </Button>
           </Link>
-          <Link to="/products/new">
-            <Button icon={<Plus size={18} />}>Nuevo Producto</Button>
-          </Link>
+          {!isAsesorVentas && (
+            <Link to="/products/new">
+              <Button icon={<Plus size={18} />}>Nuevo Producto</Button>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -154,9 +160,13 @@ export function ProductList() {
                   : 'Comienza creando un nuevo producto'}
               </p>
               {!searchTerm && !categoryFilter && (
-                <Link to="/products/new" className="mt-6 inline-block">
-                  <Button icon={<Plus size={18} />}>Nuevo Producto</Button>
-                </Link>
+                <>
+                  {!isAsesorVentas && (
+                    <Link to="/products/new" className="mt-6 inline-block">
+                      <Button icon={<Plus size={18} />}>Nuevo Producto</Button>
+                    </Link>
+                  )}
+                </>
               )}
             </div>
           ) : (
@@ -244,17 +254,21 @@ export function ProductList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end space-x-2">
-                        <Link to={`/products/edit/${product.id}`}>
-                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Trash size={16} />}
-                          onClick={() => handleDelete(product.id)}
-                          loading={deleteLoading === product.id}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        />
+                        {!isAsesorVentas && (
+                          <>
+                            <Link to={`/products/edit/${product.id}`}>
+                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Trash size={16} />}
+                              onClick={() => handleDelete(product.id)}
+                              loading={deleteLoading === product.id}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            />
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
