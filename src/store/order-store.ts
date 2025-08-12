@@ -94,6 +94,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .select(`
           *,
           clients!inner(*),
+          salesperson:profiles!orders_salesperson_id_fkey(*),
           order_items(
             *,
             product:products(*)
@@ -107,16 +108,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }
       
       console.log('Raw orders data:', data);
-      
-      // Get all salespeople using the same method as ClientForm
-      const salespeople = await useUserStore.getState().getUsersByRole('asesor_ventas');
-      console.log('Salespeople found:', salespeople);
-      
-      // Create a map for quick lookup
-      const salespeopleMap = new Map();
-      salespeople.forEach(sp => {
-        salespeopleMap.set(sp.id, sp);
-      });
       
       const orders = data.map(row => {
         console.log('Processing order row:', row);
@@ -143,14 +134,20 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order.client = null;
         }
         
-        // Map salesperson data using the same method as ClientForm
-        const salesperson = salespeopleMap.get(order.salespersonId);
-        if (salesperson) {
+        // Map salesperson data directly from the query
+        if (row.salesperson) {
           order.salesperson = {
-            ...salesperson
+            id: row.salesperson.id,
+            fullName: row.salesperson.full_name,
+            email: '', // Not needed for display
+            phone: row.salesperson.phone,
+            birthday: row.salesperson.birthday,
+            cargo: row.salesperson.cargo,
+            role: row.salesperson.role,
           };
         } else {
-          console.warn(`Salesperson not found for ID: ${order.salespersonId}`);
+          console.warn(`Salesperson not found for order: ${order.id}`);
+          order.salesperson = null;
         }
         
         // We don't need createdByUser for the list view
