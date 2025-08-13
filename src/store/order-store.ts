@@ -167,7 +167,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           *,
           client:clients!orders_client_id_fkey(*),
           salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
-          created_by_user:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -185,28 +184,60 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }
       
       const order = mapDbRowToOrder(data);
-      order.client = data.client;
-      order.salesperson = {
-        id: data.salesperson.id,
-        fullName: data.salesperson.full_name,
-        email: '',
-        phone: data.salesperson.phone,
-        birthday: data.salesperson.birthday,
-        cargo: data.salesperson.cargo,
-        role: data.salesperson.role,
-      };
-      order.createdByUser = {
-        id: data.created_by_user.id,
-        fullName: data.created_by_user.full_name,
-        email: '',
-        phone: data.created_by_user.phone,
-        birthday: data.created_by_user.birthday,
-        cargo: data.created_by_user.cargo,
-        role: data.created_by_user.role,
-      };
-      order.items = data.order_items.map(item => {
+      
+      // Map client data
+      if (data.client) {
+        order.client = {
+          id: data.client.id,
+          ruc: data.client.ruc,
+          businessName: data.client.business_name,
+          commercialName: data.client.commercial_name,
+          address: data.client.address,
+          district: data.client.district,
+          province: data.client.province,
+          salespersonId: data.client.salesperson_id,
+          transport: data.client.transport,
+          transportAddress: data.client.transport_address,
+          transportDistrict: data.client.transport_district,
+          createdAt: data.client.created_at,
+          updatedAt: data.client.updated_at,
+        };
+      }
+      
+      // Map salesperson data from joined profile
+      if (data.salesperson) {
+        order.salesperson = {
+          id: data.salesperson.id,
+          fullName: data.salesperson.full_name,
+          email: '',
+          phone: data.salesperson.phone,
+          birthday: '',
+          cargo: data.salesperson.cargo,
+          role: data.salesperson.role,
+        };
+      }
+      
+      // Map order items
+      order.items = (data.order_items || []).map(item => {
         const orderItem = mapDbRowToOrderItem(item);
-        orderItem.product = item.product;
+        if (item.product) {
+          orderItem.product = {
+            id: item.product.id,
+            code: item.product.code,
+            name: item.product.name,
+            wholesalePrice: parseFloat(item.product.wholesale_price),
+            retailPrice: parseFloat(item.product.retail_price),
+            distributorPrice: parseFloat(item.product.distributor_price),
+            creditPrice: parseFloat(item.product.credit_price),
+            cashPrice: parseFloat(item.product.cash_price),
+            unitsPerBox: item.product.units_per_box,
+            categoryId: item.product.category_id,
+            stock: item.product.stock,
+            imageUrl: item.product.image_url,
+            createdAt: item.product.created_at,
+            updatedAt: item.product.updated_at,
+          };
+        }
         return orderItem;
       });
       

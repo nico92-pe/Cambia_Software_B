@@ -102,12 +102,9 @@ export function OrderForm() {
         }
       } catch (error) {
         console.error('❌ Error loading order:', error);
-        navigate('/orders');
       }
     };
 
-    loadOrder();
-  }, [id, getOrderById, navigate]);
 
   // Filter clients based on search
   const filteredClients = clients.filter(client => 
