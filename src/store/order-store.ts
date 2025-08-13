@@ -75,15 +75,6 @@ interface OrderState {
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
-  orders: [],
-  currentOrder: null,
-  isLoading: false,
-  error: null,
-
-  getOrders: async () => {
-    set({ isLoading: true, error: null });
-
-    try {
       // Get orders with basic data first
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
@@ -98,8 +89,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         `)
         .order('created_at', { ascending: false });
 
-      if (ordersError) throw ordersError;
-
       // Get all unique salesperson IDs
       const salespersonIds = new Set();
       ordersData.forEach(order => {
@@ -107,36 +96,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         if (order.client?.salesperson_id) salespersonIds.add(order.client.salesperson_id);
       });
 
-      console.log('🔍 Salesperson IDs to fetch:', Array.from(salespersonIds));
+      // Get all salespeople data
+      const { data: salespeople, error: salespeopleError } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone, cargo, role, birthday')
+        .in('id', Array.from(salespersonIds));
 
-      // Get all salespeople data using admin function to bypass RLS
-      let salespeople = [];
-      try {
-        const { users, profiles } = await adminListUsers();
-        
-        // Filter profiles to only include the ones we need
-        salespeople = profiles.filter(profile => 
-          salespersonIds.has(profile.id)
-        );
-        
-        console.log('🔍 Admin query - profiles found:', salespeople.length);
-        console.log('🔍 Admin query - first profile:', salespeople[0]);
-      } catch (adminError) {
-        console.warn('Could not fetch salespeople via admin function, trying direct query:', adminError);
-        
-        // Fallback to direct query
-        const { data: directSalespeople, error: salespeopleError } = await supabase
-          .from('profiles')
-          .select('id, full_name, phone, cargo, role, birthday')
-          .in('id', Array.from(salespersonIds));
-
-        if (salespeopleError) throw salespeopleError;
-        salespeople = directSalespeople || [];
-      }
-
+      if (salespeopleError) throw salespeopleError;
+      
       // Create a map for quick lookup
       const salespeopleMap = new Map();
-      salespeople.forEach(person => {
+      (salespeople || []).forEach(person => {
         salespeopleMap.set(person.id, {
           id: person.id,
           fullName: person.full_name,
@@ -201,9 +171,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           return orderItem;
         });
       }
-
-      console.log('🔍 First order salesperson:', orders[0]?.salesperson);
-      console.log('🔍 Salespeople found:', salespeople.length);
 
       set({ orders, isLoading: false });
     } catch (error) {
