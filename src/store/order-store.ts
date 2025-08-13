@@ -91,7 +91,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       .from('orders')
       .select(`
         *,
-        salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, birthday, cargo, role),
         client:clients(
           *,
           salesperson:profiles(id, full_name, phone, cargo, role)
