@@ -90,11 +90,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          client:clients(
+          clients!orders_client_id_fkey(
             *,
-            salesperson:profiles(id, full_name, phone, cargo, role)
+            profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
           ),
-          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
+          profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -110,43 +110,43 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         const order = mapDbRowToOrder(row);
         
         // Map client data  
-        if (row.client) {
+        if (row.clients) {
           order.client = {
-            id: row.client.id, 
-            ruc: row.client.ruc,
-            businessName: row.client.business_name,
-            commercialName: row.client.commercial_name,
-            address: row.client.address,
-            district: row.client.district,
-            province: row.client.province,
-            salespersonId: row.client.salesperson_id,
-            salesperson: row.client.salesperson ? {
-              id: row.client.salesperson.id,
-              fullName: row.client.salesperson.full_name,
+            id: row.clients.id, 
+            ruc: row.clients.ruc,
+            businessName: row.clients.business_name,
+            commercialName: row.clients.commercial_name,
+            address: row.clients.address,
+            district: row.clients.district,
+            province: row.clients.province,
+            salespersonId: row.clients.salesperson_id,
+            salesperson: row.clients.profiles ? {
+              id: row.clients.profiles.id,
+              fullName: row.clients.profiles.full_name,
               email: '',
-              phone: row.client.salesperson.phone,
+              phone: row.clients.profiles.phone,
               birthday: '',
-              cargo: row.client.salesperson.cargo,
-              role: row.client.salesperson.role,
+              cargo: row.clients.profiles.cargo,
+              role: row.clients.profiles.role,
             } : undefined,
-            transport: row.client.transport,
-            transportAddress: row.client.transport_address,
-            transportDistrict: row.client.transport_district,
-            createdAt: row.client.created_at,
-            updatedAt: row.client.updated_at,
+            transport: row.clients.transport,
+            transportAddress: row.clients.transport_address,
+            transportDistrict: row.clients.transport_district,
+            createdAt: row.clients.created_at,
+            updatedAt: row.clients.updated_at,
           };
         }
         
         // Map salesperson data from joined profile
-        if (row.salesperson) {
+        if (row.profiles) {
           order.salesperson = {
-            id: row.salesperson.id,
-            fullName: row.salesperson.full_name,
+            id: row.profiles.id,
+            fullName: row.profiles.full_name,
             email: '',
-            phone: row.salesperson.phone,
-            birthday: row.salesperson.birthday || '',
-            cargo: row.salesperson.cargo,
-            role: row.salesperson.role,
+            phone: row.profiles.phone,
+            birthday: row.profiles.birthday || '',
+            cargo: row.profiles.cargo,
+            role: row.profiles.role,
           };
         }
         
@@ -177,11 +177,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          client:clients(
+          clients!orders_client_id_fkey(
             *,
-            salesperson:profiles(id, full_name, phone, cargo, role)
+            profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
           ),
-          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
+          profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -201,43 +201,43 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const order = mapDbRowToOrder(data);
       
       // Map client data
-      if (data.client) {
+      if (data.clients) {
         order.client = {
-          id: data.client.id,
-          ruc: data.client.ruc,
-          businessName: data.client.business_name,
-          commercialName: data.client.commercial_name,
-          address: data.client.address,
-          district: data.client.district,
-          province: data.client.province,
-          salespersonId: data.client.salesperson_id,
-          salesperson: data.client.salesperson ? {
-            id: data.client.salesperson.id,
-            fullName: data.client.salesperson.full_name,
+          id: data.clients.id,
+          ruc: data.clients.ruc,
+          businessName: data.clients.business_name,
+          commercialName: data.clients.commercial_name,
+          address: data.clients.address,
+          district: data.clients.district,
+          province: data.clients.province,
+          salespersonId: data.clients.salesperson_id,
+          salesperson: data.clients.profiles ? {
+            id: data.clients.profiles.id,
+            fullName: data.clients.profiles.full_name,
             email: '',
-            phone: data.client.salesperson.phone,
+            phone: data.clients.profiles.phone,
             birthday: '',
-            cargo: data.client.salesperson.cargo,
-            role: data.client.salesperson.role,
+            cargo: data.clients.profiles.cargo,
+            role: data.clients.profiles.role,
           } : undefined,
-          transport: data.client.transport,
-          transportAddress: data.client.transport_address,
-          transportDistrict: data.client.transport_district,
-          createdAt: data.client.created_at,
-          updatedAt: data.client.updated_at,
+          transport: data.clients.transport,
+          transportAddress: data.clients.transport_address,
+          transportDistrict: data.clients.transport_district,
+          createdAt: data.clients.created_at,
+          updatedAt: data.clients.updated_at,
         };
       }
       
       // Map salesperson data from joined profile
-      if (data.salesperson) {
+      if (data.profiles) {
         order.salesperson = {
-          id: data.salesperson.id,
-          fullName: data.salesperson.full_name,
+          id: data.profiles.id,
+          fullName: data.profiles.full_name,
           email: '',
-          phone: data.salesperson.phone,
-          birthday: data.salesperson.birthday || '',
-          cargo: data.salesperson.cargo,
-          role: data.salesperson.role,
+          phone: data.profiles.phone,
+          birthday: data.profiles.birthday || '',
+          cargo: data.profiles.cargo,
+          role: data.profiles.role,
         };
       }
       
