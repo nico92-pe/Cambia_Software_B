@@ -36,6 +36,7 @@ export default function OrderList() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [monthYearFilter, setMonthYearFilter] = useState('all');
 
   useEffect(() => {
     getOrders();
@@ -200,9 +201,9 @@ export default function OrderList() {
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {index + 1}
-                      </div>
                         #{index + 1}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {order.client?.commercialName || 'Cliente no encontrado'}
