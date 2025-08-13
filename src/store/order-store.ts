@@ -84,6 +84,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      // Debug: Check what salespeople exist
+      const { data: allProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, role')
+        .eq('role', 'asesor_ventas');
+        
+      console.log('🔍 Available asesor_ventas profiles:', allProfiles);
+      
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -102,6 +110,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log('🔍 Raw orders data:', data);
+      console.log('🔍 First order salesperson data:', data[0]?.salesperson);
 
       const orders = data.map(row => {
         const order = mapDbRowToOrder(row);
