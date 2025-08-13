@@ -193,7 +193,7 @@ export default function OrderList() {
                           <div className="font-medium">{order.client?.businessName || 'N/A'}</div>
                           <div className="text-sm text-muted-foreground">{order.client?.commercialName || 'N/A'}</div>
                           <div className="text-sm text-muted-foreground">
-                            RUC: {order.client?.ruc || 'N/A'}
+                            {order.client?.ruc || 'N/A'}
                           </div>
                         </div>
                       </div>
