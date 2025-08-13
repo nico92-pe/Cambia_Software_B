@@ -90,11 +90,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          client:clients!orders_client_id_fkey(
+          client:clients(
             *,
-            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
+            salesperson:profiles(id, full_name, phone, cargo, role)
           ),
-          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
+          salesperson:profiles(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -177,11 +177,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          client:clients!orders_client_id_fkey(
+          client:clients(
             *,
-            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
+            salesperson:profiles(id, full_name, phone, cargo, role)
           ),
-          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
+          salesperson:profiles(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
