@@ -218,7 +218,7 @@ export default function OrderList() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Vendedor:</span>
-                        <span>{order.client?.salespersonName || 'N/A'}</span>
+                        <span>{order.client?.salesperson?.fullName || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Estado:</span>
