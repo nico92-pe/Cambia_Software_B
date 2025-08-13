@@ -280,10 +280,7 @@ export default function OrderList() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       </div>
                       <div className="text-sm font-medium text-gray-900">
-                        {order.client?.businessName || 'Cliente no encontrado'}
-                      </div>
-                    <div className="text-sm font-medium text-gray-900">
-                        {order.client?.commercialName || 'Cliente no encontrado'}
+{order.client?.commercialName || 'Cliente no encontrado'}                        {order.client?.commercialName || 'Cliente no encontrado'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
