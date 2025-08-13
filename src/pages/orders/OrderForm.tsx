@@ -221,11 +221,15 @@ export function OrderForm() {
         // Create new order
         const orderData = {
           clientId: selectedClient.id,
-          salespersonId: selectedClient.salespersonId,
+          salespersonId: selectedClient.salespersonId || user.id, // Fallback to current user if no salesperson
           status: confirmAction === 'confirm' ? OrderStatus.TOMADO : OrderStatus.BORRADOR,
           observations,
           createdBy: user.id,
         };
+        
+        console.log('🔍 Creating order with data:', orderData);
+        console.log('🔍 Selected client salesperson ID:', selectedClient.salespersonId);
+        console.log('🔍 Current user ID:', user.id);
 
         const newOrder = await createOrder(orderData);
         

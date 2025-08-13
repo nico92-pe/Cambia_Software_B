@@ -310,7 +310,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      console.log('🔍 createOrder called with:', orderData);
+      
       const dbData = mapOrderToDbFormat(orderData);
+      console.log('🔍 Mapped to DB format:', dbData);
       
       const { data, error } = await supabase
         .from('orders')
@@ -320,7 +323,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         
       if (error) throw error;
       
+      console.log('🔍 Order created in DB:', data);
+      
       const newOrder = mapDbRowToOrder(data);
+      console.log('🔍 Mapped order result:', newOrder);
       
       set(state => ({
         orders: [newOrder, ...state.orders],
