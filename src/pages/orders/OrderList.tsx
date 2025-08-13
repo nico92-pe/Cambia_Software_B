@@ -55,7 +55,7 @@ export default function OrderList() {
   const handleDeleteConfirm = async () => {
     if (!orderToDelete) return;
 
-    try {
+    try { 
       setDeleteLoading(orderToDelete.id);
       setDeleteError(null);
       await deleteOrder(orderToDelete.id);
@@ -79,9 +79,7 @@ export default function OrderList() {
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
-      order.client?.commercialName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.client?.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.client?.ruc?.includes(searchTerm) ||
+      order.client?.commercialName?.toLowerCase().includes(searchTerm.toLowerCase()) || // Search only by commercial name
       order.id.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
@@ -135,9 +133,9 @@ export default function OrderList() {
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border">
-        <div className="flex flex-col sm:flex-row gap-4 items-end">
-          <div className="flex-1">
+      <div className="bg-white p-4 rounded-lg shadow-sm border"> 
+        <div className="flex flex-wrap gap-4 items-start"> {/* Changed to flex-wrap and items-start for better alignment */}
+          <div className="flex-1 min-w-[200px]"> {/* Added min-w for better responsiveness */}
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Buscar pedidos
             </label>
@@ -145,58 +143,50 @@ export default function OrderList() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Buscar por cliente, RUC o ID de pedido..."
+                placeholder="Buscar por cliente o ID de pedido..." // Updated placeholder
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mes y Año
-              </label>
-              <select
-                value={monthYearFilter}
-                onChange={(e) => setMonthYearFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[140px]"
-              >
-                <option value="all">Todos los meses</option>
-                {(() => {
-                  const options = [];
-                  const currentDate = new Date();
-                  
-                  // Generar opciones para los últimos 12 meses
-                  for (let i = 0; i < 12; i++) {
-                    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-                    const year = date.getFullYear();
-                    const month = date.getMonth() + 1;
-                    const value = `${year}-${String(month).padStart(2, '0')}`;
-                    const label = date.toLocaleDateString('es-PE', { 
-                      year: 'numeric', 
-                      month: 'long' 
-                    });
-                    
-                    options.push(
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    );
-                  }
-                  
-                  return options;
-                })()}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Estado
-              </label>
-            </div>
+
+          <div> {/* Month and Year filter */}
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mes y Año
+            </label>
+            <select
+              value={monthYearFilter}
+              onChange={(e) => setMonthYearFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[140px]"
+            >
+              <option value="all">Todos los meses</option>
+              {(() => {
+                const options = [];
+                const currentDate = new Date();
+                
+                // Generar opciones para los últimos 12 meses
+                for (let i = 0; i < 12; i++) {
+                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                  const year = date.getFullYear();
+                  const month = date.getMonth() + 1;
+                  const value = `${year}-${String(month).padStart(2, '0')}`;
+                  const label = date.toLocaleDateString('es-PE', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                  });
+                  options.push(<option key={value} value={value}>{label}</option>);
+                }
+                return options;
+              })()}
+            </select>
           </div>
-          <div>
-            <Filter className="w-4 h-4 text-gray-400" />
+
+          <div> {/* Status filter */}
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2"> {/* Moved icon here */}
+              <Filter className="w-4 h-4 text-gray-400" />
+              Estado
+            </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
@@ -218,18 +208,18 @@ export default function OrderList() {
           <div className="block sm:hidden">
             <div className="space-y-4 p-4">
               {filteredOrders.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500"> 
                   {searchTerm || statusFilter !== 'all' 
                     ? 'No se encontraron pedidos con los filtros aplicados'
                     : 'No hay pedidos registrados'
-                  }
+                  } 
                 </div>
               ) : (
                 filteredOrders.map((order) => (
                   <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                     <div className="mb-3">
                       <h3 className="font-medium text-gray-900">
-                        #{order.id.slice(0, 8)}...
+                        #{filteredOrders.indexOf(order) + 1} {/* Display row number */}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {order.client?.commercialName || 'Cliente no encontrado'}
@@ -292,8 +282,8 @@ export default function OrderList() {
           <table className="w-full hidden sm:table">
             <thead className="bg-gray-50 border-b hidden sm:table-header-group">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID Pedido
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"> {/* Changed header to # */}
+                  #
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cliente
@@ -322,7 +312,7 @@ export default function OrderList() {
                 <tr>
                   <td colSpan={canEditDelete ? 7 : 6} className="px-6 py-12 text-center text-gray-500">
                     {searchTerm || statusFilter !== 'all' 
-                      ? 'No se encontraron pedidos con los filtros aplicados'
+                      ? 'No se encontraron pedidos con los filtros aplicados' 
                       : 'No hay pedidos registrados'
                     }
                   </td>
@@ -331,8 +321,8 @@ export default function OrderList() {
                 filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {order.id.slice(0, 8)}...
+                      <div className="text-sm font-medium text-gray-900"> {/* Display row number */}
+                        {filteredOrders.indexOf(order) + 1}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
