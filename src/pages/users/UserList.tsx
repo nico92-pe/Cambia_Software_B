@@ -123,6 +123,7 @@ export function UserList() {
               )}
             </div>
           ) : (
+            <>
             <div className="block sm:hidden">
               {/* Mobile Card View */}
               <div className="space-y-4 p-4">
@@ -230,6 +231,7 @@ export function UserList() {
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </div>
       </div>
