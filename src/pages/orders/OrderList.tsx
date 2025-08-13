@@ -219,7 +219,7 @@ export default function OrderList() {
                   <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                     <div className="mb-3">
                       <h3 className="font-medium text-gray-900">
-                        #{filteredOrders.indexOf(order) + 1} {/* Display row number */}
+                        {filteredOrders.indexOf(order) + 1} {/* Display row number */}
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         {order.client?.commercialName || 'Cliente no encontrado'}
