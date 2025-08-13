@@ -220,26 +220,7 @@ export default function OrderList() {
                         <span className="text-gray-500">Vendedor:</span>
                         <span>
                           {(() => {
-                            console.log('🔍 MOBILE - DEBUGGING UNDEFINED SALESPERSON');
-                            console.log('🔍 Mobile - Order ID:', order.id);
-                            console.log('🔍 Mobile - order.salesperson exists?', order.salesperson !== undefined);
-                            console.log('🔍 Mobile - order.salesperson is null?', order.salesperson === null);
-                            console.log('🔍 Mobile - order.salesperson type:', typeof order.salesperson);
-                            console.log('🔍 Mobile - order.salesperson value:', order.salesperson);
-                            
-                            if (order.salesperson) {
-                              console.log('🔍 Mobile - salesperson.fullName exists?', 'fullName' in order.salesperson);
-                              console.log('🔍 Mobile - salesperson.fullName value:', order.salesperson.fullName);
-                              console.log('🔍 Mobile - salesperson.fullName type:', typeof order.salesperson.fullName);
-                              console.log('🔍 Mobile - salesperson keys:', Object.keys(order.salesperson));
-                            } else {
-                              console.log('🔍 Mobile - salesperson is falsy, checking salespersonId:', order.salespersonId);
-                            }
-                            
-                            const result = order.salesperson?.fullName || 'N/A';
-                            console.log('🔍 Mobile - Final result:', result);
-                            
-                            return result;
+                            return order.salesperson?.fullName || 'Sin vendedor asignado';
                           })()}
                         </span>
                       </div>
@@ -333,26 +314,7 @@ export default function OrderList() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {(() => {
-                          console.log('🔍 DEBUGGING UNDEFINED SALESPERSON');
-                          console.log('🔍 Order ID:', order.id);
-                          console.log('🔍 order.salesperson exists?', order.salesperson !== undefined);
-                          console.log('🔍 order.salesperson is null?', order.salesperson === null);
-                          console.log('🔍 order.salesperson type:', typeof order.salesperson);
-                          console.log('🔍 order.salesperson value:', order.salesperson);
-                          
-                          if (order.salesperson) {
-                            console.log('🔍 salesperson.fullName exists?', 'fullName' in order.salesperson);
-                            console.log('🔍 salesperson.fullName value:', order.salesperson.fullName);
-                            console.log('🔍 salesperson.fullName type:', typeof order.salesperson.fullName);
-                            console.log('🔍 salesperson keys:', Object.keys(order.salesperson));
-                          } else {
-                            console.log('🔍 salesperson is falsy, checking salespersonId:', order.salespersonId);
-                          }
-                          
-                          const result = order.salesperson?.fullName || 'Sin vendedor asignado';
-                          console.log('🔍 Final result:', result);
-                          
-                          return result;
+                          return order.salesperson?.fullName || 'Sin vendedor asignado';
                         })()}
                       </div>
                     </td>
