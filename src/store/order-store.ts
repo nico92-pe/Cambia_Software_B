@@ -90,7 +90,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          clients!inner(*),
+          client:clients!orders_client_id_fkey(*),
           salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
@@ -106,25 +106,23 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const orders = data.map(row => {
         const order = mapDbRowToOrder(row);
         
-        // Map client data
-        if (row.clients) {
+        // Map client data  
+        if (row.client) {
           order.client = {
-            id: row.clients.id, 
-            ruc: row.clients.ruc,
-            businessName: row.clients.business_name,
-            commercialName: row.clients.commercial_name,
-            address: row.clients.address,
-            district: row.clients.district,
-            province: row.clients.province,
-            salespersonId: row.clients.salesperson_id,
-            transport: row.clients.transport,
-            transportAddress: row.clients.transport_address,
-            transportDistrict: row.clients.transport_district,
-            createdAt: row.clients.created_at,
-            updatedAt: row.clients.updated_at,
+            id: row.client.id, 
+            ruc: row.client.ruc,
+            businessName: row.client.business_name,
+            commercialName: row.client.commercial_name,
+            address: row.client.address,
+            district: row.client.district,
+            province: row.client.province,
+            salespersonId: row.client.salesperson_id,
+            transport: row.client.transport,
+            transportAddress: row.client.transport_address,
+            transportDistrict: row.client.transport_district,
+            createdAt: row.client.created_at,
+            updatedAt: row.client.updated_at,
           };
-        } else {
-          order.client = null;
         }
         
         // Map salesperson data from joined profile
@@ -132,14 +130,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order.salesperson = {
             id: row.salesperson.id,
             fullName: row.salesperson.full_name,
-            email: '', // Not needed for display
+            email: '', 
             phone: row.salesperson.phone,
-            birthday: row.salesperson.birthday,
+            birthday: '',
             cargo: row.salesperson.cargo,
             role: row.salesperson.role,
           };
-        } else {
-          order.salesperson = null;
         }
         
         // Map order items

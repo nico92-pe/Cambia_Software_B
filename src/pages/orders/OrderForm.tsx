@@ -55,44 +55,59 @@ export function OrderForm() {
   useEffect(() => {
     const loadData = async () => {
       console.log('🔄 Loading data...');
-      await Promise.all([getClients(), getProducts(), getCategories()]);
-      
-      if (id) {
-        try {
-          console.log('📝 Loading order with ID:', id);
-          const orderData = await getOrderById(id);
-          console.log('📋 Order data loaded:', orderData);
-          if (orderData) {
-            setOrder(orderData);
-            setSelectedClient(orderData.client);
-            setClientSearch(orderData.client?.commercialName || '');
-            setObservations(orderData.observations || '');
-            
-            // Convert order items to form items
-            const formItems = orderData.items?.map(item => ({
-              id: item.id,
-              productId: item.productId,
-              product: item.product,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              subtotal: item.subtotal,
-            })) || [];
-            
-            setOrderItems(formItems);
-          } else {
-            console.log('❌ Order not found, redirecting to /orders');
-            navigate('/orders');
-          }
-        } catch (error) {
-          console.error('❌ Error loading order:', error);
-        }
-      } else {
-        console.log('✨ New order mode');
+      try {
+        await Promise.all([getClients(), getProducts(), getCategories()]);
+        console.log('✅ Base data loaded');
+      } catch (error) {
+        console.error('❌ Error loading base data:', error);
       }
     };
 
     loadData();
-  }, [id, getOrderById, getClients, getProducts, getCategories, navigate]);
+  }, [getClients, getProducts, getCategories]);
+
+  useEffect(() => {
+    const loadOrder = async () => {
+      if (!id) {
+        console.log('✨ New order mode');
+        return;
+      }
+      
+      try {
+        console.log('📝 Loading order with ID:', id);
+        const orderData = await getOrderById(id);
+        console.log('📋 Order data loaded:', orderData);
+        
+        if (orderData) {
+          setOrder(orderData);
+          setSelectedClient(orderData.client || null);
+          setClientSearch(orderData.client?.commercialName || '');
+          setObservations(orderData.observations || '');
+          
+          // Convert order items to form items
+          const formItems = orderData.items?.map(item => ({
+            id: item.id,
+            productId: item.productId,
+            product: item.product,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            subtotal: item.subtotal,
+          })) || [];
+          
+          setOrderItems(formItems);
+          console.log('✅ Order loaded successfully');
+        } else {
+          console.log('❌ Order not found, redirecting to /orders');
+          navigate('/orders');
+        }
+      } catch (error) {
+        console.error('❌ Error loading order:', error);
+        navigate('/orders');
+      }
+    };
+
+    loadOrder();
+  }, [id, getOrderById, navigate]);
 
   // Filter clients based on search
   const filteredClients = clients.filter(client => 
