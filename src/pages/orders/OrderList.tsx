@@ -192,13 +192,6 @@ export default function OrderList() {
                             <Eye className="w-4 h-4" />
                           </Button>
                         </Link>
-                        {canCreateOrder && (
-                          <Link to={`/orders/${order.id}/edit`}>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                        )}
                       </div>
                     </td>
                   </tr>

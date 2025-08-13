@@ -15,6 +15,8 @@ import { ProductForm } from './pages/products/ProductForm';
 import { CategoryList } from './pages/products/CategoryList';
 import OrderList from './pages/orders/OrderList';
 import { OrderForm } from './pages/orders/OrderForm';
+import { OrderDetail } from './pages/orders/OrderDetail';
+import { OrderEdit } from './pages/orders/OrderEdit';
 import { useAuthStore } from './store/auth-store';
 
 function App() {
@@ -57,7 +59,8 @@ function App() {
           {/* Order routes */}
           <Route path="/orders" element={<OrderList />} />
           <Route path="/orders/new" element={<OrderForm />} />
-          <Route path="/orders/:id" element={<OrderList />} />
+          <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/orders/edit/:id" element={<OrderEdit />} />
         </Route>
       </Route>
       
