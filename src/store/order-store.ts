@@ -109,16 +109,30 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       console.log('🔍 Salesperson IDs to fetch:', Array.from(salespersonIds));
 
-      // Get all salespeople data
-      const { data: salespeople, error: salespeopleError } = await supabase
-        .from('profiles')
-        .select('id, full_name, phone, cargo, role, birthday')
-        .in('id', Array.from(salespersonIds));
+      // Get all salespeople data using admin function to bypass RLS
+      let salespeople = [];
+      try {
+        const { users, profiles } = await adminListUsers();
+        
+        // Filter profiles to only include the ones we need
+        salespeople = profiles.filter(profile => 
+          salespersonIds.has(profile.id)
+        );
+        
+        console.log('🔍 Admin query - profiles found:', salespeople.length);
+        console.log('🔍 Admin query - first profile:', salespeople[0]);
+      } catch (adminError) {
+        console.warn('Could not fetch salespeople via admin function, trying direct query:', adminError);
+        
+        // Fallback to direct query
+        const { data: directSalespeople, error: salespeopleError } = await supabase
+          .from('profiles')
+          .select('id, full_name, phone, cargo, role, birthday')
+          .in('id', Array.from(salespersonIds));
 
-      console.log('🔍 Salespeople query result:', salespeople);
-      console.log('🔍 Salespeople query error:', salespeopleError);
-
-      if (salespeopleError) throw salespeopleError;
+        if (salespeopleError) throw salespeopleError;
+        salespeople = directSalespeople || [];
+      }
 
       // Create a map for quick lookup
       const salespeopleMap = new Map();
