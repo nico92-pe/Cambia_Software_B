@@ -25,6 +25,7 @@ export type Client = {
   province: string;
   salespersonId: string;
   salesperson?: User;
+  salespersonName?: string;
   transport?: string;
   transportAddress?: string;
   transportDistrict?: string;

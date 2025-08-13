@@ -85,15 +85,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Get orders with basic relations
+      // Get orders with client and order items
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
-          clients(
-            *,
-            profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
-          ),
+          clients(*),
           order_items(
             *,
             product:products(*)
@@ -108,7 +105,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const orders = data.map(row => {
         const order = mapDbRowToOrder(row);
         
-        // Map client data  
+        // Map client data
         if (row.clients) {
           order.client = {
             id: row.clients.id, 
@@ -119,15 +116,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             district: row.clients.district,
             province: row.clients.province,
             salespersonId: row.clients.salesperson_id,
-            salesperson: row.clients.profiles ? {
-              id: row.clients.profiles.id,
-              fullName: row.clients.profiles.full_name,
-              email: '',
-              phone: row.clients.profiles.phone,
-              birthday: '',
-              cargo: row.clients.profiles.cargo,
-              role: row.clients.profiles.role,
-            } : undefined,
             transport: row.clients.transport,
             transportAddress: row.clients.transport_address,
             transportDistrict: row.clients.transport_district,
@@ -136,15 +124,34 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           };
         }
         
+        return order;
+      });
+      
+      // Get salesperson names for each order
+      for (const order of orders) {
+        if (order.client?.salespersonId) {
+          const { data: salesperson } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', order.client.salespersonId)
+            .single();
+          
+          if (salesperson && order.client) {
+            order.client.salespersonName = salesperson.full_name;
+          }
+        }
+      }
+      
+      // Map order items for each order
+      for (const order of orders) {
+        const orderRow = data.find(row => row.id === order.id);
         // Map order items
-        order.items = (row.order_items || []).map(item => {
+        order.items = (orderRow?.order_items || []).map(item => {
           const orderItem = mapDbRowToOrderItem(item);
           orderItem.product = item.product || null;
           return orderItem;
         });
-        
-        return order;
-      });
+      }
       
       set({ orders, isLoading: false });
     } catch (error) {
