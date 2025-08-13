@@ -116,7 +116,7 @@ export default function OrderList() {
         </div>
       </div>
 
-      # {/* Orders Table */}
+      {/* Orders Table */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
