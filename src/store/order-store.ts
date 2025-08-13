@@ -87,6 +87,33 @@ getOrders: async () => {
   try {
     console.log('🔍 Starting getOrders query...');
     
+    // First, let's check if the salesperson IDs exist in profiles table
+    const salespersonIds = ['14e053fa-73a7-4657-a857-a6a54794259c', 'a85506ab-1a62-4732-9491-b82e6b655609'];
+    console.log('🔍 Checking if salesperson IDs exist in profiles...');
+    
+    const { data: profilesCheck, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .in('id', salespersonIds);
+      
+    if (profilesError) {
+      console.error('🔍 Error checking profiles:', profilesError);
+    } else {
+      console.log('🔍 Found profiles for salesperson IDs:', profilesCheck);
+      console.log('🔍 Missing salesperson IDs:', salespersonIds.filter(id => !profilesCheck.find(p => p.id === id)));
+    }
+    
+    // Also check all profiles to see what's available
+    const { data: allProfiles, error: allProfilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, role');
+      
+    if (allProfilesError) {
+      console.error('🔍 Error fetching all profiles:', allProfilesError);
+    } else {
+      console.log('🔍 All available profiles:', allProfiles);
+    }
+    
     const { data, error } = await supabase
       .from('orders')
       .select(`
