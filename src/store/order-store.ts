@@ -93,9 +93,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         *,
         client:clients(
           *,
-          salesperson:profiles(id, full_name, phone, cargo, role)
+          clientSalesperson:profiles(id, full_name, phone, cargo, role)
         ),
-        salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
+        orderSalesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo,   role),
         order_items(
           *,
           product:products(*)
