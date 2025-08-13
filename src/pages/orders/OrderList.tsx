@@ -227,7 +227,6 @@ export default function OrderList() {
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">RUC:</span>
                         <span className="font-medium">{order.client?.ruc || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
