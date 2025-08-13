@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Edit, MapPin, Plus, Search, Trash, User } from 'lucide-react';
 import { useClientStore } from '../../store/client-store';
+import { useUserStore } from '../../store/user-store';
+import { UserRole } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
@@ -9,12 +11,32 @@ import { Badge } from '../../components/ui/Badge';
 
 export function ClientList() {
   const { clients, getClients, deleteClient, isLoading, error } = useClientStore();
+  const { getUsersByRole } = useUserStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     getClients();
+    
+    // Debug: Check what salespeople exist
+    const checkSalespeople = async () => {
+      const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
+      console.log('🔍 Available salespeople in system:', salespeople);
+      
+      // Check which clients have invalid salesperson references
+      const invalidClients = clients.filter(client => 
+        client.salespersonId && !salespeople.find(s => s.id === client.salespersonId)
+      );
+      
+      if (invalidClients.length > 0) {
+        console.log('⚠️ Clients with invalid salesperson references:', invalidClients);
+      }
+    };
+    
+    if (clients.length > 0) {
+      checkSalespeople();
+    }
   }, [getClients]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {

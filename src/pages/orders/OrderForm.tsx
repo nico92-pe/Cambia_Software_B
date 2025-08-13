@@ -25,11 +25,6 @@ export function OrderForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // Debug logging
-  console.log('🔍 OrderForm loaded');
-  console.log('URL param id:', id);
-  console.log('Is edit mode:', Boolean(id));
-  
   const { user } = useAuthStore();
   const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, isLoading, error } = useOrderStore();
   const { clients, getClients } = useClientStore();
@@ -54,12 +49,10 @@ export function OrderForm() {
 
   useEffect(() => {
     const loadData = async () => {
-      console.log('🔄 Loading data...');
       try {
         await Promise.all([getClients(), getProducts(), getCategories()]);
-        console.log('✅ Base data loaded');
       } catch (error) {
-        console.error('❌ Error loading base data:', error);
+        console.error('Error loading base data:', error);
       }
     };
 
@@ -69,14 +62,11 @@ export function OrderForm() {
   useEffect(() => {
     const loadOrder = async () => {
       if (!id) {
-        console.log('✨ New order mode');
         return;
       }
       
       try {
-        console.log('📝 Loading order with ID:', id);
         const orderData = await getOrderById(id);
-        console.log('📋 Order data loaded:', orderData);
         
         if (orderData) {
           setOrder(orderData);
@@ -95,13 +85,11 @@ export function OrderForm() {
           })) || [];
           
           setOrderItems(formItems);
-          console.log('✅ Order loaded successfully');
         } else {
-          console.log('❌ Order not found, redirecting to /orders');
           navigate('/orders');
         }
       } catch (error) {
-        console.error('❌ Error loading order:', error);
+        console.error('Error loading order:', error);
       }
     };
 
@@ -228,8 +216,6 @@ export function OrderForm() {
         };
         
         console.log('🔍 Creating order with data:', orderData);
-        console.log('🔍 Selected client salesperson ID:', selectedClient.salespersonId);
-        console.log('🔍 Current user ID:', user.id);
 
         const newOrder = await createOrder(orderData);
         
