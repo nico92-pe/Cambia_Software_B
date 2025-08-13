@@ -314,6 +314,7 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
+                        {canCreateOrder && (
                           <Link to={`/orders/edit/${order.id}`}>
                             <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
                           </Link>
