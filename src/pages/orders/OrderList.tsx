@@ -227,6 +227,7 @@ export default function OrderList() {
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
+                        <span className="text-gray-500">RUC:</span>
                         <span className="font-medium">{order.client?.ruc || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
@@ -329,7 +330,7 @@ export default function OrderList() {
                         {order.client?.commercialName || 'Cliente no encontrado'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        RUC: {order.client?.ruc || 'N/A'}
+                         {order.client?.ruc || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
