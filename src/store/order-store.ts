@@ -75,6 +75,15 @@ interface OrderState {
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
+  orders: [],
+  currentOrder: null,
+  isLoading: false,
+  error: null,
+
+  getOrders: async () => {
+    set({ isLoading: true, error: null });
+    
+    try {
       // Get orders with basic data first
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
@@ -88,6 +97,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           )
         `)
         .order('created_at', { ascending: false });
+
+      if (ordersError) throw ordersError;
 
       // Get all unique salesperson IDs
       const salespersonIds = new Set();
