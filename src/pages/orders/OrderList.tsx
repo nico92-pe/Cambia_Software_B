@@ -187,16 +187,20 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <Link to={`/orders/${order.id}`}>
-                          <Button variant="ghost" size="sm" title="Ver detalles">
-                            <Eye className="w-4 h-4" />
-                          </Button>
+                        <Link 
+                          to={`/orders/${order.id}`}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                          title="Ver detalles"
+                        >
+                          <Eye className="w-4 h-4" />
                         </Link>
                         {user?.role === UserRole.SUPER_ADMIN && (
-                          <Link to={`/orders/edit/${order.id}`}>
-                            <Button variant="ghost" size="sm" title="Editar pedido">
-                              <Edit className="w-4 h-4" />
-                            </Button>
+                          <Link 
+                            to={`/orders/edit/${order.id}`}
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                            title="Editar pedido"
+                          >
+                            <Edit className="w-4 h-4" />
                           </Link>
                         )}
                       </div>
