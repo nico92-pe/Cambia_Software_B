@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { Order, OrderItem, OrderStatus, OrderStatusLog } from '../lib/types';
 import { supabase } from '../lib/supabase';
-import { useUserStore } from './user-store';
 
 // Helper function to map database row to Order type
 const mapDbRowToOrder = (row: any): Order => ({
@@ -85,107 +84,104 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      // Create missing salesperson profiles if they don't exist
-      await createMissingSalespersonProfiles();
-    
-    const { data, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        client:clients(
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
           *,
-          clientSalesperson:profiles(id, full_name, phone, cargo, role, birthday)
-        ),
-        salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
-        createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
-        order_items(
-          *,
-          product:products(*)
-        )
-      `)
-      .order('created_at', { ascending: false });
+          client:clients(
+            *,
+            clientSalesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
+          ),
+          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
+          createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
+          order_items(
+            *,
+            product:products(*)
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    const orders = data.map(row => {
-      const order = mapDbRowToOrder(row);
+      const orders = data.map(row => {
+        const order = mapDbRowToOrder(row);
 
-      // Map client data
-      if (row.client) {
-        order.client = {
-          id: row.client.id,
-          ruc: row.client.ruc,
-          businessName: row.client.business_name,
-          commercialName: row.client.commercial_name,
-          address: row.client.address,
-          district: row.client.district,
-          province: row.client.province,
-          salespersonId: row.client.salesperson_id,
-          salesperson: row.client.clientSalesperson
-            ? {
-                id: row.client.clientSalesperson.id,
-                fullName: row.client.clientSalesperson.full_name,
-                email: '',
-                phone: row.client.clientSalesperson.phone,
-                birthday: row.client.clientSalesperson.birthday || '',
-                cargo: row.client.clientSalesperson.cargo,
-                role: row.client.clientSalesperson.role,
-              }
-            : undefined,
-          transport: row.client.transport,
-          transportAddress: row.client.transport_address,
-          transportDistrict: row.client.transport_district,
-          createdAt: row.client.created_at,
-          updatedAt: row.client.updated_at,
-        };
+        // Map client data
+        if (row.client) {
+          order.client = {
+            id: row.client.id,
+            ruc: row.client.ruc,
+            businessName: row.client.business_name,
+            commercialName: row.client.commercial_name,
+            address: row.client.address,
+            district: row.client.district,
+            province: row.client.province,
+            salespersonId: row.client.salesperson_id,
+            salesperson: row.client.clientSalesperson
+              ? {
+                  id: row.client.clientSalesperson.id,
+                  fullName: row.client.clientSalesperson.full_name,
+                  email: '',
+                  phone: row.client.clientSalesperson.phone,
+                  birthday: row.client.clientSalesperson.birthday || '',
+                  cargo: row.client.clientSalesperson.cargo,
+                  role: row.client.clientSalesperson.role,
+                }
+              : undefined,
+            transport: row.client.transport,
+            transportAddress: row.client.transport_address,
+            transportDistrict: row.client.transport_district,
+            createdAt: row.client.created_at,
+            updatedAt: row.client.updated_at,
+          };
+        }
+
+        // Map salesperson from the order itself - only if it exists
+        if (row.salesperson) {
+          order.salesperson = {
+            id: row.salesperson.id,
+            fullName: row.salesperson.full_name,
+            email: '',
+            phone: row.salesperson.phone,
+            birthday: row.salesperson.birthday || '',
+            cargo: row.salesperson.cargo,
+            role: row.salesperson.role,
+          };
+        }
+
+        // Map createdByUser
+        if (row.createdByUser) {
+          order.createdByUser = {
+            id: row.createdByUser.id,
+            fullName: row.createdByUser.full_name,
+            email: '',
+            phone: row.createdByUser.phone,
+            birthday: row.createdByUser.birthday || '',
+            cargo: row.createdByUser.cargo,
+            role: row.createdByUser.role,
+          };
+        }
+
+        return order;
+      });
+
+      // Map order items
+      for (const order of orders) {
+        const orderRow = data.find(row => row.id === order.id);
+        order.items = (orderRow?.order_items || []).map(item => {
+          const orderItem = mapDbRowToOrderItem(item);
+          orderItem.product = item.product || null;
+          return orderItem;
+        });
       }
 
-      // Map salesperson from the order itself
-      if (row.profiles) {
-        order.salesperson = {
-          id: row.profiles.id,
-          fullName: row.profiles.full_name,
-          email: '',
-          phone: row.profiles.phone,
-          birthday: row.profiles.birthday || '',
-          cargo: row.profiles.cargo,
-          role: row.profiles.role,
-        };
-      }
-
-      // Map createdByUser
-      if (row.createdByUser) {
-        order.createdByUser = {
-          id: row.createdByUser.id,
-          fullName: row.createdByUser.full_name,
-          email: '',
-          phone: row.createdByUser.phone,
-          birthday: row.createdByUser.birthday || '',
-          cargo: row.createdByUser.cargo,
-          role: row.createdByUser.role,
-        };
-      }
-
-      return order;
-    });
-
-    // Map order items
-    for (const order of orders) {
-      const orderRow = data.find(row => row.id === order.id);
-      order.items = (orderRow?.order_items || []).map(item => {
-        const orderItem = mapDbRowToOrderItem(item);
-        orderItem.product = item.product || null;
-        return orderItem;
+      set({ orders, isLoading: false });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al cargar pedidos',
       });
     }
-
-    set({ orders, isLoading: false });
-  } catch (error) {
-    set({
-      isLoading: false,
-      error: error instanceof Error ? error.message : 'Error al cargar pedidos',
-    });
-  }
   },
 
   

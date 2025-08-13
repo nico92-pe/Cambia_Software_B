@@ -219,9 +219,7 @@ export default function OrderList() {
                       <div className="flex justify-between">
                         <span className="text-gray-500">Vendedor:</span>
                         <span>
-                          {(() => {
-                            return order.salesperson?.fullName || 'Sin vendedor asignado';
-                          })()}
+                          {order.salesperson?.fullName || 'Sin vendedor asignado'}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -313,9 +311,7 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {(() => {
-                          return order.salesperson?.fullName || 'Sin vendedor asignado';
-                        })()}
+                        {order.salesperson?.fullName || 'Sin vendedor asignado'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
