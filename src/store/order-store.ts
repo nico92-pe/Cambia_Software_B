@@ -116,7 +116,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       if (error) throw error;
       
-      console.log('🔍 Full query result (first order):', data?.[0]);
+      console.log('🔍 Full query result (first order):', JSON.stringify(data?.[0], null, 2));
       
       const orders = data.map(row => {
         const order = mapDbRowToOrder(row);
