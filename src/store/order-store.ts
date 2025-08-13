@@ -87,7 +87,6 @@ getOrders: async () => {
   try {
     console.log('🔍 Starting getOrders query...');
     
-    // Try different query syntax - using the column name directly
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -96,7 +95,8 @@ getOrders: async () => {
           *,
           clientSalesperson:profiles(id, full_name, phone, cargo, role, birthday)
         ),
-        profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
+        salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
+        createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
         order_items(
           *,
           product:products(*)
@@ -112,7 +112,7 @@ getOrders: async () => {
     const orders = data.map(row => {
       console.log('🔍 Processing order row:', row);
       console.log('🔍 Order salesperson_id:', row.salesperson_id);
-      console.log('🔍 Order profiles data:', row.profiles);
+      console.log('🔍 Order salesperson data:', row.salesperson);
       
       const order = mapDbRowToOrder(row);
 
@@ -163,8 +163,22 @@ getOrders: async () => {
         };
         console.log('🔍 Mapped order salesperson:', order.salesperson);
       } else {
-        console.log('🔍 No profiles data found');
+        console.log('🔍 No salesperson data found');
         console.log('🔍 Available keys in row:', Object.keys(row));
+      }
+
+      // Map createdByUser
+      if (row.createdByUser) {
+        console.log('🔍 Order createdByUser found:', row.createdByUser);
+        order.createdByUser = {
+          id: row.createdByUser.id,
+          fullName: row.createdByUser.full_name,
+          email: '',
+          phone: row.createdByUser.phone,
+          birthday: row.createdByUser.birthday || '',
+          cargo: row.createdByUser.cargo,
+          role: row.createdByUser.role,
+        };
       }
 
       console.log('🔍 Final order object salesperson:', order.salesperson);
@@ -203,10 +217,12 @@ getOrders: async () => {
         .from('orders')
         .select(`
           *,
-          clients(
+          client:clients(
             *,
-            profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
+            clientSalesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
           ),
+          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
+          createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
           order_items(
             *,
             product:products(*)
@@ -226,30 +242,56 @@ getOrders: async () => {
       const order = mapDbRowToOrder(data);
       
       // Map client data
-      if (data.clients) {
+      if (data.client) {
         order.client = {
-          id: data.clients.id,
-          ruc: data.clients.ruc,
-          businessName: data.clients.business_name,
-          commercialName: data.clients.commercial_name,
-          address: data.clients.address,
-          district: data.clients.district,
-          province: data.clients.province,
-          salespersonId: data.clients.salesperson_id,
-          salesperson: data.clients.profiles ? {
-            id: data.clients.profiles.id,
-            fullName: data.clients.profiles.full_name,
+          id: data.client.id,
+          ruc: data.client.ruc,
+          businessName: data.client.business_name,
+          commercialName: data.client.commercial_name,
+          address: data.client.address,
+          district: data.client.district,
+          province: data.client.province,
+          salespersonId: data.client.salesperson_id,
+          salesperson: data.client.clientSalesperson ? {
+            id: data.client.clientSalesperson.id,
+            fullName: data.client.clientSalesperson.full_name,
             email: '',
-            phone: data.clients.profiles.phone,
-            birthday: '',
-            cargo: data.clients.profiles.cargo,
-            role: data.clients.profiles.role,
+            phone: data.client.clientSalesperson.phone,
+            birthday: data.client.clientSalesperson.birthday || '',
+            cargo: data.client.clientSalesperson.cargo,
+            role: data.client.clientSalesperson.role,
           } : undefined,
-          transport: data.clients.transport,
-          transportAddress: data.clients.transport_address,
-          transportDistrict: data.clients.transport_district,
-          createdAt: data.clients.created_at,
-          updatedAt: data.clients.updated_at,
+          transport: data.client.transport,
+          transportAddress: data.client.transport_address,
+          transportDistrict: data.client.transport_district,
+          createdAt: data.client.created_at,
+          updatedAt: data.client.updated_at,
+        };
+      }
+      
+      // Map salesperson from the order itself
+      if (data.salesperson) {
+        order.salesperson = {
+          id: data.salesperson.id,
+          fullName: data.salesperson.full_name,
+          email: '',
+          phone: data.salesperson.phone,
+          birthday: data.salesperson.birthday || '',
+          cargo: data.salesperson.cargo,
+          role: data.salesperson.role,
+        };
+      }
+      
+      // Map createdByUser
+      if (data.createdByUser) {
+        order.createdByUser = {
+          id: data.createdByUser.id,
+          fullName: data.createdByUser.full_name,
+          email: '',
+          phone: data.createdByUser.phone,
+          birthday: data.createdByUser.birthday || '',
+          cargo: data.createdByUser.cargo,
+          role: data.createdByUser.role,
         };
       }
       
