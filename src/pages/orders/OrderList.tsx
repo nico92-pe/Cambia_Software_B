@@ -43,10 +43,7 @@ export default function OrderList() {
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
-      order.client?.commercialName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.client?.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.client?.ruc?.includes(searchTerm) ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase());
+      order.client?.commercialName?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
@@ -86,22 +83,65 @@ export default function OrderList() {
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
+      <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="flex flex-wrap gap-4 items-start">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Buscar pedidos
+            </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Buscar por cliente, RUC o ID de pedido..."
+                placeholder="Buscar por nombre comercial del cliente..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-400" />
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mes y Año
+            </label>
+            <select
+              value={monthYearFilter}
+              onChange={(e) => setMonthYearFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[140px]"
+            >
+              <option value="all">Todos los meses</option>
+              {(() => {
+                const options = [];
+                const currentDate = new Date();
+                
+                for (let i = 0; i < 12; i++) {
+                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                  const year = date.getFullYear();
+                  const month = date.getMonth() + 1;
+                  const value = `${year}-${String(month).padStart(2, '0')}`;
+                  const label = date.toLocaleDateString('es-PE', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                  });
+                  
+                  options.push(
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  );
+                }
+                
+                return options;
+              })()}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              Estado
+            </label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
@@ -123,7 +163,7 @@ export default function OrderList() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID Pedido
+                  #
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cliente
@@ -156,13 +196,13 @@ export default function OrderList() {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
+                filteredOrders.map((order, index) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {order.id.slice(0, 8)}...
+                        {index + 1}
                       </div>
-                    </td>
+                        #{index + 1}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {order.client?.commercialName || 'Cliente no encontrado'}
