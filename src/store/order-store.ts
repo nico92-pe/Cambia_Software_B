@@ -107,11 +107,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         if (order.client?.salesperson_id) salespersonIds.add(order.client.salesperson_id);
       });
 
+      console.log('🔍 Salesperson IDs to fetch:', Array.from(salespersonIds));
+
       // Get all salespeople data
       const { data: salespeople, error: salespeopleError } = await supabase
         .from('profiles')
         .select('id, full_name, phone, cargo, role, birthday')
         .in('id', Array.from(salespersonIds));
+
+      console.log('🔍 Salespeople query result:', salespeople);
+      console.log('🔍 Salespeople query error:', salespeopleError);
 
       if (salespeopleError) throw salespeopleError;
 
