@@ -11,24 +11,18 @@ import { Alert } from '../../components/ui/Alert';
 
 const statusColors = {
   borrador: 'bg-gray-100 text-gray-800',
-  pendiente: 'bg-yellow-100 text-yellow-800',
+  tomado: 'bg-yellow-100 text-yellow-800',
   confirmado: 'bg-blue-100 text-blue-800',
   en_preparacion: 'bg-purple-100 text-purple-800',
-  listo: 'bg-green-100 text-green-800',
-  despachado: 'bg-indigo-100 text-indigo-800',
-  entregado: 'bg-emerald-100 text-emerald-800',
-  cancelado: 'bg-red-100 text-red-800',
+  despachado: 'bg-green-100 text-green-800',
 };
 
 const statusLabels = {
   borrador: 'Borrador',
-  pendiente: 'Pendiente',
+  tomado: 'Tomado',
   confirmado: 'Confirmado',
   en_preparacion: 'En Preparación',
-  listo: 'Listo',
   despachado: 'Despachado',
-  entregado: 'Entregado',
-  cancelado: 'Cancelado',
 };
 
 export default function OrderList() {
