@@ -87,15 +87,7 @@ getOrders: async () => {
   try {
     console.log('🔍 Starting getOrders query...');
     
-    // First, let's check what salesperson IDs exist in profiles
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, role')
-      .in('role', ['asesor_ventas', 'admin', 'super_admin']);
-    
-    console.log('🔍 Available profiles:', profilesData);
-    
-    // Let's try a simpler query first to see what's happening
+    // Try different query syntax - using the column name directly
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -104,7 +96,7 @@ getOrders: async () => {
           *,
           clientSalesperson:profiles(id, full_name, phone, cargo, role, birthday)
         ),
-        salesperson:profiles(id, full_name, phone, cargo, role, birthday),
+        profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
         order_items(
           *,
           product:products(*)
@@ -120,7 +112,7 @@ getOrders: async () => {
     const orders = data.map(row => {
       console.log('🔍 Processing order row:', row);
       console.log('🔍 Order salesperson_id:', row.salesperson_id);
-      console.log('🔍 Order salesperson data:', row.salesperson);
+      console.log('🔍 Order profiles data:', row.profiles);
       
       const order = mapDbRowToOrder(row);
 
@@ -158,29 +150,20 @@ getOrders: async () => {
       }
 
       // Map salesperson from the order itself
-      if (row.salesperson) {
-        console.log('🔍 Order salesperson found:', row.salesperson);
+      if (row.profiles) {
+        console.log('🔍 Order salesperson found:', row.profiles);
         order.salesperson = {
-          id: row.salesperson.id,
-          fullName: row.salesperson.full_name,
+          id: row.profiles.id,
+          fullName: row.profiles.full_name,
           email: '',
-          phone: row.salesperson.phone,
-          birthday: row.salesperson.birthday || '',
-          cargo: row.salesperson.cargo,
-          role: row.salesperson.role,
+          phone: row.profiles.phone,
+          birthday: row.profiles.birthday || '',
+          cargo: row.profiles.cargo,
+          role: row.profiles.role,
         };
         console.log('🔍 Mapped order salesperson:', order.salesperson);
       } else {
-        console.log('🔍 No salesperson data found');
-        console.log('🔍 Checking if salesperson_id exists in profiles...');
-        const matchingProfile = profilesData?.find(p => p.id === row.salesperson_id);
-        console.log('🔍 Matching profile found:', matchingProfile);
-        
-        if (matchingProfile) {
-          console.log('🔍 Profile exists but relation failed - this is a query issue');
-        } else {
-          console.log('🔍 Profile does not exist in database');
-        }
+        console.log('🔍 No profiles data found');
         console.log('🔍 Available keys in row:', Object.keys(row));
       }
 
