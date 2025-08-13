@@ -90,6 +90,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .select('id, full_name, role');
         
       console.log('🔍 ALL profiles in database:', allProfiles);
+      allProfiles?.forEach(profile => {
+        console.log(`  - ID: ${profile.id}, Name: ${profile.full_name}, Role: ${profile.role}`);
+      });
       
       const asesorVentasProfiles = allProfiles?.filter(p => p.role === 'asesor_ventas') || [];
       console.log('🔍 Available asesor_ventas profiles:', asesorVentasProfiles);
