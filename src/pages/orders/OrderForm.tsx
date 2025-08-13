@@ -105,6 +105,8 @@ export function OrderForm() {
       }
     };
 
+    loadOrder();
+  }, [id, getOrderById, navigate]);
 
   // Filter clients based on search
   const filteredClients = clients.filter(client => 
