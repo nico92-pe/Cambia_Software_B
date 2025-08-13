@@ -84,6 +84,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          client:clients(
+            *,
+            clientSalesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
+          ),
+          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
+          createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
+          order_items(
+            *,
+            product:products(*)
+          )
+        `)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       
@@ -518,7 +534,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .eq('order_id', orderId)
         .order('created_at', { ascending: false });
         
-      if (error) {
+      if (error) throw error;
 
       const logs: OrderStatusLog[] = data.map(row => ({
         id: row.id,
