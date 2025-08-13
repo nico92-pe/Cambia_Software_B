@@ -194,10 +194,10 @@ export default function OrderList() {
                         <span className="text-gray-500">Cliente:</span>
                         <div className="text-right">
                           <div className="font-medium">{order.client?.businessName || 'N/A'}</div>
-                        <div className="font-medium">{order.client?.businessName || 'N/A'}</div>
-                        <div className="text-sm text-muted-foreground">{order.client?.commercialName || 'N/A'}</div>
-                        <div className="text-sm text-muted-foreground">
-                          RUC: {order.client?.ruc || 'N/A'}
+                          <div className="text-sm text-muted-foreground">{order.client?.commercialName || 'N/A'}</div>
+                          <div className="text-sm text-muted-foreground">
+                            RUC: {order.client?.ruc || 'N/A'}
+                          </div>
                         </div>
                       </div>
                       <div className="flex justify-between">
@@ -284,7 +284,6 @@ export default function OrderList() {
                       <div className="text-sm font-medium text-gray-900">
                         {order.client?.commercialName || 'Cliente no encontrado'}
                       </div>
-                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -325,6 +324,7 @@ export default function OrderList() {
               )}
             </tbody>
           </table>
+        </div>
       </div>
     </div>
   );
