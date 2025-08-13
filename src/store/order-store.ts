@@ -85,6 +85,8 @@ getOrders: async () => {
   set({ isLoading: true, error: null });
 
   try {
+    console.log('🔍 Starting getOrders query...');
+    
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -103,11 +105,19 @@ getOrders: async () => {
 
     if (error) throw error;
 
+    console.log('🔍 Raw Supabase response:', data);
+    console.log('🔍 Number of orders returned:', data?.length || 0);
+
     const orders = data.map(row => {
+      console.log('🔍 Processing order row:', row);
+      console.log('🔍 Order salesperson_id:', row.salesperson_id);
+      console.log('🔍 Order orderSalesperson data:', row.orderSalesperson);
+      
       const order = mapDbRowToOrder(row);
 
       // Map client data
       if (row.client) {
+        console.log('🔍 Client data found:', row.client);
         order.client = {
           id: row.client.id,
           ruc: row.client.ruc,
@@ -134,10 +144,13 @@ getOrders: async () => {
           createdAt: row.client.created_at,
           updatedAt: row.client.updated_at,
         };
+      } else {
+        console.log('🔍 No client data found for order');
       }
 
       // Map salesperson from the order itself
       if (row.orderSalesperson) {
+        console.log('🔍 Order salesperson found:', row.orderSalesperson);
         order.salesperson = {
           id: row.orderSalesperson.id,
           fullName: row.orderSalesperson.full_name,
@@ -147,8 +160,13 @@ getOrders: async () => {
           cargo: row.orderSalesperson.cargo,
           role: row.orderSalesperson.role,
         };
+        console.log('🔍 Mapped order salesperson:', order.salesperson);
+      } else {
+        console.log('🔍 No orderSalesperson data found');
+        console.log('🔍 Available keys in row:', Object.keys(row));
       }
 
+      console.log('🔍 Final order object salesperson:', order.salesperson);
       return order;
     });
 
@@ -162,8 +180,12 @@ getOrders: async () => {
       });
     }
 
+    console.log('🔍 Final processed orders:', orders);
+    console.log('🔍 First order salesperson check:', orders[0]?.salesperson);
+
     set({ orders, isLoading: false });
   } catch (error) {
+    console.error('🔍 Error in getOrders:', error);
     set({
       isLoading: false,
       error: error instanceof Error ? error.message : 'Error al cargar pedidos',

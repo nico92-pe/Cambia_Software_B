@@ -218,7 +218,13 @@ export default function OrderList() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Vendedor:</span>
-                        <span>{order.salesperson?.fullName || 'N/A'}</span>
+                        <span>
+                          {(() => {
+                            console.log('🔍 Mobile view - Order salesperson:', order.salesperson);
+                            console.log('🔍 Mobile view - Order salespersonId:', order.salespersonId);
+                            return order.salesperson?.fullName || 'N/A';
+                          })()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Estado:</span>
@@ -309,7 +315,15 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {order.salesperson?.fullName || 'Sin vendedor asignado'}
+                        {(() => {
+                          console.log('🔍 Rendering salesperson for order:', order.id);
+                          console.log('🔍 Order salesperson object:', order.salesperson);
+                          console.log('🔍 Order salesperson fullName:', order.salesperson?.fullName);
+                          console.log('🔍 Order salespersonId:', order.salespersonId);
+                          console.log('🔍 Full order object:', order);
+                          
+                          return order.salesperson?.fullName || 'Sin vendedor asignado';
+                        })()}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
