@@ -84,13 +84,26 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+      // First, let's test a simple query to see what we get
+      const { data: testData, error: testError } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          salesperson_id,
+          profiles!orders_salesperson_id_fkey(id, full_name, role)
+        `)
+        .limit(1);
+        
+      console.log('🔍 Test query result:', testData);
+      console.log('🔍 Test query error:', testError);
+
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
           client:clients(
             *,
-            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
+            clientSalesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
           ),
           orderSalesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
           createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
@@ -102,6 +115,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log('🔍 Full query result (first order):', data?.[0]);
       
       const orders = data.map(row => {
         const order = mapDbRowToOrder(row);
@@ -123,15 +138,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             district: row.client.district,
             province: row.client.province,
             salespersonId: row.client.salesperson_id,
-            salesperson: row.client.salesperson
+            salesperson: row.client.clientSalesperson
               ? {
-                  id: row.client.salesperson.id,
-                  fullName: row.client.salesperson.full_name,
+                  id: row.client.clientSalesperson.id,
+                  fullName: row.client.clientSalesperson.full_name,
                   email: '',
-                  phone: row.client.salesperson.phone,
-                  birthday: row.client.salesperson.birthday || '',
-                  cargo: row.client.salesperson.cargo,
-                  role: row.client.salesperson.role,
+                  phone: row.client.clientSalesperson.phone,
+                  birthday: row.client.clientSalesperson.birthday || '',
+                  cargo: row.client.clientSalesperson.cargo,
+                  role: row.client.clientSalesperson.role,
                 }
               : undefined,
             transport: row.client.transport,
