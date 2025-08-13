@@ -87,10 +87,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       // Debug: Check what salespeople exist
       const { data: allProfiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, role')
-        .eq('role', 'asesor_ventas');
+        .select('id, full_name, role');
         
-      console.log('🔍 Available asesor_ventas profiles:', allProfiles);
+      console.log('🔍 ALL profiles in database:', allProfiles);
+      
+      const asesorVentasProfiles = allProfiles?.filter(p => p.role === 'asesor_ventas') || [];
+      console.log('🔍 Available asesor_ventas profiles:', asesorVentasProfiles);
       
       const { data, error } = await supabase
         .from('orders')
