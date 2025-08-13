@@ -169,38 +169,13 @@ export default function OrderList() {
               ) : (
                 filteredOrders.map((order) => (
                   <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">
-                          #{order.id.slice(0, 8)}...
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {order.client?.commercialName || 'Cliente no encontrado'}
-                        </p>
-                      </div>
-                      {canEditDelete && (
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Link 
-                            to={`/orders/edit/${order.id}`}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-gray-600 hover:text-gray-900"
-                            title="Editar pedido"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteClick(order)}
-                            disabled={deleteLoading === order.id}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50"
-                            title="Eliminar pedido"
-                          >
-                            {deleteLoading === order.id ? (
-                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      )}
+                    <div className="mb-3">
+                      <h3 className="font-medium text-gray-900">
+                        #{order.id.slice(0, 8)}...
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {order.client?.commercialName || 'Cliente no encontrado'}
+                      </p>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -226,6 +201,29 @@ export default function OrderList() {
                         <span>{new Date(order.createdAt).toLocaleDateString('es-PE')}</span>
                       </div>
                     </div>
+                    {canEditDelete && (
+                      <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
+                        <Link 
+                          to={`/orders/edit/${order.id}`}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-gray-600 hover:text-gray-900"
+                          title="Editar pedido"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteClick(order)}
+                          disabled={deleteLoading === order.id}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50"
+                          title="Eliminar pedido"
+                        >
+                          {deleteLoading === order.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

@@ -114,24 +114,9 @@ export function ClientList() {
                 <div className="space-y-4 p-4">
                   {filteredClients.map((client) => (
                     <div key={client.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{client.commercialName}</h3>
-                          <p className="text-sm text-muted-foreground">{client.businessName}</p>
-                        </div>
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Link to={`/clients/edit/${client.id}`}>
-                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                          </Link>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={<Trash size={16} />}
-                            onClick={() => handleDelete(client.id)}
-                            loading={deleteLoading === client.id}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          />
-                        </div>
+                      <div className="mb-3">
+                        <h3 className="font-medium text-gray-900">{client.commercialName}</h3>
+                        <p className="text-sm text-muted-foreground">{client.businessName}</p>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -151,6 +136,19 @@ export function ClientList() {
                             {client.province}
                           </Badge>
                         </div>
+                      </div>
+                      <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
+                        <Link to={`/clients/edit/${client.id}`}>
+                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Trash size={16} />}
+                          onClick={() => handleDelete(client.id)}
+                          loading={deleteLoading === client.id}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        />
                       </div>
                     </div>
                   ))}

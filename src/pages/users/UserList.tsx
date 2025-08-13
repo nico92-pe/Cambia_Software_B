@@ -129,27 +129,13 @@ export function UserList() {
               <div className="space-y-4 p-4">
                 {filteredUsers.map((user) => (
                   <div key={user.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center flex-1">
+                    <div className="mb-3">
+                      <div className="flex items-center">
                         <Avatar name={user.fullName} size="sm" className="mr-3" />
                         <div>
                           <h3 className="font-medium text-gray-900">{user.fullName}</h3>
                           <p className="text-sm text-muted-foreground">{user.email}</p>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <Link to={`/users/edit/${user.id}`}>
-                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Trash size={16} />}
-                          onClick={() => handleDelete(user.id)}
-                          loading={deleteLoading === user.id}
-                          disabled={user.role === UserRole.SUPER_ADMIN}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        />
                       </div>
                     </div>
                     <div className="space-y-2 text-sm">
@@ -165,6 +151,20 @@ export function UserList() {
                         <span className="text-gray-500">Teléfono:</span>
                         <span>{user.phone}</span>
                       </div>
+                    </div>
+                    <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
+                      <Link to={`/users/edit/${user.id}`}>
+                        <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<Trash size={16} />}
+                        onClick={() => handleDelete(user.id)}
+                        loading={deleteLoading === user.id}
+                        disabled={user.role === UserRole.SUPER_ADMIN}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      />
                     </div>
                   </div>
                 ))}

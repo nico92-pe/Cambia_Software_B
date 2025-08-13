@@ -195,36 +195,19 @@ export function ProductList() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h3 
-                                className="font-medium text-gray-900 cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => handleProductClick(product)}
-                              >
-                                {product.name}
-                              </h3>
-                              <p 
-                                className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => handleProductClick(product)}
-                              >
-                                Código: {product.code}
-                              </p>
-                            </div>
-                            {!isAsesorVentas && (
-                              <div className="flex items-center space-x-2 ml-4">
-                                <Link to={`/products/edit/${product.id}`}>
-                                  <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                                </Link>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  icon={<Trash size={16} />}
-                                  onClick={() => handleDelete(product.id)}
-                                  loading={deleteLoading === product.id}
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                />
-                              </div>
-                            )}
+                          <div>
+                            <h3 
+                              className="font-medium text-gray-900 cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleProductClick(product)}
+                            >
+                              {product.name}
+                            </h3>
+                            <p 
+                              className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleProductClick(product)}
+                            >
+                              Código: {product.code}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -252,6 +235,21 @@ export function ProductList() {
                           <span className="font-medium">{product.stock || 0}</span>
                         </div>
                       </div>
+                      {!isAsesorVentas && (
+                        <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
+                          <Link to={`/products/edit/${product.id}`}>
+                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Trash size={16} />}
+                            onClick={() => handleDelete(product.id)}
+                            loading={deleteLoading === product.id}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
