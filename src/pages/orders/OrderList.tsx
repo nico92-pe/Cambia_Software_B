@@ -218,7 +218,7 @@ export default function OrderList() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Vendedor:</span>
-                        <span>{order.salesperson?.fullName || 'N/A'}</span>
+                        <span>{order.client?.salesperson?.fullName || order.salesperson?.fullName || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Estado:</span>
@@ -309,7 +309,7 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {order.salesperson?.fullName || 'Sin vendedor asignado'}
+                        {order.client?.salesperson?.fullName || order.salesperson?.fullName || 'Sin vendedor asignado'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

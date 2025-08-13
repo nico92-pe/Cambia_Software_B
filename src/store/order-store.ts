@@ -90,7 +90,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          client:clients!orders_client_id_fkey(*),
+          client:clients!orders_client_id_fkey(
+            *,
+            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
+          ),
           salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
@@ -117,6 +120,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             district: row.client.district,
             province: row.client.province,
             salespersonId: row.client.salesperson_id,
+            salesperson: row.client.salesperson ? {
+              id: row.client.salesperson.id,
+              fullName: row.client.salesperson.full_name,
+              email: '',
+              phone: row.client.salesperson.phone,
+              birthday: '',
+              cargo: row.client.salesperson.cargo,
+              role: row.client.salesperson.role,
+            } : undefined,
             transport: row.client.transport,
             transportAddress: row.client.transport_address,
             transportDistrict: row.client.transport_district,
@@ -165,7 +177,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          client:clients!orders_client_id_fkey(*),
+          client:clients!orders_client_id_fkey(
+            *,
+            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
+          ),
           salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
@@ -196,6 +211,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           district: data.client.district,
           province: data.client.province,
           salespersonId: data.client.salesperson_id,
+          salesperson: data.client.salesperson ? {
+            id: data.client.salesperson.id,
+            fullName: data.client.salesperson.full_name,
+            email: '',
+            phone: data.client.salesperson.phone,
+            birthday: '',
+            cargo: data.client.salesperson.cargo,
+            role: data.client.salesperson.role,
+          } : undefined,
           transport: data.client.transport,
           transportAddress: data.client.transport_address,
           transportDistrict: data.client.transport_district,
