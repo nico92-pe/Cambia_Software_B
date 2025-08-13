@@ -186,6 +186,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       error: error instanceof Error ? error.message : 'Error al cargar pedidos',
     });
   }
+  },
 
   
   getOrderById: async (id) => {
@@ -582,40 +583,3 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ currentOrder: order });
   },
 }));
-
-// Helper function to create missing salesperson profiles
-async function createMissingSalespersonProfiles() {
-  const missingSalespersonIds = [
-    '14e053fa-73a7-4657-a857-a6a54794259c',
-    'a85506ab-1a62-4732-9491-b82e6b655609'
-  ];
-
-  // Check which profiles already exist
-  const { data: existingProfiles } = await supabase
-    .from('profiles')
-    .select('id')
-    .in('id', missingSalespersonIds);
-
-  const existingIds = existingProfiles?.map(p => p.id) || [];
-  const missingIds = missingSalespersonIds.filter(id => !existingIds.includes(id));
-
-  // Create missing profiles
-  if (missingIds.length > 0) {
-    const profilesToCreate = missingIds.map((id, index) => ({
-      id,
-      full_name: `Vendedor ${index + 1}`,
-      phone: `+51 999 000 00${index + 1}`,
-      cargo: 'Asesor de Ventas',
-      role: 'asesor_ventas',
-      must_change_password: true,
-    }));
-
-    const { error } = await supabase
-      .from('profiles')
-      .insert(profilesToCreate);
-
-    if (error) {
-      console.warn('Could not create missing salesperson profiles:', error);
-    }
-  }
-}
