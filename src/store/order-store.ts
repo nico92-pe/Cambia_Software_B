@@ -85,16 +85,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Get orders with basic relations and profiles joined
+      // Get orders with basic relations
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
-          clients!orders_client_id_fkey(
+          clients(
             *,
             profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
           ),
-          profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -137,19 +136,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           };
         }
         
-        // Map salesperson data from joined profile
-        if (row.profiles) {
-          order.salesperson = {
-            id: row.profiles.id,
-            fullName: row.profiles.full_name,
-            email: '',
-            phone: row.profiles.phone,
-            birthday: row.profiles.birthday || '',
-            cargo: row.profiles.cargo,
-            role: row.profiles.role,
-          };
-        }
-        
         // Map order items
         order.items = (row.order_items || []).map(item => {
           const orderItem = mapDbRowToOrderItem(item);
@@ -177,11 +163,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          clients!orders_client_id_fkey(
+          clients(
             *,
             profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role)
           ),
-          profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -225,19 +210,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           transportDistrict: data.clients.transport_district,
           createdAt: data.clients.created_at,
           updatedAt: data.clients.updated_at,
-        };
-      }
-      
-      // Map salesperson data from joined profile
-      if (data.profiles) {
-        order.salesperson = {
-          id: data.profiles.id,
-          fullName: data.profiles.full_name,
-          email: '',
-          phone: data.profiles.phone,
-          birthday: data.profiles.birthday || '',
-          cargo: data.profiles.cargo,
-          role: data.profiles.role,
         };
       }
       
