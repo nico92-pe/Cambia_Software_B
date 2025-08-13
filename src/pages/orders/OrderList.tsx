@@ -31,6 +31,10 @@ const statusLabels = {
   cancelado: 'Cancelado',
 };
 
+const formatCurrency = (amount: number) => {
+  return `S/ ${amount.toFixed(2)}`;
+};
+
 export default function OrderList() {
   const { orders, isLoading, error, getOrders } = useOrderStore();
   const { user } = useAuthStore();
@@ -194,7 +198,7 @@ export default function OrderList() {
                           <div className="text-sm text-muted-foreground">{order.client?.commercialName || 'N/A'}</div>
                           <div className="text-sm text-muted-foreground">
                             {order.client?.ruc || 'N/A'}
-                          <span className="font-medium">{formatCurrency(order.total)}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex justify-between">
