@@ -13,7 +13,7 @@ import { ClientForm } from './pages/clients/ClientForm';
 import { ProductList } from './pages/products/ProductList';
 import { ProductForm } from './pages/products/ProductForm';
 import { CategoryList } from './pages/products/CategoryList';
-import { OrderList } from './pages/orders/OrderList';
+import OrderList from './pages/orders/OrderList';
 import { OrderForm } from './pages/orders/OrderForm';
 import { useAuthStore } from './store/auth-store';
 
