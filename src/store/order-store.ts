@@ -90,7 +90,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          clients(*),
+          clients(
+            *,
+            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, birthday, cargo, role)
+          ),
           order_items(
             *,
             product:products(*)
@@ -116,6 +119,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             district: row.clients.district,
             province: row.clients.province,
             salespersonId: row.clients.salesperson_id,
+            salesperson: row.clients.salesperson ? {
+              id: row.clients.salesperson.id,
+              fullName: row.clients.salesperson.full_name,
+              email: '',
+              phone: row.clients.salesperson.phone,
+              birthday: row.clients.salesperson.birthday || '',
+              cargo: row.clients.salesperson.cargo,
+              role: row.clients.salesperson.role,
+            } : undefined,
             transport: row.clients.transport,
             transportAddress: row.clients.transport_address,
             transportDistrict: row.clients.transport_district,
@@ -126,21 +138,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         
         return order;
       });
-      
-      // Get salesperson names for each order
-      for (const order of orders) {
-        if (order.client?.salespersonId) {
-          const { data: salesperson } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', order.client.salespersonId)
-            .single();
-          
-          if (salesperson && order.client) {
-            order.client.salespersonName = salesperson.full_name;
-          }
-        }
-      }
       
       // Map order items for each order
       for (const order of orders) {
