@@ -185,9 +185,6 @@ export default function OrderList() {
                       <h3 className="font-medium text-gray-900">
                         Pedido #{index + 1}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {order.client?.commercialName || 'Cliente no encontrado'}
-                      </p>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
