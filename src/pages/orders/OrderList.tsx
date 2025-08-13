@@ -237,6 +237,7 @@ export default function OrderList() {
             <thead className="bg-muted hidden sm:table-header-group">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  #
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Cliente
@@ -273,7 +274,7 @@ export default function OrderList() {
                   <tr key={order.id} className="hover:bg-muted/30">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        #{index + 1}
+                        {index + 1}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
