@@ -329,6 +329,9 @@ export default function OrderList() {
                       <div className="text-sm font-medium text-gray-900">
                         {order.client?.commercialName || 'Cliente no encontrado'}
                       </div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {order.client?.commercialName || 'Cliente no encontrado'}
+                      </div>
                       <div className="text-sm text-gray-500">
                          {order.client?.ruc || 'N/A'}
                       </div>
