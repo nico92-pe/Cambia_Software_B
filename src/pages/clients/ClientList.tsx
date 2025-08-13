@@ -74,20 +74,20 @@ export function ClientList() {
 
       <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
         <div className="card-header border-b">
-          <div className="relative">
+          <div className="relative mb-4 sm:mb-0">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
               <Search size={18} />
             </div>
             <input
               type="text"
-              className="input pl-10"
+              className="input pl-10 w-full"
               placeholder="Buscar por nombre o RUC..."
               value={searchTerm}
               onChange={handleSearch}
             />
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader />
@@ -108,8 +108,55 @@ export function ClientList() {
               )}
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-muted">
+            <div className="block sm:hidden">
+              {/* Mobile Card View */}
+              <div className="space-y-4 p-4">
+                {filteredClients.map((client) => (
+                  <div key={client.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{client.commercialName}</h3>
+                        <p className="text-sm text-muted-foreground">{client.businessName}</p>
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <Link to={`/clients/edit/${client.id}`}>
+                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Trash size={16} />}
+                          onClick={() => handleDelete(client.id)}
+                          loading={deleteLoading === client.id}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">RUC:</span>
+                        <span className="font-medium">{client.ruc}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Ubicación:</span>
+                        <div className="flex items-center">
+                          <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
+                          <span>{client.district}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Provincia:</span>
+                        <Badge variant={client.province === 'Lima' ? 'primary' : 'secondary'}>
+                          {client.province}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <table className="min-w-full divide-y divide-gray-200 hidden sm:table">
+              <thead className="bg-muted hidden sm:table-header-group">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Cliente
@@ -128,7 +175,7 @@ export function ClientList() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
                 {filteredClients.map((client) => (
                   <tr key={client.id} className="hover:bg-muted/30">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -154,7 +201,7 @@ export function ClientList() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end space-x-2">
                         <Link to={`/clients/edit/${client.id}`}>
-                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex" />
                         </Link>
                         <Button
                           variant="ghost"
@@ -162,7 +209,7 @@ export function ClientList() {
                           icon={<Trash size={16} />}
                           onClick={() => handleDelete(client.id)}
                           loading={deleteLoading === client.id}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 hidden sm:inline-flex"
                         />
                       </div>
                     </td>
