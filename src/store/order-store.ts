@@ -534,6 +534,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const targetProfile = allProfiles?.find(p => p.id === targetId);
       console.log('🎯 Target salesperson profile:', targetProfile);
       
+      // Check specifically for the salesperson ID we need
+      const targetId = '14e053fa-73a7-4657-a857-a6a54794259c';
+      const targetProfile = allProfiles?.find(p => p.id === targetId);
+      console.log('🎯 Target salesperson profile:', targetProfile);
+      
       allProfiles?.forEach(profile => {
         console.log(`  - ID: ${profile.id}, Name: ${profile.full_name}, Role: ${profile.role}`);
       });
