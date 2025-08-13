@@ -81,39 +81,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   isLoading: false,
   error: null,
 
-getOrders: async () => {
-  set({ isLoading: true, error: null });
+  getOrders: async () => {
+    set({ isLoading: true, error: null });
 
-  try {
-    console.log('🔍 Starting getOrders query...');
-    
-    // First, let's check if the salesperson IDs exist in profiles table
-    const salespersonIds = ['14e053fa-73a7-4657-a857-a6a54794259c', 'a85506ab-1a62-4732-9491-b82e6b655609'];
-    console.log('🔍 Checking if salesperson IDs exist in profiles...');
-    
-    const { data: profilesCheck, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, role')
-      .in('id', salespersonIds);
-      
-    if (profilesError) {
-      console.error('🔍 Error checking profiles:', profilesError);
-    } else {
-      console.log('🔍 Found profiles for salesperson IDs:', profilesCheck);
-      console.log('🔍 Missing salesperson IDs:', salespersonIds.filter(id => !profilesCheck.find(p => p.id === id)));
-    }
-    
-    // Also check all profiles to see what's available
-    const { data: allProfiles, error: allProfilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, role');
-      
-    if (allProfilesError) {
-      console.error('🔍 Error fetching all profiles:', allProfilesError);
-    } else {
-      console.log('🔍 All available profiles:', allProfiles);
-      console.log('🔍 Available profile details:', JSON.stringify(allProfiles, null, 2));
-    }
+    try {
+      // Create missing salesperson profiles if they don't exist
+      await createMissingSalespersonProfiles();
     
     const { data, error } = await supabase
       .from('orders')
@@ -134,19 +107,11 @@ getOrders: async () => {
 
     if (error) throw error;
 
-    console.log('🔍 Raw Supabase response:', data);
-    console.log('🔍 Number of orders returned:', data?.length || 0);
-
     const orders = data.map(row => {
-      console.log('🔍 Processing order row:', row);
-      console.log('🔍 Order salesperson_id:', row.salesperson_id);
-      console.log('🔍 Order salesperson data:', row.salesperson);
-      
       const order = mapDbRowToOrder(row);
 
       // Map client data
       if (row.client) {
-        console.log('🔍 Client data found:', row.client);
         order.client = {
           id: row.client.id,
           ruc: row.client.ruc,
@@ -173,13 +138,10 @@ getOrders: async () => {
           createdAt: row.client.created_at,
           updatedAt: row.client.updated_at,
         };
-      } else {
-        console.log('🔍 No client data found for order');
       }
 
       // Map salesperson from the order itself
       if (row.profiles) {
-        console.log('🔍 Order salesperson found:', row.profiles);
         order.salesperson = {
           id: row.profiles.id,
           fullName: row.profiles.full_name,
@@ -189,31 +151,10 @@ getOrders: async () => {
           cargo: row.profiles.cargo,
           role: row.profiles.role,
         };
-        console.log('🔍 Mapped order salesperson:', order.salesperson);
-      } else {
-        console.log('🔍 No salesperson data found');
-        console.log('🔍 Available keys in row:', Object.keys(row));
-        
-        // TEMPORARY FIX: Use the available profile as fallback
-        if (allProfiles && allProfiles.length > 0) {
-          console.log('🔍 Using fallback profile as salesperson');
-          const fallbackProfile = allProfiles[0];
-          order.salesperson = {
-            id: fallbackProfile.id,
-            fullName: fallbackProfile.full_name,
-            email: '',
-            phone: fallbackProfile.phone,
-            birthday: fallbackProfile.birthday || '',
-            cargo: fallbackProfile.cargo,
-            role: fallbackProfile.role,
-          };
-          console.log('🔍 Fallback salesperson assigned:', order.salesperson);
-        }
       }
 
       // Map createdByUser
       if (row.createdByUser) {
-        console.log('🔍 Order createdByUser found:', row.createdByUser);
         order.createdByUser = {
           id: row.createdByUser.id,
           fullName: row.createdByUser.full_name,
@@ -225,7 +166,6 @@ getOrders: async () => {
         };
       }
 
-      console.log('🔍 Final order object salesperson:', order.salesperson);
       return order;
     });
 
@@ -239,18 +179,13 @@ getOrders: async () => {
       });
     }
 
-    console.log('🔍 Final processed orders:', orders);
-    console.log('🔍 First order salesperson check:', orders[0]?.salesperson);
-
     set({ orders, isLoading: false });
   } catch (error) {
-    console.error('🔍 Error in getOrders:', error);
     set({
       isLoading: false,
       error: error instanceof Error ? error.message : 'Error al cargar pedidos',
     });
   }
-},
 
   
   getOrderById: async (id) => {
