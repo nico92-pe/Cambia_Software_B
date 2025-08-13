@@ -31,6 +31,10 @@ export default function OrderList() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [monthYearFilter, setMonthYearFilter] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -82,7 +86,15 @@ export default function OrderList() {
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    const matchesMonthYear = (() => {
+      if (monthYearFilter === 'all') return true;
+      
+      const orderDate = new Date(order.createdAt);
+      const orderMonthYear = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
+      return orderMonthYear === monthYearFilter;
+    })();
+    
+    return matchesSearch && matchesStatus && matchesMonthYear;
   });
 
   const canCreateOrder = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
@@ -124,8 +136,11 @@ export default function OrderList() {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Buscar pedidos
+            </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -137,12 +152,55 @@ export default function OrderList() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mes y Año
+              </label>
+              <select
+                value={monthYearFilter}
+                onChange={(e) => setMonthYearFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[140px]"
+              >
+                <option value="all">Todos los meses</option>
+                {(() => {
+                  const options = [];
+                  const currentDate = new Date();
+                  
+                  // Generar opciones para los últimos 12 meses
+                  for (let i = 0; i < 12; i++) {
+                    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                    const year = date.getFullYear();
+                    const month = date.getMonth() + 1;
+                    const value = `${year}-${String(month).padStart(2, '0')}`;
+                    const label = date.toLocaleDateString('es-PE', { 
+                      year: 'numeric', 
+                      month: 'long' 
+                    });
+                    
+                    options.push(
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    );
+                  }
+                  
+                  return options;
+                })()}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Estado
+              </label>
+            </div>
+          </div>
+          <div>
             <Filter className="w-4 h-4 text-gray-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[160px]"
             >
               <option value="all">Todos los estados</option>
               {Object.entries(statusLabels).map(([value, label]) => (
