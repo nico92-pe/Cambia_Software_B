@@ -86,16 +86,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   set({ isLoading: true, error: null });
 
   try {
-    // Get orders with client, salesperson and order items
+    // Get orders with clients and salesperson from profiles
     const { data, error } = await supabase
       .from('orders')
       .select(`
         *,
         salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, birthday, cargo, role),
-        clients(
+        client:clients(
           *,
-          salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, birthday, cargo, role)
+          salesperson:profiles(id, full_name, phone, cargo, role)
         ),
+        salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
         order_items(
           *,
           product:products(*)
@@ -111,32 +112,32 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const order = mapDbRowToOrder(row);
 
       // Map client data
-      if (row.clients) {
+      if (row.client) {
         order.client = {
-          id: row.clients.id,
-          ruc: row.clients.ruc,
-          businessName: row.clients.business_name,
-          commercialName: row.clients.commercial_name,
-          address: row.clients.address,
-          district: row.clients.district,
-          province: row.clients.province,
-          salespersonId: row.clients.salesperson_id,
-          salesperson: row.clients.salesperson
+          id: row.client.id,
+          ruc: row.client.ruc,
+          businessName: row.client.business_name,
+          commercialName: row.client.commercial_name,
+          address: row.client.address,
+          district: row.client.district,
+          province: row.client.province,
+          salespersonId: row.client.salesperson_id,
+          salesperson: row.client.salesperson
             ? {
-                id: row.clients.salesperson.id,
-                fullName: row.clients.salesperson.full_name,
+                id: row.client.salesperson.id,
+                fullName: row.client.salesperson.full_name,
                 email: '',
-                phone: row.clients.salesperson.phone,
-                birthday: row.clients.salesperson.birthday || '',
-                cargo: row.clients.salesperson.cargo,
-                role: row.clients.salesperson.role,
+                phone: row.client.salesperson.phone,
+                birthday: row.client.salesperson.birthday || '',
+                cargo: row.client.salesperson.cargo,
+                role: row.client.salesperson.role,
               }
             : undefined,
-          transport: row.clients.transport,
-          transportAddress: row.clients.transport_address,
-          transportDistrict: row.clients.transport_district,
-          createdAt: row.clients.created_at,
-          updatedAt: row.clients.updated_at,
+          transport: row.client.transport,
+          transportAddress: row.client.transport_address,
+          transportDistrict: row.client.transport_district,
+          createdAt: row.client.created_at,
+          updatedAt: row.client.updated_at,
         };
       }
 
@@ -147,7 +148,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           fullName: row.salesperson.full_name,
           email: '',
           phone: row.salesperson.phone,
-          birthday: row.salesperson.birthday || '',
+          birthday: '',
           cargo: row.salesperson.cargo,
           role: row.salesperson.role,
         };
