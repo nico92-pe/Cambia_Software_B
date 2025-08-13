@@ -525,6 +525,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      // Debug: Check all profiles first
+      const { data: allProfiles } = await supabase.from('profiles').select('*');
+      console.log('🔍 ALL profiles in database:', allProfiles);
+      
+      // Check specifically for the salesperson ID we need
+      const targetId = '14e053fa-73a7-4657-a857-a6a54794259c';
+      const targetProfile = allProfiles?.find(p => p.id === targetId);
+      console.log('🎯 Target salesperson profile:', targetProfile);
+      
+      allProfiles?.forEach(profile => {
+        console.log(`  - ID: ${profile.id}, Name: ${profile.full_name}, Role: ${profile.role}`);
+      });
+      
       const { data, error } = await supabase
         .from('order_status_logs')
         .select(`
