@@ -314,15 +314,8 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <Link to={`/orders/${order.id}`}>
-                          <Button variant="ghost" size="sm" icon={<Eye size={16} />} className="hidden sm:inline-flex">
-                          </Button>
-                        </Link>
-                        {canCreateOrder && (
-                          <Link to={`/orders/${order.id}/edit`}>
-                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex">
                             </Button>
-                          </Link>
+                          <Link to={`/orders/edit/${order.id}`}>
                         )}
                       </div>
                     </td>

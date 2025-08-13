@@ -13,6 +13,7 @@ import { Modal } from '../../components/ui/Modal';
 import { formatCurrency } from '../../lib/utils';
 
 interface OrderFormItem {
+  id?: string;
   productId: string;
   product?: Product;
   quantity: number;
@@ -24,10 +25,11 @@ export function OrderForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { createOrder, updateOrder, deleteOrder, isLoading, error } = useOrderStore();
+  const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, isLoading, error } = useOrderStore();
   const { clients, getClients } = useClientStore();
   const { products, categories, getProducts, getCategories } = useProductStore();
   
+  const [order, setOrder] = useState(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clientSearch, setClientSearch] = useState('');
   const [showClientResults, setShowClientResults] = useState(false);
@@ -45,10 +47,40 @@ export function OrderForm() {
   const isEditMode = Boolean(id);
 
   useEffect(() => {
-    getClients();
-    getProducts();
-    getCategories();
-  }, [getClients, getProducts, getCategories]);
+    const loadData = async () => {
+      await Promise.all([getClients(), getProducts(), getCategories()]);
+      
+      if (id) {
+        try {
+          const orderData = await getOrderById(id);
+          if (orderData) {
+            setOrder(orderData);
+            setSelectedClient(orderData.client);
+            setClientSearch(orderData.client?.commercialName || '');
+            setObservations(orderData.observations || '');
+            
+            // Convert order items to form items
+            const formItems = orderData.items?.map(item => ({
+              id: item.id,
+              productId: item.productId,
+              product: item.product,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: item.subtotal,
+            })) || [];
+            
+            setOrderItems(formItems);
+          } else {
+            navigate('/orders');
+          }
+        } catch (error) {
+          console.error('Error loading order:', error);
+        }
+      }
+    };
+
+    loadData();
+  }, [id, getOrderById, getClients, getProducts, getCategories, navigate]);
 
   // Filter clients based on search
   const filteredClients = clients.filter(client => 
@@ -87,7 +119,7 @@ export function OrderForm() {
     setShowProductResults(false);
   };
 
-  const updateOrderItem = (index: number, field: 'quantity' | 'unitPrice', value: number) => {
+  const updateOrderItemLocal = (index: number, field: 'quantity' | 'unitPrice', value: number) => {
     const updatedItems = [...orderItems];
     updatedItems[index] = {
       ...updatedItems[index],
@@ -99,7 +131,7 @@ export function OrderForm() {
     setOrderItems(updatedItems);
   };
 
-  const removeOrderItem = (index: number) => {
+  const removeOrderItemLocal = (index: number) => {
     setOrderItems(orderItems.filter((_, i) => i !== index));
   };
 
@@ -117,26 +149,63 @@ export function OrderForm() {
     if (!confirmAction || !selectedClient || !user) return;
 
     try {
-      const orderData = {
-        clientId: selectedClient.id,
-        salespersonId: selectedClient.salespersonId,
-        status: confirmAction === 'confirm' ? OrderStatus.TOMADO : OrderStatus.BORRADOR,
-        observations,
-        createdBy: user.id,
-      };
-
       if (confirmAction === 'delete') {
         // Clear form
         setSelectedClient(null);
         setClientSearch('');
         setOrderItems([]);
         setObservations('');
+      } else if (isEditMode && id) {
+        // Update existing order
+        await updateOrder(id, {
+          clientId: selectedClient.id,
+          observations,
+        });
+
+        // Handle order items changes
+        const existingItems = order?.items || [];
+        const currentItems = orderItems;
+
+        // Remove items that are no longer in the order
+        for (const existingItem of existingItems) {
+          const stillExists = currentItems.find(item => item.id === existingItem.id);
+          if (!stillExists) {
+            await removeOrderItem(existingItem.id);
+          }
+        }
+
+        // Update or add items
+        for (const item of currentItems) {
+          if (item.id) {
+            // Update existing item
+            await updateOrderItem(item.id, {
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+            });
+          } else {
+            // Add new item
+            await addOrderItem(id, {
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+            });
+          }
+        }
       } else {
-        const order = await createOrder(orderData);
+        // Create new order
+        const orderData = {
+          clientId: selectedClient.id,
+          salespersonId: selectedClient.salespersonId,
+          status: confirmAction === 'confirm' ? OrderStatus.TOMADO : OrderStatus.BORRADOR,
+          observations,
+          createdBy: user.id,
+        };
+
+        const newOrder = await createOrder(orderData);
         
         // Add order items
         for (const item of orderItems) {
-          await useOrderStore.getState().addOrderItem(order.id, {
+          await addOrderItem(newOrder.id, {
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
@@ -166,6 +235,14 @@ export function OrderForm() {
     const category = categories.find(c => c.id === categoryId);
     return category ? category.name : '';
   };
+
+  if (isEditMode && isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -382,7 +459,7 @@ export function OrderForm() {
                             min="1"
                             className="input w-20"
                             value={item.quantity}
-                            onChange={(e) => updateOrderItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                            onChange={(e) => updateOrderItemLocal(index, 'quantity', parseInt(e.target.value) || 1)}
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -392,7 +469,7 @@ export function OrderForm() {
                             min="0"
                             className="input w-32"
                             value={item.unitPrice}
-                            onChange={(e) => updateOrderItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            onChange={(e) => updateOrderItemLocal(index, 'unitPrice', parseFloat(e.target.value) || 0)}
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap font-medium">
@@ -403,7 +480,7 @@ export function OrderForm() {
                             variant="ghost"
                             size="sm"
                             icon={<Trash2 size={16} />}
-                            onClick={() => removeOrderItem(index)}
+                            onClick={() => removeOrderItemLocal(index)}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           />
                         </td>
@@ -462,7 +539,7 @@ export function OrderForm() {
               onClick={() => handleAction('delete')}
               disabled={isLoading}
             >
-              Eliminar
+              {isEditMode ? 'Cancelar' : 'Eliminar'}
             </Button>
             <Button
               variant="outline"
@@ -477,7 +554,7 @@ export function OrderForm() {
               onClick={() => handleAction('confirm')}
               disabled={isLoading || orderItems.length === 0}
             >
-              Confirmar Pedido
+              {isEditMode ? 'Actualizar Pedido' : 'Confirmar Pedido'}
             </Button>
           </div>
         )}
