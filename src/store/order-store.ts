@@ -84,19 +84,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      // Debug: Check what salespeople exist
-      const { data: allProfiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, role');
-        
-      console.log('🔍 ALL profiles in database:', allProfiles);
-      allProfiles?.forEach(profile => {
-        console.log(`  - ID: ${profile.id}, Name: ${profile.full_name}, Role: ${profile.role}`);
-      });
-      
-      const asesorVentasProfiles = allProfiles?.filter(p => p.role === 'asesor_ventas') || [];
-      console.log('🔍 Available asesor_ventas profiles:', asesorVentasProfiles);
-      
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -116,9 +103,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       if (error) throw error;
       
-      console.log('🔍 Raw orders data:', data);
-      console.log('🔍 First order salesperson data:', data[0]?.salesperson);
-
       const orders = data.map(row => {
         const order = mapDbRowToOrder(row);
 
