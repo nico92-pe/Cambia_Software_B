@@ -194,7 +194,7 @@ export default function OrderList() {
                           <div className="text-sm text-muted-foreground">{order.client?.commercialName || 'N/A'}</div>
                           <div className="text-sm text-muted-foreground">
                             {order.client?.ruc || 'N/A'}
-                          </div>
+                          <span className="font-medium">{formatCurrency(order.total)}</span>
                         </div>
                       </div>
                       <div className="flex justify-between">
@@ -300,7 +300,7 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        S/ {order.total.toFixed(2)}
+                        {formatCurrency(order.total)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
