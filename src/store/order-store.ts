@@ -84,22 +84,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          client:clients(
-            *,
-            clientSalesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
-          ),
-          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
-          createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
-          order_items(
-            *,
-            product:products(*)
-          )
-        `)
-        .order('created_at', { ascending: false });
 
       if (error) throw error;
       
@@ -525,24 +509,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Debug: Check all profiles first
-      const { data: allProfiles } = await supabase.from('profiles').select('*');
-      console.log('🔍 ALL profiles in database:', allProfiles);
-      
-      // Check specifically for the salesperson ID we need
-      const targetId = '14e053fa-73a7-4657-a857-a6a54794259c';
-      const targetProfile = allProfiles?.find(p => p.id === targetId);
-      console.log('🎯 Target salesperson profile:', targetProfile);
-      
-      // Check specifically for the salesperson ID we need
-      const targetId = '14e053fa-73a7-4657-a857-a6a54794259c';
-      const targetProfile = allProfiles?.find(p => p.id === targetId);
-      console.log('🎯 Target salesperson profile:', targetProfile);
-      
-      allProfiles?.forEach(profile => {
-        console.log(`  - ID: ${profile.id}, Name: ${profile.full_name}, Role: ${profile.role}`);
-      });
-      
       const { data, error } = await supabase
         .from('order_status_logs')
         .select(`
@@ -553,10 +519,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .order('created_at', { ascending: false });
         
       if (error) {
-        console.error('Error fetching orders:', error);
-        throw error;
-      }
-      
+
       const logs: OrderStatusLog[] = data.map(row => ({
         id: row.id,
         orderId: row.order_id,
