@@ -285,6 +285,8 @@ export function OrderForm() {
                 <Search size={18} />
               </div>
               <input
+                id="client-search"
+                name="clientSearch"
                 type="text"
                 className="input pl-10"
                 placeholder="Buscar cliente..."
@@ -358,6 +360,8 @@ export function OrderForm() {
                     <Search size={18} />
                   </div>
                   <input
+                    id="product-search"
+                    name="productSearch"
                     type="text"
                     className="input pl-10"
                     placeholder="Buscar producto..."
@@ -371,6 +375,8 @@ export function OrderForm() {
                 </div>
                 
                 <select
+                  id="category-filter"
+                  name="categoryFilter"
                   className="select"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
@@ -455,6 +461,8 @@ export function OrderForm() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <input
+                            id={`quantity-${index}`}
+                            name={`quantity-${index}`}
                             type="number"
                             min="1"
                             className="input w-20"
@@ -464,6 +472,8 @@ export function OrderForm() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <input
+                            id={`unit-price-${index}`}
+                            name={`unitPrice-${index}`}
                             type="number"
                             step="0.01"
                             min="0"
@@ -521,6 +531,8 @@ export function OrderForm() {
             </div>
             <div className="card-content">
               <textarea
+                id="observations"
+                name="observations"
                 className="input resize-none"
                 rows={4}
                 placeholder="Observaciones del pedido..."
