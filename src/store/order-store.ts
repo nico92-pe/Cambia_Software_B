@@ -84,28 +84,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      // First, let's test a simple query to see what we get
-      const { data: testData, error: testError } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          salesperson_id,
-          profiles!orders_salesperson_id_fkey(id, full_name, role)
-        `)
-        .limit(1);
-        
-      console.log('🔍 Test query result:', testData);
-      console.log('🔍 Test query error:', testError);
-
-      const { data, error } = await supabase
+      // Get orders with basic data first
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select(`
           *,
-          client:clients(
-            *,
-            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
-          ),
-          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
+          client:clients(*),
           createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
           order_items(
             *,
@@ -114,11 +98,38 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ordersError) throw ordersError;
+
+      // Get all unique salesperson IDs
+      const salespersonIds = new Set();
+      ordersData.forEach(order => {
+        if (order.salesperson_id) salespersonIds.add(order.salesperson_id);
+        if (order.client?.salesperson_id) salespersonIds.add(order.client.salesperson_id);
+      });
+
+      // Get all salespeople data
+      const { data: salespeople, error: salespeopleError } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone, cargo, role, birthday')
+        .in('id', Array.from(salespersonIds));
+
+      if (salespeopleError) throw salespeopleError;
+
+      // Create a map for quick lookup
+      const salespeopleMap = new Map();
+      salespeople.forEach(person => {
+        salespeopleMap.set(person.id, {
+          id: person.id,
+          fullName: person.full_name,
+          email: '',
+          phone: person.phone,
+          birthday: person.birthday || '',
+          cargo: person.cargo,
+          role: person.role,
+        });
+      });
       
-      console.log('🔍 Full query result (first order):', JSON.stringify(data?.[0], null, 2));
-      
-      const orders = data.map(row => {
+      const orders = ordersData.map(row => {
         const order = mapDbRowToOrder(row);
         
         // Map client data
@@ -132,17 +143,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             district: row.client.district,
             province: row.client.province,
             salespersonId: row.client.salesperson_id,
-            salesperson: row.client.salesperson
-              ? {
-                  id: row.client.salesperson.id,
-                  fullName: row.client.salesperson.full_name,
-                  email: '',
-                  phone: row.client.salesperson.phone,
-                  birthday: row.client.salesperson.birthday || '',
-                  cargo: row.client.salesperson.cargo,
-                  role: row.client.salesperson.role,
-                }
-              : undefined,
+            salesperson: row.client.salesperson_id ? salespeopleMap.get(row.client.salesperson_id) : undefined,
             transport: row.client.transport,
             transportAddress: row.client.transport_address,
             transportDistrict: row.client.transport_district,
@@ -151,17 +152,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           };
         }
 
-        // Map salesperson from the order itself - only if it exists
-        if (row.salesperson) {
-          order.salesperson = {
-            id: row.salesperson.id,
-            fullName: row.salesperson.full_name,
-            email: '',
-            phone: row.salesperson.phone,
-            birthday: row.salesperson.birthday || '',
-            cargo: row.salesperson.cargo,
-            role: row.salesperson.role,
-          };
+        // Map salesperson from the order itself
+        if (row.salesperson_id) {
+          order.salesperson = salespeopleMap.get(row.salesperson_id);
         }
 
         // Map createdByUser
@@ -182,13 +175,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       // Map order items
       for (const order of orders) {
-        const orderRow = data.find(row => row.id === order.id);
+        const orderRow = ordersData.find(row => row.id === order.id);
         order.items = (orderRow?.order_items || []).map(item => {
           const orderItem = mapDbRowToOrderItem(item);
           orderItem.product = item.product || null;
           return orderItem;
         });
       }
+
+      console.log('🔍 First order salesperson:', orders[0]?.salesperson);
+      console.log('🔍 Salespeople found:', salespeople.length);
 
       set({ orders, isLoading: false });
     } catch (error) {
