@@ -85,36 +85,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // First get all profiles to map salesperson data
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
-        
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        throw profilesError;
-      }
-      
-      // Create a map of profiles by ID for quick lookup
-      const profilesMap = new Map();
-      profiles.forEach(profile => {
-        profilesMap.set(profile.id, {
-          id: profile.id,
-          fullName: profile.full_name,
-          email: '', // Not needed for display
-          phone: profile.phone,
-          birthday: profile.birthday,
-          cargo: profile.cargo,
-          role: profile.role,
-        });
-      });
-      
-      // First get orders with basic relations
+      // Get orders with basic relations and profiles joined
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
           clients!inner(*),
+          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role),
           order_items(
             *,
             product:products(*)
@@ -150,9 +127,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order.client = null;
         }
         
-        // Map salesperson data using the profiles map
-        if (row.salesperson_id && profilesMap.has(row.salesperson_id)) {
-          order.salesperson = profilesMap.get(row.salesperson_id);
+        // Map salesperson data from joined profile
+        if (row.salesperson) {
+          order.salesperson = {
+            id: row.salesperson.id,
+            fullName: row.salesperson.full_name,
+            email: '', // Not needed for display
+            phone: row.salesperson.phone,
+            birthday: row.salesperson.birthday,
+            cargo: row.salesperson.cargo,
+            role: row.salesperson.role,
+          };
         } else {
           order.salesperson = null;
         }
