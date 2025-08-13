@@ -237,7 +237,6 @@ export default function OrderList() {
             <thead className="bg-muted hidden sm:table-header-group">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  #
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Cliente
