@@ -158,39 +158,115 @@ export default function OrderList() {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+      <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          {/* Mobile Card View */}
+          <div className="block sm:hidden">
+            <div className="space-y-4 p-4">
+              {filteredOrders.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="mx-auto h-12 w-12 text-muted-foreground opacity-30">📋</div>
+                  <h3 className="mt-4 text-lg font-medium">No se encontraron pedidos</h3>
+                  <p className="mt-1 text-muted-foreground">
+                    {searchTerm || statusFilter !== 'all' || monthYearFilter !== 'all'
+                      ? 'No hay resultados para tu búsqueda'
+                      : 'Comienza creando un nuevo pedido'}
+                  </p>
+                  {!searchTerm && statusFilter === 'all' && monthYearFilter === 'all' && canCreateOrder && (
+                    <Link to="/orders/new" className="mt-6 inline-block">
+                      <Button icon={<Plus size={18} />}>Nuevo Pedido</Button>
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                filteredOrders.map((order, index) => (
+                  <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="mb-3">
+                      <h3 className="font-medium text-gray-900">
+                        Pedido #{index + 1}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {order.client?.commercialName || 'Cliente no encontrado'}
+                      </p>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Cliente:</span>
+                        <div className="text-right">
+                          <div className="font-medium">{order.client?.businessName || 'N/A'}</div>
+                        <div className="font-medium">{order.client?.businessName || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">{order.client?.commercialName || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">
+                          RUC: {order.client?.ruc || 'N/A'}
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Vendedor:</span>
+                        <span>{order.salesperson?.fullName || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Estado:</span>
+                        <Badge className={statusColors[order.status]}>
+                          {statusLabels[order.status]}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Total:</span>
+                        <span className="font-medium">S/ {order.total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Fecha:</span>
+                        <span>{new Date(order.createdAt).toLocaleDateString('es-PE')}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
+                      <Link to={`/orders/${order.id}`}>
+                        <Button variant="ghost" size="sm" icon={<Eye size={16} />} />
+                      </Link>
+                      {canCreateOrder && (
+                        <Link to={`/orders/${order.id}/edit`}>
+                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Table View */}
+          <table className="min-w-full divide-y divide-gray-200 hidden sm:table">
+            <thead className="bg-muted hidden sm:table-header-group">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   #
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Cliente
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Vendedor
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Fecha
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    {searchTerm || statusFilter !== 'all' 
+                  <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
+                    {searchTerm || statusFilter !== 'all' || monthYearFilter !== 'all'
                       ? 'No se encontraron pedidos con los filtros aplicados'
                       : 'No hay pedidos registrados'
                     }
@@ -198,7 +274,7 @@ export default function OrderList() {
                 </tr>
               ) : (
                 filteredOrders.map((order, index) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
+                  <tr key={order.id} className="hover:bg-muted/30">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         #{index + 1}
@@ -208,8 +284,6 @@ export default function OrderList() {
                       <div className="text-sm font-medium text-gray-900">
                         {order.client?.commercialName || 'Cliente no encontrado'}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        RUC: {order.client?.ruc || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -235,14 +309,12 @@ export default function OrderList() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <Link to={`/orders/${order.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
+                          <Button variant="ghost" size="sm" icon={<Eye size={16} />} className="hidden sm:inline-flex">
                           </Button>
                         </Link>
                         {canCreateOrder && (
                           <Link to={`/orders/${order.id}/edit`}>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="w-4 h-4" />
+                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex">
                             </Button>
                           </Link>
                         )}
@@ -253,7 +325,6 @@ export default function OrderList() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
     </div>
   );
