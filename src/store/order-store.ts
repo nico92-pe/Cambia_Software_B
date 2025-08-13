@@ -185,8 +185,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       set({ orders, isLoading: false });
       
-      console.log('🔍 Final Orders object:', orders);
-      console.log('🔍 First order details:', orders[0]);
+      console.log('🔍 Final Orders object:', JSON.stringify(orders, null, 2));
+      console.log('🔍 First order details:', JSON.stringify(orders[0], null, 2));
     } catch (error) {
       set({
         isLoading: false,
