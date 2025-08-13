@@ -90,9 +90,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           *,
           client:clients(
             *,
-            clientSalesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
+            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
           ),
-          salesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
+          orderSalesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
           createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
           order_items(
             *,
@@ -109,7 +109,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         console.log('🔍 Processing order:', {
           orderId: order.id,
           salespersonId: order.salespersonId,
-          rawSalesperson: row.salesperson
+          rawSalesperson: row.orderSalesperson
         });
 
         // Map client data
@@ -123,15 +123,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             district: row.client.district,
             province: row.client.province,
             salespersonId: row.client.salesperson_id,
-            salesperson: row.client.clientSalesperson
+            salesperson: row.client.salesperson
               ? {
-                  id: row.client.clientSalesperson.id,
-                  fullName: row.client.clientSalesperson.full_name,
+                  id: row.client.salesperson.id,
+                  fullName: row.client.salesperson.full_name,
                   email: '',
-                  phone: row.client.clientSalesperson.phone,
-                  birthday: row.client.clientSalesperson.birthday || '',
-                  cargo: row.client.clientSalesperson.cargo,
-                  role: row.client.clientSalesperson.role,
+                  phone: row.client.salesperson.phone,
+                  birthday: row.client.salesperson.birthday || '',
+                  cargo: row.client.salesperson.cargo,
+                  role: row.client.salesperson.role,
                 }
               : undefined,
             transport: row.client.transport,
@@ -143,15 +143,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         }
 
         // Map salesperson from the order itself - only if it exists
-        if (row.salesperson) {
+        if (row.orderSalesperson) {
           order.salesperson = {
-            id: row.salesperson.id,
-            fullName: row.salesperson.full_name,
+            id: row.orderSalesperson.id,
+            fullName: row.orderSalesperson.full_name,
             email: '',
-            phone: row.salesperson.phone,
-            birthday: row.salesperson.birthday || '',
-            cargo: row.salesperson.cargo,
-            role: row.salesperson.role,
+            phone: row.orderSalesperson.phone,
+            birthday: row.orderSalesperson.birthday || '',
+            cargo: row.orderSalesperson.cargo,
+            role: row.orderSalesperson.role,
           };
         }
 
