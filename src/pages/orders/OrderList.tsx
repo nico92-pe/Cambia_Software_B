@@ -309,7 +309,7 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {order.salesperson?.fullName || 'Vendedor no encontrado'}
+                        {order.salesperson?.fullName || 'Sin vendedor asignado'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

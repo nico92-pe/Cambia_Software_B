@@ -130,9 +130,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order.salesperson = {
             id: row.salesperson.id,
             fullName: row.salesperson.full_name,
-            email: '', 
+            email: '',
             phone: row.salesperson.phone,
-            birthday: '',
+            birthday: row.salesperson.birthday || '',
             cargo: row.salesperson.cargo,
             role: row.salesperson.role,
           };
@@ -211,7 +211,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           fullName: data.salesperson.full_name,
           email: '',
           phone: data.salesperson.phone,
-          birthday: '',
+          birthday: data.salesperson.birthday || '',
           cargo: data.salesperson.cargo,
           role: data.salesperson.role,
         };
