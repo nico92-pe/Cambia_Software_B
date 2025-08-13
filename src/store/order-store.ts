@@ -81,21 +81,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   isLoading: false,
   error: null,
 
-
-  getOrders: async () => {
+getOrders: async () => {
   set({ isLoading: true, error: null });
 
   try {
-    // Get orders with clients and salesperson from profiles
     const { data, error } = await supabase
       .from('orders')
       .select(`
         *,
         client:clients(
           *,
-          clientSalesperson:profiles(id, full_name, phone, cargo, role)
+          clientSalesperson:profiles(id, full_name, phone, cargo, role, birthday)
         ),
-        orderSalesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo,   role),
+        orderSalesperson:profiles!orders_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday),
         order_items(
           *,
           product:products(*)
@@ -103,9 +101,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       `)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     const orders = data.map(row => {
       const order = mapDbRowToOrder(row);
@@ -121,15 +117,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           district: row.client.district,
           province: row.client.province,
           salespersonId: row.client.salesperson_id,
-          salesperson: row.client.salesperson
+          salesperson: row.client.clientSalesperson
             ? {
-                id: row.client.salesperson.id,
-                fullName: row.client.salesperson.full_name,
+                id: row.client.clientSalesperson.id,
+                fullName: row.client.clientSalesperson.full_name,
                 email: '',
-                phone: row.client.salesperson.phone,
-                birthday: row.client.salesperson.birthday || '',
-                cargo: row.client.salesperson.cargo,
-                role: row.client.salesperson.role,
+                phone: row.client.clientSalesperson.phone,
+                birthday: row.client.clientSalesperson.birthday || '',
+                cargo: row.client.clientSalesperson.cargo,
+                role: row.client.clientSalesperson.role,
               }
             : undefined,
           transport: row.client.transport,
@@ -141,22 +137,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }
 
       // Map salesperson from the order itself
-      if (row.salesperson) {
+      if (row.orderSalesperson) {
         order.salesperson = {
-          id: row.salesperson.id,
-          fullName: row.salesperson.full_name,
+          id: row.orderSalesperson.id,
+          fullName: row.orderSalesperson.full_name,
           email: '',
-          phone: row.salesperson.phone,
-          birthday: '',
-          cargo: row.salesperson.cargo,
-          role: row.salesperson.role,
+          phone: row.orderSalesperson.phone,
+          birthday: row.orderSalesperson.birthday || '',
+          cargo: row.orderSalesperson.cargo,
+          role: row.orderSalesperson.role,
         };
       }
 
       return order;
     });
 
-    // Map order items for each order
+    // Map order items
     for (const order of orders) {
       const orderRow = data.find(row => row.id === order.id);
       order.items = (orderRow?.order_items || []).map(item => {
@@ -170,14 +166,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   } catch (error) {
     set({
       isLoading: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Error al cargar pedidos',
+      error: error instanceof Error ? error.message : 'Error al cargar pedidos',
     });
   }
 },
 
+  
   getOrderById: async (id) => {
     set({ isLoading: true, error: null });
     
