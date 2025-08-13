@@ -112,6 +112,7 @@ getOrders: async () => {
       console.error('🔍 Error fetching all profiles:', allProfilesError);
     } else {
       console.log('🔍 All available profiles:', allProfiles);
+      console.log('🔍 Available profile details:', JSON.stringify(allProfiles, null, 2));
     }
     
     const { data, error } = await supabase
@@ -192,6 +193,22 @@ getOrders: async () => {
       } else {
         console.log('🔍 No salesperson data found');
         console.log('🔍 Available keys in row:', Object.keys(row));
+        
+        // TEMPORARY FIX: Use the available profile as fallback
+        if (allProfiles && allProfiles.length > 0) {
+          console.log('🔍 Using fallback profile as salesperson');
+          const fallbackProfile = allProfiles[0];
+          order.salesperson = {
+            id: fallbackProfile.id,
+            fullName: fallbackProfile.full_name,
+            email: '',
+            phone: fallbackProfile.phone,
+            birthday: fallbackProfile.birthday || '',
+            cargo: fallbackProfile.cargo,
+            role: fallbackProfile.role,
+          };
+          console.log('🔍 Fallback salesperson assigned:', order.salesperson);
+        }
       }
 
       // Map createdByUser
