@@ -18,25 +18,6 @@ export function ClientList() {
 
   useEffect(() => {
     getClients();
-    
-    // Debug: Check what salespeople exist
-    const checkSalespeople = async () => {
-      const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
-      console.log('🔍 Available salespeople in system:', salespeople);
-      
-      // Check which clients have invalid salesperson references
-      const invalidClients = clients.filter(client => 
-        client.salespersonId && !salespeople.find(s => s.id === client.salespersonId)
-      );
-      
-      if (invalidClients.length > 0) {
-        console.log('⚠️ Clients with invalid salesperson references:', invalidClients);
-      }
-    };
-    
-    if (clients.length > 0) {
-      checkSalespeople();
-    }
   }, [getClients]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
