@@ -59,7 +59,6 @@ function App() {
           {/* Order routes */}
           <Route path="/orders" element={<OrderList />} />
           <Route path="/orders/new" element={<OrderForm />} />
-          <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/orders/edit/:id" element={<OrderEdit />} />
         </Route>
       </Route>

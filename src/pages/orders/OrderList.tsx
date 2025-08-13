@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Filter } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Filter } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useAuthStore } from '../../store/auth-store';
 import { UserRole, OrderStatus } from '../../lib/types';
@@ -26,14 +26,34 @@ const statusLabels = {
 };
 
 export default function OrderList() {
-  const { orders, isLoading, error, getOrders } = useOrderStore();
+  const { orders, isLoading, error, getOrders, deleteOrder } = useOrderStore();
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     getOrders();
   }, [getOrders]);
+
+  const handleDelete = async (id: string) => {
+    if (confirm('¿Está seguro de eliminar este pedido?')) {
+      try {
+        setDeleteLoading(id);
+        setDeleteError(null);
+        await deleteOrder(id);
+      } catch (error) {
+        if (error instanceof Error) {
+          setDeleteError(error.message);
+        } else {
+          setDeleteError('Error al eliminar el pedido');
+        }
+      } finally {
+        setDeleteLoading(null);
+      }
+    }
+  };
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
@@ -48,6 +68,7 @@ export default function OrderList() {
   });
 
   const canCreateOrder = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
+  const canEditDelete = user?.role === UserRole.SUPER_ADMIN;
 
   if (isLoading) {
     return (
@@ -77,6 +98,10 @@ export default function OrderList() {
 
       {error && (
         <Alert type="error" message={error} />
+      )}
+
+      {deleteError && (
+        <Alert type="error" message={deleteError} />
       )}
 
       {/* Filters */}
@@ -134,15 +159,17 @@ export default function OrderList() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
+                {canEditDelete && (
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={canEditDelete ? 7 : 6} className="px-6 py-12 text-center text-gray-500">
                     {searchTerm || statusFilter !== 'all' 
                       ? 'No se encontraron pedidos con los filtros aplicados'
                       : 'No hay pedidos registrados'
@@ -185,26 +212,31 @@ export default function OrderList() {
                         {new Date(order.createdAt).toLocaleDateString('es-PE')}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Link 
-                          to={`/orders/${order.id}`}
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
-                          title="Ver detalles"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                        {user?.role === UserRole.SUPER_ADMIN && (
+                    {canEditDelete && (
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
                           <Link 
                             to={`/orders/edit/${order.id}`}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-gray-600 hover:text-gray-900"
                             title="Editar pedido"
                           >
                             <Edit className="w-4 h-4" />
                           </Link>
-                        )}
-                      </div>
-                    </td>
+                          <button
+                            onClick={() => handleDelete(order.id)}
+                            disabled={deleteLoading === order.id}
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50"
+                            title="Eliminar pedido"
+                          >
+                            {deleteLoading === order.id ? (
+                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
