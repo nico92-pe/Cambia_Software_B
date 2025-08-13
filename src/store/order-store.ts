@@ -105,6 +105,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       
       const orders = data.map(row => {
         const order = mapDbRowToOrder(row);
+        
+        console.log('🔍 Processing order:', {
+          orderId: order.id,
+          salespersonId: order.salespersonId,
+          rawSalesperson: row.salesperson
+        });
 
         // Map client data
         if (row.client) {
