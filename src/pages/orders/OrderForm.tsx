@@ -24,6 +24,12 @@ interface OrderFormItem {
 export function OrderForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
+  // Debug logging
+  console.log('🔍 OrderForm loaded');
+  console.log('URL param id:', id);
+  console.log('Is edit mode:', Boolean(id));
+  
   const { user } = useAuthStore();
   const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, isLoading, error } = useOrderStore();
   const { clients, getClients } = useClientStore();
@@ -48,11 +54,14 @@ export function OrderForm() {
 
   useEffect(() => {
     const loadData = async () => {
+      console.log('🔄 Loading data...');
       await Promise.all([getClients(), getProducts(), getCategories()]);
       
       if (id) {
         try {
+          console.log('📝 Loading order with ID:', id);
           const orderData = await getOrderById(id);
+          console.log('📋 Order data loaded:', orderData);
           if (orderData) {
             setOrder(orderData);
             setSelectedClient(orderData.client);
@@ -71,11 +80,14 @@ export function OrderForm() {
             
             setOrderItems(formItems);
           } else {
+            console.log('❌ Order not found, redirecting to /orders');
             navigate('/orders');
           }
         } catch (error) {
-          console.error('Error loading order:', error);
+          console.error('❌ Error loading order:', error);
         }
+      } else {
+        console.log('✨ New order mode');
       }
     };
 
