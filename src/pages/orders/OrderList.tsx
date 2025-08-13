@@ -123,7 +123,7 @@ export default function OrderList() {
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border space-y-4">
+      <div className="bg-white p-4 rounded-lg shadow-sm border">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -155,9 +155,86 @@ export default function OrderList() {
 
       {/* Orders Table */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          {/* Mobile Card View */}
+          <div className="block sm:hidden">
+            <div className="space-y-4 p-4">
+              {filteredOrders.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  {searchTerm || statusFilter !== 'all' 
+                    ? 'No se encontraron pedidos con los filtros aplicados'
+                    : 'No hay pedidos registrados'
+                  }
+                </div>
+              ) : (
+                filteredOrders.map((order) => (
+                  <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">
+                          #{order.id.slice(0, 8)}...
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {order.client?.commercialName || 'Cliente no encontrado'}
+                        </p>
+                      </div>
+                      {canEditDelete && (
+                        <div className="flex items-center space-x-2 ml-4">
+                          <Link 
+                            to={`/orders/edit/${order.id}`}
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-gray-600 hover:text-gray-900"
+                            title="Editar pedido"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteClick(order)}
+                            disabled={deleteLoading === order.id}
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50"
+                            title="Eliminar pedido"
+                          >
+                            {deleteLoading === order.id ? (
+                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">RUC:</span>
+                        <span className="font-medium">{order.client?.ruc || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Vendedor:</span>
+                        <span>{order.salesperson?.fullName || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Estado:</span>
+                        <Badge className={statusColors[order.status]}>
+                          {statusLabels[order.status]}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Total:</span>
+                        <span className="font-medium">S/ {order.total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Fecha:</span>
+                        <span>{new Date(order.createdAt).toLocaleDateString('es-PE')}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          
+          {/* Desktop Table View */}
+          <table className="w-full hidden sm:table">
+            <thead className="bg-gray-50 border-b hidden sm:table-header-group">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ID Pedido
@@ -184,7 +261,7 @@ export default function OrderList() {
                 )}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
               {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={canEditDelete ? 7 : 6} className="px-6 py-12 text-center text-gray-500">
@@ -235,7 +312,7 @@ export default function OrderList() {
                         <div className="flex justify-end space-x-2">
                           <Link 
                             to={`/orders/edit/${order.id}`}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-gray-600 hover:text-gray-900"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-gray-600 hover:text-gray-900 hidden sm:inline-flex"
                             title="Editar pedido"
                           >
                             <Edit className="w-4 h-4" />
@@ -243,7 +320,7 @@ export default function OrderList() {
                           <button
                             onClick={() => handleDeleteClick(order)}
                             disabled={deleteLoading === order.id}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-red-600 hover:text-red-900 hover:bg-red-50 hidden sm:inline-flex"
                             title="Eliminar pedido"
                           >
                             {deleteLoading === order.id ? (

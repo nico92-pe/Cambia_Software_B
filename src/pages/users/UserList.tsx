@@ -89,20 +89,20 @@ export function UserList() {
 
       <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
         <div className="card-header border-b">
-          <div className="relative">
+          <div className="relative mb-4 sm:mb-0">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
               <Search size={18} />
             </div>
             <input
               type="text"
-              className="input pl-10"
+              className="input pl-10 w-full"
               placeholder="Buscar por nombre, email o cargo..."
               value={searchTerm}
               onChange={handleSearch}
             />
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader />
@@ -123,8 +123,54 @@ export function UserList() {
               )}
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-muted">
+            <div className="block sm:hidden">
+              {/* Mobile Card View */}
+              <div className="space-y-4 p-4">
+                {filteredUsers.map((user) => (
+                  <div key={user.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center flex-1">
+                        <Avatar name={user.fullName} size="sm" className="mr-3" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">{user.fullName}</h3>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <Link to={`/users/edit/${user.id}`}>
+                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Trash size={16} />}
+                          onClick={() => handleDelete(user.id)}
+                          loading={deleteLoading === user.id}
+                          disabled={user.role === UserRole.SUPER_ADMIN}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Cargo:</span>
+                        <span className="font-medium">{user.cargo}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Rol:</span>
+                        {getRoleBadge(user.role)}
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Teléfono:</span>
+                        <span>{user.phone}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <table className="min-w-full divide-y divide-gray-200 hidden sm:table">
+              <thead className="bg-muted hidden sm:table-header-group">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Usuario
@@ -143,7 +189,7 @@ export function UserList() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
                 {filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-muted/30">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -167,7 +213,7 @@ export function UserList() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end space-x-2">
                         <Link to={`/users/edit/${user.id}`}>
-                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex" />
                         </Link>
                         <Button
                           variant="ghost"
@@ -176,7 +222,7 @@ export function UserList() {
                           onClick={() => handleDelete(user.id)}
                           loading={deleteLoading === user.id}
                           disabled={user.role === UserRole.SUPER_ADMIN}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 hidden sm:inline-flex"
                         />
                       </div>
                     </td>
