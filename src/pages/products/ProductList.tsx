@@ -170,111 +170,200 @@ export function ProductList() {
               )}
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-muted">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Imagen
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Producto
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Categoría
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Precio Mayorista
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Precio Minorista
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Unidades/Caja
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Stock
-                  </th>
-                  {!isAsesorVentas && (
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-muted/30">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => handleProductClick(product)}
-                        />
-                      ) : (
-                        <div 
-                          className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
-                          onClick={() => handleProductClick(product)}
-                        >
-                          <Package className="h-6 w-6 text-gray-400" />
+            <>
+              {/* Mobile Card View */}
+              <div className="block sm:hidden">
+                <div className="space-y-4 p-4">
+                  {filteredProducts.map((product) => (
+                    <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-start gap-4 mb-3">
+                        <div className="flex-shrink-0">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => handleProductClick(product)}
+                            />
+                          ) : (
+                            <div 
+                              className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                              onClick={() => handleProductClick(product)}
+                            >
+                              <Package className="h-8 w-8 text-gray-400" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div 
-                          className="font-medium cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => handleProductClick(product)}
-                        >
-                          {product.name}
-                        </div>
-                        <div 
-                          className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => handleProductClick(product)}
-                        >
-                          Código: {product.code}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h3 
+                                className="font-medium text-gray-900 cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => handleProductClick(product)}
+                              >
+                                {product.name}
+                              </h3>
+                              <p 
+                                className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => handleProductClick(product)}
+                              >
+                                Código: {product.code}
+                              </p>
+                            </div>
+                            {!isAsesorVentas && (
+                              <div className="flex items-center space-x-2 ml-4">
+                                <Link to={`/products/edit/${product.id}`}>
+                                  <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                                </Link>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  icon={<Trash size={16} />}
+                                  onClick={() => handleDelete(product.id)}
+                                  loading={deleteLoading === product.id}
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge>
-                        {getCategoryName(product.categoryId)}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium">{formatCurrency(product.wholesalePrice)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium">{formatCurrency(product.retailPrice)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">{product.unitsPerBox}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium">{product.stock || 0}</div>
-                    </td>
-                    {!isAsesorVentas && (
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Link to={`/products/edit/${product.id}`}>
-                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                          </Link>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={<Trash size={16} />}
-                            onClick={() => handleDelete(product.id)}
-                            loading={deleteLoading === product.id}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          />
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Categoría:</span>
+                          <Badge>
+                            {getCategoryName(product.categoryId)}
+                          </Badge>
                         </div>
-                      </td>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Precio Mayorista:</span>
+                          <span className="font-medium">{formatCurrency(product.wholesalePrice)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Precio Minorista:</span>
+                          <span className="font-medium">{formatCurrency(product.retailPrice)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Unidades/Caja:</span>
+                          <span>{product.unitsPerBox}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Stock:</span>
+                          <span className="font-medium">{product.stock || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Desktop Table View */}
+              <table className="min-w-full divide-y divide-gray-200 hidden sm:table">
+                <thead className="bg-muted hidden sm:table-header-group">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Imagen
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Producto
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Categoría
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Precio Mayorista
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Precio Minorista
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Unidades/Caja
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Stock
+                    </th>
+                    {!isAsesorVentas && (
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Acciones
+                      </th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
+                  {filteredProducts.map((product) => (
+                    <tr key={product.id} className="hover:bg-muted/30">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => handleProductClick(product)}
+                          />
+                        ) : (
+                          <div 
+                            className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                            onClick={() => handleProductClick(product)}
+                          >
+                            <Package className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div 
+                            className="font-medium cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => handleProductClick(product)}
+                          >
+                            {product.name}
+                          </div>
+                          <div 
+                            className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => handleProductClick(product)}
+                          >
+                            Código: {product.code}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge>
+                          {getCategoryName(product.categoryId)}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium">{formatCurrency(product.wholesalePrice)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium">{formatCurrency(product.retailPrice)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm">{product.unitsPerBox}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium">{product.stock || 0}</div>
+                      </td>
+                      {!isAsesorVentas && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Link to={`/products/edit/${product.id}`}>
+                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex" />
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Trash size={16} />}
+                              onClick={() => handleDelete(product.id)}
+                              loading={deleteLoading === product.id}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 hidden sm:inline-flex"
+                            />
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
       </div>
