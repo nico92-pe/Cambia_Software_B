@@ -14,12 +14,12 @@ export function formatDate(date: Date): string {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('es-ES', {
+  return new Intl.NumberFormat('es-PE', {
     style: 'currency',
     currency: 'PEN',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount).replace('PEN', 'S/');
+  }).format(amount).replace('PEN', 'S/').replace('S/\u00A0', 'S/ ');
 }
 
 export function getInitials(name: string): string {

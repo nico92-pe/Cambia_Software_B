@@ -299,60 +299,69 @@ export function OrderForm() {
       )}
 
       <div className="space-y-6">
-        {/* Client Selection */}
-        <div className="card">
-          <div className="card-header">
-            <h2 className="card-title">Seleccionar Cliente</h2>
-            <p className="card-description">
-              Busca por RUC, nombre comercial o razón social
-            </p>
-          </div>
-          <div className="card-content">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                <Search size={18} />
-              </div>
-              <input
-                id="client-search"
-                name="clientSearch"
-                type="text"
-                className="input pl-10"
-                placeholder="Buscar cliente..."
-                value={clientSearch}
-                onChange={(e) => {
-                  setClientSearch(e.target.value);
-                  setShowClientResults(true);
-                  if (!e.target.value) {
-                    setSelectedClient(null);
-                  }
-                }}
-                onFocus={() => setShowClientResults(true)}
-              />
-              
-              {showClientResults && clientSearch && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                  {filteredClients.length > 0 ? (
-                    filteredClients.map((client) => (
-                      <button
-                        key={client.id}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                        onClick={() => handleClientSelect(client)}
-                      >
-                        <div className="font-medium">{client.commercialName}</div>
-                        <div className="text-sm text-gray-500">{client.businessName}</div>
-                        <div className="text-sm text-gray-500">RUC: {client.ruc}</div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-3 text-gray-500">No se encontraron clientes</div>
-                  )}
-                </div>
-              )}
+        {/* Client Selection - Only show in create mode */}
+        {!isEditMode && (
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Seleccionar Cliente</h2>
+              <p className="card-description">
+                Busca por RUC, nombre comercial o razón social
+              </p>
             </div>
-            
-            {selectedClient && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium mb-2">Cliente Seleccionado</h3>
+            <div className="card-content">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                  <Search size={18} />
+                </div>
+                <input
+                  id="client-search"
+                  name="clientSearch"
+                  type="text"
+                  className="input pl-10"
+                  placeholder="Buscar cliente..."
+                  value={clientSearch}
+                  onChange={(e) => {
+                    setClientSearch(e.target.value);
+                    setShowClientResults(true);
+                    if (!e.target.value) {
+                      setSelectedClient(null);
+                    }
+                  }}
+                  onFocus={() => setShowClientResults(true)}
+                />
+                
+                {showClientResults && clientSearch && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {filteredClients.length > 0 ? (
+                      filteredClients.map((client) => (
+                        <button
+                          key={client.id}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                          onClick={() => handleClientSelect(client)}
+                        >
+                          <div className="font-medium">{client.commercialName}</div>
+                          <div className="text-sm text-gray-500">{client.businessName}</div>
+                          <div className="text-sm text-gray-500">RUC: {client.ruc}</div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-gray-500">No se encontraron clientes</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Client Selected - Show in both modes */}
+        {selectedClient && (
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Cliente Seleccionado</h2>
+            </div>
+            <div className="card-content">
+              <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Nombre Comercial:</span> {selectedClient.commercialName}
@@ -373,11 +382,11 @@ export function OrderForm() {
                   )}
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Product Selection */}
+        {/* Product Selection - Only in create mode */}
         {selectedClient && !isEditMode && (
           <div className="card animate-in fade-in duration-300">
             <div className="card-header">
@@ -516,7 +525,7 @@ export function OrderForm() {
                             id={`quantity-${index}`}
                             name={`quantity-${index}`}
                             type="number"
-                            min="1"
+                            min="0"
                             className="input w-20"
                             value={item.quantity}
                             onChange={(e) => updateOrderItemLocal(index, 'quantity', parseInt(e.target.value) || 0)}
@@ -623,8 +632,6 @@ export function OrderForm() {
               {isEditMode ? 'Actualizar Pedido' : 'Confirmar Pedido'}
             </Button>
           </div>
-        )}
-      </div>
 
       {/* Confirmation Modal */}
       <Modal

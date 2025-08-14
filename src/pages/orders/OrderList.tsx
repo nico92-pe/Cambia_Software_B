@@ -32,7 +32,8 @@ export default function OrderList() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
-  const [monthYearFilter, setMonthYearFilter] = useState('all');
+  const [monthFilter, setMonthFilter] = useState('all');
+  const [yearFilter, setYearFilter] = useState('');
   
   // Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -46,11 +47,13 @@ export default function OrderList() {
     getOrders();
   }, [getOrders]);
 
-  // Set current month/year as default filter
+  // Set current month/year as default filters
   useEffect(() => {
     const currentDate = new Date();
-    const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-    setMonthYearFilter(currentMonthYear);
+    const currentMonth = String(currentDate.getMonth() + 1);
+    const currentYear = String(currentDate.getFullYear());
+    setMonthFilter(currentMonth);
+    setYearFilter(currentYear);
   }, []);
 
   const handleDeleteClick = (orderId: string) => {
@@ -90,13 +93,18 @@ export default function OrderList() {
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
-    const matchesMonth = monthYearFilter === 'all' || (() => {
+    const matchesDate = (monthFilter === 'all' && yearFilter === '') || (() => {
       const orderDate = new Date(order.createdAt);
-      const orderMonthYear = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
-      return orderMonthYear === monthYearFilter;
+      const orderMonth = String(orderDate.getMonth() + 1);
+      const orderYear = String(orderDate.getFullYear());
+      
+      const matchesMonth = monthFilter === 'all' || orderMonth === monthFilter;
+      const matchesYear = yearFilter === '' || orderYear === yearFilter;
+      
+      return matchesMonth && matchesYear;
     })();
     
-    return matchesSearch && matchesStatus && matchesMonth;
+    return matchesSearch && matchesStatus && matchesDate;
   }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); // Oldest to newest
 
   const canCreateOrder = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
@@ -153,38 +161,38 @@ export default function OrderList() {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mes y Año
+              Mes
             </label>
-            <select
-              value={monthYearFilter}
-              onChange={(e) => setMonthYearFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[140px]"
-            >
-              <option value="all">Todos los meses</option>
-              {(() => {
-                const options = [];
-                const currentDate = new Date();
-                
-                for (let i = 0; i < 12; i++) {
-                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-                  const year = date.getFullYear();
-                  const month = date.getMonth() + 1;
-                  const value = `${year}-${String(month).padStart(2, '0')}`;
-                  const label = date.toLocaleDateString('es-PE', { 
-                    year: 'numeric', 
-                    month: 'long' 
-                  });
-                  
-                  options.push(
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  );
-                }
-                
-                return options;
-              })()}
-            </select>
+            <div className="flex gap-2">
+              <select
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Todos</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+              <input
+                type="number"
+                placeholder="Año"
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-20"
+                min="2020"
+                max="2030"
+              />
+            </div>
           </div>
           
           <div>
@@ -333,7 +341,7 @@ export default function OrderList() {
               {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
-                    {searchTerm || statusFilter !== 'all' || monthYearFilter !== 'all'
+                    {searchTerm || statusFilter !== 'all' || monthFilter !== 'all' || yearFilter !== ''
                       ? 'No se encontraron pedidos con los filtros aplicados'
                       : 'No hay pedidos registrados'
                     }
