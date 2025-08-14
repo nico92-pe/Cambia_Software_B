@@ -46,6 +46,13 @@ export default function OrderList() {
     getOrders();
   }, [getOrders]);
 
+  // Set current month/year as default filter
+  useEffect(() => {
+    const currentDate = new Date();
+    const currentMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+    setMonthYearFilter(currentMonthYear);
+  }, []);
+
   const handleDeleteClick = (orderId: string) => {
     setOrderToDelete(orderId);
     setShowDeleteModal(true);
@@ -83,8 +90,14 @@ export default function OrderList() {
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
-  });
+    const matchesMonth = monthYearFilter === 'all' || (() => {
+      const orderDate = new Date(order.createdAt);
+      const orderMonthYear = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
+      return orderMonthYear === monthYearFilter;
+    })();
+    
+    return matchesSearch && matchesStatus && matchesMonth;
+  }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); // Oldest to newest
 
   const canCreateOrder = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
   const canManageOrders = user?.role && ['super_admin', 'admin'].includes(user.role);

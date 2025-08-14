@@ -366,6 +366,11 @@ export function OrderForm() {
                   <div>
                     <span className="font-medium">Dirección:</span> {selectedClient.address}, {selectedClient.district}, {selectedClient.province}
                   </div>
+                  {selectedClient.salesperson && (
+                    <div>
+                      <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -373,7 +378,7 @@ export function OrderForm() {
         </div>
 
         {/* Product Selection */}
-        {selectedClient && (
+        {selectedClient && !isEditMode && (
           <div className="card animate-in fade-in duration-300">
             <div className="card-header">
               <h2 className="card-title">Agregar Productos</h2>
@@ -514,7 +519,7 @@ export function OrderForm() {
                             min="1"
                             className="input w-20"
                             value={item.quantity}
-                            onChange={(e) => updateOrderItemLocal(index, 'quantity', parseInt(e.target.value) || 1)}
+                            onChange={(e) => updateOrderItemLocal(index, 'quantity', parseInt(e.target.value) || 0)}
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -598,16 +603,18 @@ export function OrderForm() {
               onClick={() => handleAction('delete')}
               disabled={isLoading}
             >
-              {isEditMode ? 'Cancelar' : 'Eliminar'}
+              Cancelar
             </Button>
-            <Button
-              variant="outline"
-              icon={<Save size={18} />}
-              onClick={() => handleAction('draft')}
-              disabled={isLoading || orderItems.length === 0}
-            >
-              Guardar Borrador
-            </Button>
+            {!isEditMode && (
+              <Button
+                variant="outline"
+                icon={<Save size={18} />}
+                onClick={() => handleAction('draft')}
+                disabled={isLoading || orderItems.length === 0}
+              >
+                Guardar Borrador
+              </Button>
+            )}
             <Button
               icon={<FileText size={18} />}
               onClick={() => handleAction('confirm')}

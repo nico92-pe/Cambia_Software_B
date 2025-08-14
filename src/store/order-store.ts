@@ -89,7 +89,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .from('orders')
         .select(`
           *,
-          client:clients(*),
+          client:clients(
+            *,
+            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
+          ),
           createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
           order_items(
             *,
@@ -143,7 +146,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             district: row.client.district,
             province: row.client.province,
             salespersonId: row.client.salesperson_id,
-            salesperson: row.client.salesperson_id ? salespeopleMap.get(row.client.salesperson_id) : undefined,
+            salesperson: row.client.salesperson ? {
+              id: row.client.salesperson.id,
+              fullName: row.client.salesperson.full_name,
+              email: '',
+              phone: row.client.salesperson.phone,
+              birthday: row.client.salesperson.birthday || '',
+              cargo: row.client.salesperson.cargo,
+              role: row.client.salesperson.role,
+            } : undefined,
             transport: row.client.transport,
             transportAddress: row.client.transport_address,
             transportDistrict: row.client.transport_district,
