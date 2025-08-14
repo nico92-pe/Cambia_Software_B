@@ -146,12 +146,13 @@ export function OrderForm() {
 
   const updateOrderItemLocal = (index: number, field: 'quantity' | 'unitPrice', value: number) => {
     const updatedItems = [...orderItems];
+    const numericValue = isNaN(value) ? 0 : value;
     updatedItems[index] = {
       ...updatedItems[index],
-      [field]: value,
+      [field]: numericValue,
       subtotal: field === 'quantity' 
-        ? value * updatedItems[index].unitPrice
-        : updatedItems[index].quantity * value
+        ? numericValue * updatedItems[index].unitPrice
+        : updatedItems[index].quantity * numericValue
     };
     setOrderItems(updatedItems);
   };
@@ -161,9 +162,9 @@ export function OrderForm() {
   };
 
   // Calculate totals
-  const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
-  const subtotal = total / 1.18;
-  const igv = subtotal * 0.18;
+  const subtotalAmount = orderItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  const igvAmount = subtotalAmount * 0.18;
+  const totalAmount = subtotalAmount + igvAmount;
 
   const handleAction = (action: 'draft' | 'delete' | 'confirm') => {
     setConfirmAction(action);
@@ -528,7 +529,14 @@ export function OrderForm() {
                             min="0"
                             className="input w-20"
                             value={item.quantity}
-                            onChange={(e) => updateOrderItemLocal(index, 'quantity', parseInt(e.target.value) || 0)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || value === '0') {
+                                updateOrderItemLocal(index, 'quantity', 0);
+                              } else {
+                                updateOrderItemLocal(index, 'quantity', parseInt(value) || 0);
+                              }
+                            }}
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -540,11 +548,18 @@ export function OrderForm() {
                             min="0"
                             className="input w-32"
                             value={item.unitPrice}
-                            onChange={(e) => updateOrderItemLocal(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '') {
+                                updateOrderItemLocal(index, 'unitPrice', 0);
+                              } else {
+                                updateOrderItemLocal(index, 'unitPrice', parseFloat(value) || 0);
+                              }
+                            }}
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap font-medium">
-                          {formatCurrency(item.subtotal)}
+                          {formatCurrency(item.quantity * item.unitPrice)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <Button
@@ -567,15 +582,15 @@ export function OrderForm() {
                   <div className="w-80 space-y-2">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span className="font-medium">{formatCurrency(subtotal)}</span>
+                      <span className="font-medium">{formatCurrency(subtotalAmount)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>IGV (18%):</span>
-                      <span className="font-medium">{formatCurrency(igv)}</span>
+                      <span className="font-medium">{formatCurrency(igvAmount)}</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold border-t pt-2">
                       <span>Total:</span>
-                      <span>{formatCurrency(total)}</span>
+                      <span>{formatCurrency(totalAmount)}</span>
                     </div>
                   </div>
                 </div>
