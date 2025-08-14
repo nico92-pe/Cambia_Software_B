@@ -69,7 +69,7 @@ export function ClientForm() {
 
     loadData();
     loadClient();
-  }, [id, getClientById, getUsers, reset, navigate]);
+  }, [id, getClientById, getUsers, reset, navigate, isCurrentUserSalesperson, currentUser]);
 
   // Filter salespeople from loaded users
   useEffect(() => {

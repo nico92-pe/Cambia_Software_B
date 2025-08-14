@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Filter, Bug } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Filter } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useAuthStore } from '../../store/auth-store';
 import { UserRole, OrderStatus } from '../../lib/types';
@@ -32,7 +32,12 @@ const statusLabels = {
 };
 
 const formatCurrency = (amount: number) => {
-  return `S/ ${amount.toFixed(2)}`;
+  return new Intl.NumberFormat('es-PE', {
+    style: 'currency',
+    currency: 'PEN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount).replace('PEN', 'S/');
 };
 
 export default function OrderList() {
@@ -41,21 +46,6 @@ export default function OrderList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [monthYearFilter, setMonthYearFilter] = useState('all');
-
-  // Debug function
-  const debugOrderEdit = (order: any) => {
-    console.log('🐛 DEBUG: Order Edit clicked');
-    console.log('Order ID:', order.id);
-    console.log('Order object:', order);
-    console.log('Current user:', user);
-    console.log('User role:', user?.role);
-    console.log('Edit URL would be:', `/orders/edit/${order.id}`);
-    
-    // Test if Link component works
-    const link = document.createElement('a');
-    link.href = `/orders/edit/${order.id}`;
-    console.log('Generated link href:', link.href);
-  };
 
   useEffect(() => {
     getOrders();
@@ -331,42 +321,9 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        {/* Debug button */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={<Bug size={16} />}
-                          onClick={() => debugOrderEdit(order)}
-                          className="mr-2"
-                        >
-                          Debug
-                        </Button>
-                        
-                        {/* Direct navigation button for testing */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            console.log('🔧 Direct navigation test');
-                            window.location.href = `/orders/edit/${order.id}`;
-                          }}
-                        >
-                          Direct Nav
-                        </Button>
-                        
                         <Link to={`/orders/edit/${order.id}`}>
                           <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
                         </Link>
-                        
-                        {/* Debug button for mobile */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={<Bug size={16} />}
-                          onClick={() => debugOrderEdit(order)}
-                        >
-                          Debug
-                        </Button>
                       </div>
                     </td>
                   </tr>
