@@ -632,6 +632,8 @@ export function OrderForm() {
               {isEditMode ? 'Actualizar Pedido' : 'Confirmar Pedido'}
             </Button>
           </div>
+        )}
+      </div>
 
       {/* Confirmation Modal */}
       <Modal
