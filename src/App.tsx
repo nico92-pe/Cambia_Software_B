@@ -59,17 +59,7 @@ function App() {
           {/* Order routes */}
           <Route path="/orders" element={<OrderList />} />
           <Route path="/orders/new" element={<OrderForm />} />
-          <Route 
-            path="/orders/edit/:id" 
-            element={
-              <div>
-                <div style={{padding: '10px', background: '#e3f2fd', margin: '10px', borderRadius: '4px'}}>
-                  🔧 DEBUG: OrderForm Edit Route Loaded
-                </div>
-                <OrderForm />
-              </div>
-            } 
-          />
+          <Route path="/orders/edit/:id" element={<OrderForm />} />
         </Route>
       </Route>
       

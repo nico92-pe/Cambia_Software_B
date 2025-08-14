@@ -531,10 +531,11 @@ export function OrderForm() {
                             value={item.quantity}
                             onChange={(e) => {
                               const value = e.target.value;
-                              if (value === '' || value === '0') {
+                              if (value === '') {
                                 updateOrderItemLocal(index, 'quantity', 0);
                               } else {
-                                updateOrderItemLocal(index, 'quantity', parseInt(value) || 0);
+                                const numericValue = parseInt(value);
+                                updateOrderItemLocal(index, 'quantity', isNaN(numericValue) ? 0 : numericValue);
                               }
                             }}
                           />
@@ -553,7 +554,8 @@ export function OrderForm() {
                               if (value === '') {
                                 updateOrderItemLocal(index, 'unitPrice', 0);
                               } else {
-                                updateOrderItemLocal(index, 'unitPrice', parseFloat(value) || 0);
+                                const numericValue = parseFloat(value);
+                                updateOrderItemLocal(index, 'unitPrice', isNaN(numericValue) ? 0 : numericValue);
                               }
                             }}
                           />
@@ -622,13 +624,6 @@ export function OrderForm() {
         {/* Action Buttons */}
         {selectedClient && (
           <div className="flex justify-end space-x-4 animate-in fade-in duration-300">
-            <Button
-              variant="outline"
-              onClick={() => handleAction('delete')}
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
             {!isEditMode && (
               <Button
                 variant="outline"
