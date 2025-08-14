@@ -22,8 +22,13 @@ export function DashboardLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  
+  // Auto-close sidebar when location changes
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
   
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
