@@ -162,9 +162,9 @@ export function OrderForm() {
   };
 
   // Calculate totals
-  const subtotalAmount = orderItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  const totalAmount = orderItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  const subtotalAmount = totalAmount / 1.18;
   const igvAmount = subtotalAmount * 0.18;
-  const totalAmount = subtotalAmount + igvAmount;
 
   const handleAction = (action: 'draft' | 'delete' | 'confirm') => {
     setConfirmAction(action);
@@ -561,7 +561,7 @@ export function OrderForm() {
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap font-medium">
-                          {formatCurrency(item.quantity * item.unitPrice)}
+                          {formatCurrency(item.subtotal)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <Button
