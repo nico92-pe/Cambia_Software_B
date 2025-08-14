@@ -225,11 +225,11 @@ export default function OrderList() {
                   <div className="mx-auto h-12 w-12 text-muted-foreground opacity-30">📋</div>
                   <h3 className="mt-4 text-lg font-medium">No se encontraron pedidos</h3>
                   <p className="mt-1 text-muted-foreground">
-                    {searchTerm || statusFilter !== 'all' || monthYearFilter !== 'all'
+                    {searchTerm || statusFilter !== 'all' || monthFilter !== 'all' || yearFilter !== ''
                       ? 'No hay resultados para tu búsqueda'
                       : 'Comienza creando un nuevo pedido'}
                   </p>
-                  {!searchTerm && statusFilter === 'all' && monthYearFilter === 'all' && canCreateOrder && (
+                  {!searchTerm && statusFilter === 'all' && monthFilter === 'all' && yearFilter === '' && canCreateOrder && (
                     <Link to="/orders/new" className="mt-6 inline-block">
                       <Button icon={<Plus size={18} />}>Nuevo Pedido</Button>
                     </Link>
