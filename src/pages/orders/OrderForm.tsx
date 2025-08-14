@@ -561,7 +561,7 @@ export function OrderForm() {
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap font-medium">
-                          {formatCurrency(item.subtotal)}
+                          {formatCurrency(item.quantity * item.unitPrice)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <Button
