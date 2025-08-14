@@ -376,11 +376,9 @@ export function OrderForm() {
                   <div>
                     <span className="font-medium">Dirección:</span> {selectedClient.address}, {selectedClient.district}, {selectedClient.province}
                   </div>
-                  {selectedClient.salesperson && (
-                    <div>
-                      <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
-                    </div>
-                  )}
+                  <div>
+                    <span className="font-medium">Vendedor:</span> {selectedClient.salesperson?.fullName || 'Sin vendedor asignado'}
+                  </div>
                 </div>
               </div>
             </div>
