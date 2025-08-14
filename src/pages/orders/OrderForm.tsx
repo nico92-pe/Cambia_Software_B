@@ -388,7 +388,7 @@ export function OrderForm() {
         )}
 
         {/* Product Selection - Only in create mode */}
-        {selectedClient && !isEditMode && (
+        {selectedClient && (
           <div className="card animate-in fade-in duration-300">
             <div className="card-header">
               <h2 className="card-title">Agregar Productos</h2>
