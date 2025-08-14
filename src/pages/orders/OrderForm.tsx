@@ -1,16 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Search, Plus, Trash2, Save, FileText, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Trash2, Save, FileText, AlertTriangle, ChevronDown } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useClientStore } from '../../store/client-store';
 import { useProductStore } from '../../store/product-store';
 import { useAuthStore } from '../../store/auth-store';
-import { OrderStatus, Client, Product, OrderItem } from '../../lib/types';
+import { OrderStatus, Client, Product, OrderItem, UserRole } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
 import { Modal } from '../../components/ui/Modal';
 import { formatCurrency } from '../../lib/utils';
+
+const statusLabels = {
+  borrador: 'Borrador',
+  tomado: 'Tomado',
+  confirmado: 'Confirmado',
+  en_preparacion: 'En Preparación',
+  despachado: 'Despachado',
+};
 
 interface OrderFormItem {
   id?: string;
@@ -34,6 +42,7 @@ export function OrderForm() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clientSearch, setClientSearch] = useState('');
   const [showClientResults, setShowClientResults] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(OrderStatus.BORRADOR);
   
   const [productSearch, setProductSearch] = useState('');
   const [showProductResults, setShowProductResults] = useState(false);
@@ -46,6 +55,7 @@ export function OrderForm() {
   const [confirmAction, setConfirmAction] = useState<'draft' | 'delete' | 'confirm' | null>(null);
   
   const isEditMode = Boolean(id);
+  const canManageOrders = user?.role && ['super_admin', 'admin'].includes(user.role);
 
   useEffect(() => {
     const loadData = async () => {
@@ -73,6 +83,7 @@ export function OrderForm() {
           setSelectedClient(orderData.client || null);
           setClientSearch(orderData.client?.commercialName || '');
           setObservations(orderData.observations || '');
+          setCurrentStatus(orderData.status);
           
           // Convert order items to form items
           const formItems = orderData.items?.map(item => ({
@@ -174,6 +185,7 @@ export function OrderForm() {
         await updateOrder(id, {
           clientId: selectedClient.id,
           observations,
+          status: currentStatus,
         });
 
         // Handle order items changes
@@ -442,7 +454,26 @@ export function OrderForm() {
         {orderItems.length > 0 && (
           <div className="card animate-in fade-in duration-300">
             <div className="card-header">
-              <h2 className="card-title">Productos del Pedido</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="card-title">Productos del Pedido</h2>
+                {isEditMode && canManageOrders && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium">Estado:</label>
+                    <div className="relative">
+                      <select
+                        value={currentStatus}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                      >
+                        {Object.entries(statusLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="card-content">
               <div className="overflow-x-auto">

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Filter } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Filter, AlertTriangle } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useAuthStore } from '../../store/auth-store';
 import { UserRole, OrderStatus } from '../../lib/types';
@@ -8,48 +8,74 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Loader } from '../../components/ui/Loader';
 import { Alert } from '../../components/ui/Alert';
+import { Modal } from '../../components/ui/Modal';
+import { formatCurrency } from '../../lib/utils';
 
 const statusColors = {
   borrador: 'bg-gray-100 text-gray-800',
-  pendiente: 'bg-yellow-100 text-yellow-800',
+  tomado: 'bg-yellow-100 text-yellow-800',
   confirmado: 'bg-blue-100 text-blue-800',
   en_preparacion: 'bg-purple-100 text-purple-800',
-  listo: 'bg-green-100 text-green-800',
   despachado: 'bg-indigo-100 text-indigo-800',
-  entregado: 'bg-emerald-100 text-emerald-800',
-  cancelado: 'bg-red-100 text-red-800',
 };
 
 const statusLabels = {
   borrador: 'Borrador',
-  pendiente: 'Pendiente',
+  tomado: 'Tomado',
   confirmado: 'Confirmado',
   en_preparacion: 'En Preparación',
-  listo: 'Listo',
   despachado: 'Despachado',
-  entregado: 'Entregado',
-  cancelado: 'Cancelado',
-};
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount).replace('PEN', 'S/');
 };
 
 export default function OrderList() {
-  const { orders, isLoading, error, getOrders } = useOrderStore();
+  const { orders, isLoading, error, getOrders, deleteOrder, updateOrderStatus } = useOrderStore();
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [monthYearFilter, setMonthYearFilter] = useState('all');
+  
+  // Modal states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // Status update states
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   useEffect(() => {
     getOrders();
   }, [getOrders]);
+
+  const handleDeleteClick = (orderId: string) => {
+    setOrderToDelete(orderId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!orderToDelete) return;
+    
+    try {
+      setDeleteLoading(true);
+      await deleteOrder(orderToDelete);
+      setShowDeleteModal(false);
+      setOrderToDelete(null);
+    } catch (error) {
+      // Error handled by store
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      setUpdatingStatus(orderId);
+      await updateOrderStatus(orderId, newStatus);
+    } catch (error) {
+      // Error handled by store
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
@@ -61,6 +87,7 @@ export default function OrderList() {
   });
 
   const canCreateOrder = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
+  const canManageOrders = user?.role && ['super_admin', 'admin'].includes(user.role);
 
   if (isLoading) {
     return (
@@ -214,13 +241,26 @@ export default function OrderList() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Estado:</span>
-                        <Badge className={statusColors[order.status]}>
-                          {statusLabels[order.status]}
-                        </Badge>
+                        {canManageOrders ? (
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                            disabled={updatingStatus === order.id}
+                            className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            {Object.entries(statusLabels).map(([value, label]) => (
+                              <option key={value} value={value}>{label}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <Badge className={statusColors[order.status]}>
+                            {statusLabels[order.status]}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Total:</span>
-                        <span className="font-medium">S/ {order.total.toFixed(2)}</span>
+                        <span className="font-medium">{formatCurrency(order.total)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Fecha:</span>
@@ -228,13 +268,19 @@ export default function OrderList() {
                       </div>
                     </div>
                     <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
-                      <Link to={`/orders/${order.id}`}>
-                        <Button variant="ghost" size="sm" icon={<Eye size={16} />} />
-                      </Link>
                       {canCreateOrder && (
-                        <Link to={`/orders/${order.id}/edit`}>
+                        <Link to={`/orders/edit/${order.id}`}>
                           <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
                         </Link>
+                      )}
+                      {canManageOrders && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Trash2 size={16} />}
+                          onClick={() => handleDeleteClick(order.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        />
                       )}
                     </div>
                   </div>
@@ -305,9 +351,22 @@ export default function OrderList() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={statusColors[order.status]}>
-                        {statusLabels[order.status]}
-                      </Badge>
+                      {canManageOrders ? (
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                          disabled={updatingStatus === order.id}
+                          className="px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        >
+                          {Object.entries(statusLabels).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Badge className={statusColors[order.status]}>
+                          {statusLabels[order.status]}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -321,9 +380,20 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <Link to={`/orders/edit/${order.id}`}>
-                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                        </Link>
+                        {canCreateOrder && (
+                          <Link to={`/orders/edit/${order.id}`}>
+                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                          </Link>
+                        )}
+                        {canManageOrders && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Trash2 size={16} />}
+                            onClick={() => handleDeleteClick(order.id)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -333,6 +403,42 @@ export default function OrderList() {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+            <div>
+              <h3 className="font-medium">¿Estás seguro?</h3>
+              <p className="text-sm text-muted-foreground">
+                Esta acción eliminará permanentemente este pedido y no se puede deshacer.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={deleteLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              loading={deleteLoading}
+            >
+              Eliminar Pedido
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
