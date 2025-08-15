@@ -799,29 +799,6 @@ export function OrderForm() {
                       ))}
                     </select>
                   </div>
-        {/* Action Buttons */}
-        {selectedClient && (
-          <div className="flex justify-end space-x-4 animate-in fade-in duration-300">
-            {!isEditMode && (
-              <Button
-                variant="outline"
-                icon={<Save size={18} />}
-                onClick={() => handleAction('draft')}
-                disabled={isLoading || orderItems.length === 0}
-              >
-                Guardar Borrador
-              </Button>
-            )}
-            <Button
-              icon={<FileText size={18} />}
-              onClick={() => handleAction('confirm')}
-              disabled={isLoading || orderItems.length === 0}
-            >
-              {isEditMode ? 'Actualizar Pedido' : 'Confirmar Pedido'}
-            </Button>
-          </div>
-        )}
-      </div>
 
                   {/* Installment Details */}
                   {installmentDetails.length > 0 && (
@@ -892,6 +869,31 @@ export function OrderForm() {
             </div>
           </div>
         )}
+
+        {/* Action Buttons */}
+        {selectedClient && (
+          <div className="flex justify-end space-x-4 animate-in fade-in duration-300">
+            {!isEditMode && (
+              <Button
+                variant="outline"
+                icon={<Save size={18} />}
+                onClick={() => handleAction('draft')}
+                disabled={isLoading || orderItems.length === 0}
+              >
+                Guardar Borrador
+              </Button>
+            )}
+            <Button
+              icon={<FileText size={18} />}
+              onClick={() => handleAction('confirm')}
+              disabled={isLoading || orderItems.length === 0}
+            >
+              {isEditMode ? 'Actualizar Pedido' : 'Confirmar Pedido'}
+            </Button>
+          </div>
+        )}
+      </div>
+
       {/* Confirmation Modal */}
       <Modal
         isOpen={showConfirmModal}
