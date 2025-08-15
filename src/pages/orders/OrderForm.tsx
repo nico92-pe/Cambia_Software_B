@@ -29,6 +29,13 @@ interface OrderFormItem {
   subtotal: number;
 }
 
+interface OrderInstallmentForm {
+  installmentNumber: number;
+  amount: number;
+  dueDate: string;
+  daysDue: number;
+}
+
 export function OrderForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -50,6 +57,12 @@ export function OrderForm() {
   
   const [orderItems, setOrderItems] = useState<OrderFormItem[]>([]);
   const [observations, setObservations] = useState('');
+  
+  // Payment terms state
+  const [paymentType, setPaymentType] = useState<'contado' | 'credito'>('contado');
+  const [creditType, setCreditType] = useState<'factura' | 'letras'>('factura');
+  const [installments, setInstallments] = useState<number>(1);
+  const [installmentDetails, setInstallmentDetails] = useState<OrderInstallmentForm[]>([]);
   
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'draft' | 'delete' | 'confirm' | null>(null);
@@ -84,6 +97,9 @@ export function OrderForm() {
           setClientSearch(orderData.client?.commercialName || '');
           setObservations(orderData.observations || '');
           setCurrentStatus(orderData.status);
+          setPaymentType(orderData.paymentType || 'contado');
+          setCreditType(orderData.creditType || 'factura');
+          setInstallments(orderData.installments || 1);
           
           // Convert order items to form items
           const formItems = orderData.items?.map(item => ({
@@ -96,6 +112,17 @@ export function OrderForm() {
           })) || [];
           
           setOrderItems(formItems);
+          
+          // Set installment details if they exist
+          if (orderData.installmentDetails && orderData.installmentDetails.length > 0) {
+            const installmentForms = orderData.installmentDetails.map(inst => ({
+              installmentNumber: inst.installmentNumber,
+              amount: inst.amount,
+              dueDate: inst.dueDate,
+              daysDue: inst.daysDue,
+            }));
+            setInstallmentDetails(installmentForms);
+          }
         } else {
           navigate('/orders');
         }
@@ -165,6 +192,68 @@ export function OrderForm() {
   const totalAmount = orderItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   const subtotalAmount = totalAmount / 1.18;
   const igvAmount = subtotalAmount * 0.18;
+  
+  // Generate installment details when payment type or installments change
+  useEffect(() => {
+    if (paymentType === 'credito' && installments > 0) {
+      generateInstallmentDetails();
+    }
+  }, [paymentType, installments, totalAmount]);
+  
+  const generateInstallmentDetails = () => {
+    if (installments <= 0 || totalAmount <= 0) return;
+    
+    const baseAmount = Math.floor((totalAmount / installments) * 100) / 100;
+    const remainder = Math.round((totalAmount - (baseAmount * installments)) * 100) / 100;
+    
+    const newInstallments: OrderInstallmentForm[] = [];
+    const baseDate = new Date();
+    
+    for (let i = 1; i <= installments; i++) {
+      const amount = i === installments ? baseAmount + remainder : baseAmount;
+      const dueDate = new Date(baseDate);
+      dueDate.setDate(baseDate.getDate() + (i * 30)); // 30 days between installments
+      
+      newInstallments.push({
+        installmentNumber: i,
+        amount: amount,
+        dueDate: dueDate.toISOString().split('T')[0],
+        daysDue: i * 30,
+      });
+    }
+    
+    setInstallmentDetails(newInstallments);
+  };
+  
+  const updateInstallmentDate = (index: number, newDate: string) => {
+    const updatedInstallments = [...installmentDetails];
+    const baseDate = new Date();
+    const dueDate = new Date(newDate);
+    const daysDiff = Math.ceil((dueDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    updatedInstallments[index] = {
+      ...updatedInstallments[index],
+      dueDate: newDate,
+      daysDue: daysDiff,
+    };
+    
+    setInstallmentDetails(updatedInstallments);
+  };
+  
+  const updateInstallmentDays = (index: number, newDays: number) => {
+    const updatedInstallments = [...installmentDetails];
+    const baseDate = new Date();
+    const dueDate = new Date(baseDate);
+    dueDate.setDate(baseDate.getDate() + newDays);
+    
+    updatedInstallments[index] = {
+      ...updatedInstallments[index],
+      dueDate: dueDate.toISOString().split('T')[0],
+      daysDue: newDays,
+    };
+    
+    setInstallmentDetails(updatedInstallments);
+  };
 
   const handleAction = (action: 'draft' | 'delete' | 'confirm') => {
     setConfirmAction(action);
@@ -187,6 +276,9 @@ export function OrderForm() {
           clientId: selectedClient.id,
           observations,
           status: currentStatus,
+          paymentType,
+          creditType: paymentType === 'credito' ? creditType : undefined,
+          installments: paymentType === 'credito' ? installments : undefined,
         });
 
         // Handle order items changes
@@ -226,6 +318,9 @@ export function OrderForm() {
           status: confirmAction === 'confirm' ? OrderStatus.TOMADO : OrderStatus.BORRADOR,
           observations,
           createdBy: user.id,
+          paymentType,
+          creditType: paymentType === 'credito' ? creditType : undefined,
+          installments: paymentType === 'credito' ? installments : undefined,
         };
         
         console.log('🔍 Creating order with data:', orderData);
@@ -619,6 +714,91 @@ export function OrderForm() {
           </div>
         )}
 
+        {/* Payment Terms */}
+        {selectedClient && (
+          <div className="card animate-in fade-in duration-300">
+            <div className="card-header">
+              <h2 className="card-title">Términos de Pago</h2>
+              <p className="card-description">
+                Configura las condiciones de pago del pedido
+              </p>
+            </div>
+            <div className="card-content space-y-6">
+              {/* Payment Type */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium">Tipo de Pago</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="contado"
+                      checked={paymentType === 'contado'}
+                      onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                      className="mr-2"
+                    />
+                    Contado
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="credito"
+                      checked={paymentType === 'credito'}
+                      onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                      className="mr-2"
+                    />
+                    Crédito
+                  </label>
+                </div>
+              </div>
+
+              {/* Credit Options */}
+              {paymentType === 'credito' && (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium">Tipo de Crédito</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="creditType"
+                          value="factura"
+                          checked={creditType === 'factura'}
+                          onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
+                          className="mr-2"
+                        />
+                        Factura
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="creditType"
+                          value="letras"
+                          checked={creditType === 'letras'}
+                          onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
+                          className="mr-2"
+                        />
+                        Letras
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="installments" className="block text-sm font-medium">
+                      Número de Cuotas
+                    </label>
+                    <select
+                      id="installments"
+                      value={installments}
+                      onChange={(e) => setInstallments(parseInt(e.target.value))}
+                      className="select w-32"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                        <option key={num} value={num}>{num}</option>
+                      ))}
+                    </select>
+                  </div>
         {/* Action Buttons */}
         {selectedClient && (
           <div className="flex justify-end space-x-4 animate-in fade-in duration-300">
@@ -643,6 +823,75 @@ export function OrderForm() {
         )}
       </div>
 
+                  {/* Installment Details */}
+                  {installmentDetails.length > 0 && (
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Detalle de Cuotas</h4>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Cuota
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Monto
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Fecha
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Días
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {installmentDetails.map((installment, index) => (
+                              <tr key={index}>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {installment.installmentNumber}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {formatCurrency(installment.amount)}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <input
+                                    type="date"
+                                    value={installment.dueDate}
+                                    onChange={(e) => updateInstallmentDate(index, e.target.value)}
+                                    className="input text-sm w-32"
+                                  />
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <input
+                                    type="number"
+                                    value={installment.daysDue}
+                                    onChange={(e) => updateInstallmentDays(index, parseInt(e.target.value) || 0)}
+                                    className="input text-sm w-20"
+                                    min="0"
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="bg-gray-50">
+                            <tr>
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900">Total:</td>
+                              <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                                {formatCurrency(installmentDetails.reduce((sum, inst) => sum + inst.amount, 0))}
+                              </td>
+                              <td colSpan={2}></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       {/* Confirmation Modal */}
       <Modal
         isOpen={showConfirmModal}

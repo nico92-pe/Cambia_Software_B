@@ -74,6 +74,9 @@ export type Order = {
   igv: number;
   total: number;
   observations?: string;
+  paymentType: 'contado' | 'credito';
+  creditType?: 'factura' | 'letras';
+  installments?: number;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -82,6 +85,7 @@ export type Order = {
   client?: Client;
   salesperson?: User;
   createdByUser?: User;
+  installmentDetails?: OrderInstallment[];
 };
 
 export type OrderItem = {
@@ -106,4 +110,14 @@ export type OrderStatusLog = {
   createdAt: string;
   // Populated fields
   createdByUser?: User;
+};
+
+export type OrderInstallment = {
+  id: string;
+  orderId: string;
+  installmentNumber: number;
+  amount: number;
+  dueDate: string;
+  daysDue: number;
+  createdAt: string;
 };

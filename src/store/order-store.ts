@@ -12,6 +12,9 @@ const mapDbRowToOrder = (row: any): Order => ({
   igv: parseFloat(row.igv || '0'),
   total: parseFloat(row.total || '0'),
   observations: row.observations,
+  paymentType: row.payment_type || 'contado',
+  creditType: row.credit_type,
+  installments: row.installments,
   createdBy: row.created_by,
   createdAt: row.created_at || '',
   updatedAt: row.updated_at || '',
@@ -37,6 +40,9 @@ const mapOrderToDbFormat = (order: Partial<Order>) => ({
   status: order.status,
   observations: order.observations,
   created_by: order.createdBy,
+  payment_type: order.paymentType,
+  credit_type: order.creditType,
+  installments: order.installments,
 });
 
 // Helper function to map OrderItem type to database format
@@ -221,6 +227,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order_items(
             *,
             product:products(*)
+          ),
+          order_installments(
+            *
           )
         `)
         .eq('id', id)
@@ -313,6 +322,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         }
         return orderItem;
       });
+      
+      // Map installment details
+      if (data.order_installments) {
+        order.installmentDetails = data.order_installments.map((inst: any) => ({
+          id: inst.id,
+          orderId: inst.order_id,
+          installmentNumber: inst.installment_number,
+          amount: parseFloat(inst.amount),
+          dueDate: inst.due_date,
+          daysDue: inst.days_due,
+          createdAt: inst.created_at,
+        }));
+      }
       
       set({ isLoading: false });
       return order;
