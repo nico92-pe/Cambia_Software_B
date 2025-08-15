@@ -259,7 +259,7 @@ export function OrderForm() {
     const input = e.currentTarget;
     const value = input.value;
     
-    // Allow only numbers and one decimal point
+    // Allow only numbers and one decimal point with max 2 decimal places
     const regex = /^\d*\.?\d{0,2}$/;
     if (!regex.test(value)) {
       // If invalid, revert to previous valid value
@@ -672,8 +672,8 @@ export function OrderForm() {
                             <tr className="bg-gray-50">
                               <th className="border border-gray-300 p-3 text-center w-20">Cuota</th>
                               <th className="border border-gray-300 p-3 text-center w-32">Monto</th>
-                              <th className="border border-gray-300 p-3 text-center w-40">Fecha</th>
-                              <th className="border border-gray-300 p-3 text-center w-24">Días</th>
+                              <th className="border border-gray-300 p-3 text-center w-44">Fecha</th>
+                              <th className="border border-gray-300 p-3 text-center w-28">Días</th>
                             </tr>
                           </thead>
                           <tbody>
