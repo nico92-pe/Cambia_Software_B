@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Search, Plus, Trash2, Save, FileText, AlertTriangle, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Trash2, Save, AlertTriangle } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useClientStore } from '../../store/client-store';
 import { useProductStore } from '../../store/product-store';
@@ -87,6 +87,7 @@ export function OrderForm() {
   const [salespeople, setSalespeople] = useState([]);
   const [selectedSalesperson, setSelectedSalesperson] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [isDraft, setIsDraft] = useState(true);
 
   const isEditing = !!id;
   const canEdit = user?.role !== UserRole.ASESOR_VENTAS || !isEditing;
@@ -128,6 +129,7 @@ export function OrderForm() {
             setPaymentType(orderData.paymentType || 'contado');
             setCreditType(orderData.creditType || 'factura');
             setInstallmentCount(orderData.installments || 1);
+            setIsDraft(orderData.status === OrderStatus.BORRADOR);
             
             // Convert order items to form items
             const formItems: OrderFormItem[] = orderData.items.map(item => ({
@@ -303,7 +305,7 @@ export function OrderForm() {
     setInstallments(updatedInstallments);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, saveAsDraft: boolean = false) => {
     e.preventDefault();
     
     if (!selectedClient) {
@@ -327,7 +329,7 @@ export function OrderForm() {
       const orderData = {
         clientId: selectedClient.id,
         salespersonId: selectedSalesperson,
-        status: currentStatus,
+        status: saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO,
         observations: notes,
         paymentType,
         creditType: paymentType === 'credito' ? creditType : undefined,
@@ -362,55 +364,59 @@ export function OrderForm() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center py-12">
         <Loader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/orders')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver a Pedidos
-            </Button>
-          </div>
-          
-          <h1 className="text-3xl font-bold text-gray-900">
+    <div>
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-in fade-in duration-500">
+        <div>
+          <h1 className="text-3xl font-bold">
             {isEditing ? 'Editar Pedido' : 'Nuevo Pedido'}
           </h1>
+          <p className="text-muted-foreground mt-1">
+            {isEditing ? 'Actualiza la información del pedido' : 'Crea un nuevo pedido en el sistema'}
+          </p>
         </div>
+        <Button
+          variant="outline"
+          icon={<ArrowLeft size={18} />}
+          onClick={() => navigate('/orders')}
+        >
+          Volver
+        </Button>
+      </header>
 
-        {(error || formError) && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertTriangle className="w-4 h-4" />
-            {error || formError}
-          </Alert>
-        )}
+      {(error || formError) && (
+        <Alert variant="destructive" className="mb-6 animate-in fade-in duration-300">
+          {error || formError}
+        </Alert>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Client Selection */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Cliente</h2>
+      <div className="space-y-6">
+        {/* Client Selection */}
+        <div className="card animate-in fade-in duration-500">
+          <div className="card-header">
+            <h2 className="card-title text-xl">Cliente</h2>
+            <p className="card-description">
+              Selecciona el cliente para este pedido
+            </p>
+          </div>
+          <div className="card-content">
             <div className="relative">
-              <div className="flex items-center gap-2">
-                <Search className="w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar cliente por nombre o RUC..."
-                  value={clientSearch}
-                  onChange={(e) => handleClientSearch(e.target.value)}
-                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                <Search size={18} />
               </div>
+              <input
+                type="text"
+                placeholder="Buscar cliente por nombre o RUC..."
+                value={clientSearch}
+                onChange={(e) => handleClientSearch(e.target.value)}
+                className="input pl-10 w-full"
+              />
               
               {showClientResults && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -438,10 +444,17 @@ export function OrderForm() {
               </div>
             )}
           </div>
+        </div>
 
-          {/* Salesperson Selection */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Vendedor</h2>
+        {/* Salesperson Selection */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Vendedor</h2>
+            <p className="card-description">
+              Vendedor asignado al pedido
+            </p>
+          </div>
+          <div className="card-content">
             {isCurrentUserSalesperson ? (
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="font-medium">{user?.fullName}</p>
@@ -451,7 +464,7 @@ export function OrderForm() {
               <select
                 value={selectedSalesperson}
                 onChange={(e) => setSelectedSalesperson(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="select w-full"
                 required
               >
                 <option value="">Seleccionar vendedor</option>
@@ -463,25 +476,31 @@ export function OrderForm() {
               </select>
             )}
           </div>
+        </div>
 
-          {/* Products Section */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Productos</h2>
-            
+        {/* Products Section */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Productos</h2>
+            <p className="card-description">
+              Agrega productos al pedido
+            </p>
+          </div>
+          <div className="card-content">
             {/* Product Search */}
             <div className="mb-4 space-y-4">
               <div className="flex gap-4">
                 <div className="flex-1 relative">
-                  <div className="flex items-center gap-2">
-                    <Search className="w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Buscar producto por nombre o código..."
-                      value={productSearch}
-                      onChange={(e) => handleProductSearch(e.target.value)}
-                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                    <Search size={18} />
                   </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar producto por nombre o código..."
+                    value={productSearch}
+                    onChange={(e) => handleProductSearch(e.target.value)}
+                    className="input pl-10 w-full"
+                  />
                   
                   {showProductResults && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -503,7 +522,7 @@ export function OrderForm() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="select"
                 >
                   <option value="">Todas las categorías</option>
                   {categories.map((category) => (
@@ -518,33 +537,43 @@ export function OrderForm() {
             {/* Items Table */}
             {items.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="border border-gray-300 p-3 text-left">Producto</th>
-                      <th className="border border-gray-300 p-3 text-center w-24">Cantidad</th>
-                      <th className="border border-gray-300 p-3 text-center w-32">Precio Unit.</th>
-                      <th className="border border-gray-300 p-3 text-center w-32">Subtotal</th>
-                      <th className="border border-gray-300 p-3 text-center w-16">Acciones</th>
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Producto
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Cantidad
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Precio Unit.
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Subtotal
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {items.map((item, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 p-3">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium">{item.product?.name}</div>
                           <div className="text-sm text-gray-600">Código: {item.product?.code}</div>
                         </td>
-                        <td className="border border-gray-300 p-3 text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
                           <input
                             type="number"
                             min="1"
                             value={item.quantity || ''}
                             onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 0)}
-                            className="w-full p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-20 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
                           />
                         </td>
-                        <td className="border border-gray-300 p-3 text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
                           <input
                             type="number"
                             step="0.01"
@@ -552,21 +581,21 @@ export function OrderForm() {
                             value={item.unitPrice || ''}
                             onChange={(e) => updateItemPrice(index, parseFloat(e.target.value) || 0)}
                             onInput={handlePriceInput}
-                            className="w-full p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-24 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
                           />
                         </td>
-                        <td className="border border-gray-300 p-3 text-center font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
                           {formatCurrency(item.subtotal)}
                         </td>
-                        <td className="border border-gray-300 p-3 text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => confirmDeleteItem(index)}
-                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 size={16} />
                           </Button>
                         </td>
                       </tr>
@@ -594,14 +623,20 @@ export function OrderForm() {
               </div>
             )}
           </div>
+        </div>
 
-          {/* Payment Terms */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Términos de Pago</h2>
-            
+        {/* Payment Terms */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Términos de Pago</h2>
+            <p className="card-description">
+              Configura los términos de pago del pedido
+            </p>
+          </div>
+          <div className="card-content">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium mb-2">
                   Tipo de Pago
                 </label>
                 <div className="flex gap-4">
@@ -634,13 +669,13 @@ export function OrderForm() {
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2">
                         Tipo de Crédito
                       </label>
                       <select
                         value={creditType}
                         onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="select w-full"
                       >
                         <option value="factura">Factura</option>
                         <option value="letras">Letras</option>
@@ -648,13 +683,13 @@ export function OrderForm() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2">
                         Número de Cuotas
                       </label>
                       <select
                         value={installmentCount}
                         onChange={(e) => setInstallmentCount(parseInt(e.target.value))}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="select w-full"
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
                           <option key={num} value={num}>{num} cuota{num > 1 ? 's' : ''}</option>
@@ -667,39 +702,47 @@ export function OrderForm() {
                     <div>
                       <h3 className="text-lg font-medium mb-3">Detalle de Cuotas</h3>
                       <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-gray-300">
-                          <thead>
-                            <tr className="bg-gray-50">
-                              <th className="border border-gray-300 p-3 text-center w-20">Cuota</th>
-                              <th className="border border-gray-300 p-3 text-center w-32">Monto</th>
-                              <th className="border border-gray-300 p-3 text-center w-44">Fecha</th>
-                              <th className="border border-gray-300 p-3 text-center w-28">Días</th>
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Cuota
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Monto
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Fecha
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Días
+                              </th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="bg-white divide-y divide-gray-200">
                             {installments.map((installment, index) => (
                               <tr key={index} className="hover:bg-gray-50">
-                                <td className="border border-gray-300 p-3 text-center font-medium">
+                                <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
                                   {installment.installmentNumber}
                                 </td>
-                                <td className="border border-gray-300 p-3 text-center font-medium">
+                                <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
                                   {formatCurrency(installment.amount)}
                                 </td>
-                                <td className="border border-gray-300 p-3 text-center">
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <input
                                     type="date"
                                     value={installment.dueDate}
                                     onChange={(e) => updateInstallmentDate(index, e.target.value)}
-                                    className="w-full p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-44 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
                                   />
                                 </td>
-                                <td className="border border-gray-300 p-3 text-center">
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <input
                                     type="number"
                                     min="0"
                                     value={installment.daysDue || ''}
                                     onChange={(e) => updateInstallmentDays(index, parseInt(e.target.value) || 0)}
-                                    className="w-full p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-20 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
                                   />
                                 </td>
                               </tr>
@@ -707,12 +750,12 @@ export function OrderForm() {
                           </tbody>
                           <tfoot>
                             <tr className="bg-gray-100 font-bold">
-                              <td className="border border-gray-300 p-3 text-center">Total</td>
-                              <td className="border border-gray-300 p-3 text-center">
+                              <td className="px-6 py-4 text-center">Total</td>
+                              <td className="px-6 py-4 text-center">
                                 {formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}
                               </td>
-                              <td className="border border-gray-300 p-3"></td>
-                              <td className="border border-gray-300 p-3"></td>
+                              <td className="px-6 py-4"></td>
+                              <td className="px-6 py-4"></td>
                             </tr>
                           </tfoot>
                         </table>
@@ -723,98 +766,92 @@ export function OrderForm() {
               )}
             </div>
           </div>
+        </div>
 
-          {/* Status and Notes */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Estado y Observaciones</h2>
-            
-            <div className="space-y-4">
-              {canChangeStatus && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estado del Pedido
-                  </label>
-                  <select
-                    value={currentStatus}
-                    onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {Object.entries(statusLabels).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Observaciones
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={4}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Observaciones adicionales del pedido..."
-                />
-              </div>
-            </div>
+        {/* Notes */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Observaciones</h2>
+            <p className="card-description">
+              Notas adicionales del pedido
+            </p>
           </div>
+          <div className="card-content">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              className="input w-full resize-none"
+              placeholder="Observaciones adicionales del pedido..."
+            />
+          </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-4">
+        {/* Actions */}
+        <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '500ms' }}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/orders')}
+          >
+            Cancelar
+          </Button>
+          {!isEditing && (
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate('/orders')}
+              onClick={(e) => handleSubmit(e, true)}
+              loading={isLoading}
+              disabled={!selectedClient || !selectedSalesperson || items.length === 0}
+            >
+              Guardar Borrador
+            </Button>
+          )}
+          <Button
+            type="button"
+            onClick={(e) => handleSubmit(e, false)}
+            loading={isLoading}
+            disabled={!selectedClient || !selectedSalesperson || items.length === 0}
+          >
+            <Save size={18} className="mr-2" />
+            {isEditing ? 'Actualizar Pedido' : 'Confirmar Pedido'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+            <div>
+              <h3 className="font-medium">¿Eliminar producto?</h3>
+              <p className="text-sm text-muted-foreground">
+                Esta acción eliminará el producto del pedido.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
             >
               Cancelar
             </Button>
             <Button
-              type="submit"
-              loading={isLoading}
-              disabled={!selectedClient || !selectedSalesperson || items.length === 0}
+              variant="destructive"
+              onClick={deleteItem}
             >
-              <Save className="w-4 h-4 mr-2" />
-              {isEditing ? 'Actualizar Pedido' : 'Crear Pedido'}
+              Eliminar
             </Button>
           </div>
-        </form>
-
-        {/* Delete Confirmation Modal */}
-        <Modal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          title="Confirmar Eliminación"
-        >
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-              <div>
-                <h3 className="font-medium">¿Eliminar producto?</h3>
-                <p className="text-sm text-muted-foreground">
-                  Esta acción eliminará el producto del pedido.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={deleteItem}
-              >
-                Eliminar
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      </div>
+        </div>
+      </Modal>
     </div>
   );
 }
