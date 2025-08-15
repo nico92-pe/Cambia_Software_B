@@ -453,6 +453,11 @@ export function OrderForm() {
                     <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
                   </p>
                 )}
+                {selectedClient.salesperson && (
+                  <p className="text-gray-600 mt-2">
+                    <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -587,16 +592,16 @@ export function OrderForm() {
                 <div className="mt-4 flex justify-end">
                   <div className="w-64 space-y-2">
                     <div className="flex justify-between">
-                      <span>Total:</span>
-                      <span className="font-medium">{formatCurrency(total)}</span>
-                    </div>
-                    <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span className="font-medium">{formatCurrency(subtotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>IGV (18%):</span>
                       <span className="font-medium">{formatCurrency(igv)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total:</span>
+                      <span className="font-medium">{formatCurrency(total)}</span>
                     </div>
                   </div>
                 </div>
@@ -715,9 +720,6 @@ export function OrderForm() {
                                     onChange={(e) => updateInstallmentDate(index, e.target.value)}
                                     className="w-44 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
                                   />
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {formatDateForDisplay(installment.dueDate)}
-                                  </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <input
