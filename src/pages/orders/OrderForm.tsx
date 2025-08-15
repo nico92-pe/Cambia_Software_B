@@ -621,7 +621,7 @@ export function OrderForm() {
                             type="number"
                             min="0"
                             className="input w-20"
-                            value={item.quantity}
+                            value={item.quantity === 0 ? '' : item.quantity}
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === '') {
@@ -641,7 +641,7 @@ export function OrderForm() {
                             step="0.01"
                             min="0"
                             className="input w-32"
-                            value={item.unitPrice}
+                            value={item.unitPrice === 0 ? '' : item.unitPrice}
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === '') {
@@ -836,7 +836,7 @@ export function OrderForm() {
                                     type="date"
                                     value={installment.dueDate}
                                     onChange={(e) => updateInstallmentDate(index, e.target.value)}
-                                    className="input text-sm w-32"
+                                    className="input text-sm w-36"
                                   />
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap">
@@ -844,7 +844,7 @@ export function OrderForm() {
                                     type="number"
                                     value={installment.daysDue}
                                     onChange={(e) => updateInstallmentDays(index, parseInt(e.target.value) || 0)}
-                                    className="input text-sm w-20"
+                                    className="input text-sm w-24"
                                     min="0"
                                   />
                                 </td>
