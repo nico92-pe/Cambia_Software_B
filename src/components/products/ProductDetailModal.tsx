@@ -3,7 +3,7 @@ import { Package, Tag, DollarSign, Box } from 'lucide-react';
 import { Product } from '../../lib/types';
 import { Modal } from '../ui/Modal';
 import { Badge } from '../ui/Badge';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, formatDate } from '../../lib/utils';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -123,11 +123,11 @@ export function ProductDetailModal({
             <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
               <div>
                 <span className="font-medium">Creado:</span>{' '}
-                {new Date(product.createdAt).toLocaleDateString('es-PE')}
+                {formatDate(new Date(product.createdAt))}
               </div>
               <div>
                 <span className="font-medium">Actualizado:</span>{' '}
-                {new Date(product.updatedAt).toLocaleDateString('es-PE')}
+                {formatDate(new Date(product.updatedAt))}
               </div>
             </div>
           </div>

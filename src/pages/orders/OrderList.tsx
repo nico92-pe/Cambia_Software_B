@@ -9,7 +9,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Loader } from '../../components/ui/Loader';
 import { Alert } from '../../components/ui/Alert';
 import { Modal } from '../../components/ui/Modal';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, formatDate } from '../../lib/utils';
 
 const statusColors = {
   borrador: 'bg-gray-100 text-gray-800',
@@ -285,7 +285,7 @@ export default function OrderList() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Fecha:</span>
-                        <span>{new Date(order.createdAt).toLocaleDateString('es-PE')}</span>
+                        <span>{formatDate(new Date(order.createdAt))}</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
@@ -396,7 +396,7 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {new Date(order.createdAt).toLocaleDateString('es-PE')}
+                        {formatDate(new Date(order.createdAt))}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

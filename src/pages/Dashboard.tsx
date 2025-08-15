@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/auth-store';
 import { useClientStore } from '../store/client-store';
 import { useProductStore } from '../store/product-store';
 import { useOrderStore } from '../store/order-store';
+import { formatDate } from '../lib/utils';
 
 export function Dashboard() {
   const { user } = useAuthStore();
@@ -75,7 +76,7 @@ export function Dashboard() {
                     <div>
                       <p className="font-medium">Pedido #{order.id}</p>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString('es-PE')}
+                        {formatDate(new Date(order.createdAt))}
                       </p>
                     </div>
                     <div className="font-semibold">
