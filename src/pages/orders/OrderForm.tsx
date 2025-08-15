@@ -58,6 +58,15 @@ const addDaysToDate = (date: Date, days: number): Date => {
   return result;
 };
 
+// Helper function to format date for display (dd/mm/yyyy)
+const formatDateForDisplay = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 export function OrderForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -95,9 +104,9 @@ export function OrderForm() {
   const isCurrentUserSalesperson = user?.role === UserRole.ASESOR_VENTAS;
 
   // Calculate totals
-  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+  const subtotal = total / 1.18;
   const igv = subtotal * 0.18;
-  const total = subtotal + igv;
 
   // Load initial data
   useEffect(() => {
@@ -521,7 +530,7 @@ export function OrderForm() {
                         Precio Unit.
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Subtotal
+                        Valor
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Acciones
@@ -578,16 +587,16 @@ export function OrderForm() {
                 <div className="mt-4 flex justify-end">
                   <div className="w-64 space-y-2">
                     <div className="flex justify-between">
+                      <span>Total:</span>
+                      <span className="font-medium">{formatCurrency(total)}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span className="font-medium">{formatCurrency(subtotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>IGV (18%):</span>
                       <span className="font-medium">{formatCurrency(igv)}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold border-t pt-2">
-                      <span>Total:</span>
-                      <span>{formatCurrency(total)}</span>
                     </div>
                   </div>
                 </div>
@@ -706,6 +715,9 @@ export function OrderForm() {
                                     onChange={(e) => updateInstallmentDate(index, e.target.value)}
                                     className="w-44 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
                                   />
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {formatDateForDisplay(installment.dueDate)}
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                   <input
