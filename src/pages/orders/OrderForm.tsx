@@ -207,10 +207,8 @@ export function OrderForm() {
     setClientSearch(client.commercialName);
     setShowClientResults(false);
     
-    // Auto-select the client's salesperson if available
-    if (client.salespersonId && !isCurrentUserSalesperson) {
-      setSelectedSalesperson(client.salespersonId);
-    }
+    // Auto-select the client's salesperson
+    setSelectedSalesperson(client.salespersonId || '');
   };
 
   const handleProductSearch = (value: string) => {
@@ -313,8 +311,8 @@ export function OrderForm() {
       return;
     }
     
-    if (!selectedSalesperson) {
-      setFormError('Debe seleccionar un vendedor');
+    if (!selectedClient.salespersonId && !selectedSalesperson) {
+      setFormError('El cliente debe tener un vendedor asignado');
       return;
     }
     
@@ -328,7 +326,7 @@ export function OrderForm() {
       
       const orderData = {
         clientId: selectedClient.id,
-        salespersonId: selectedSalesperson,
+        salespersonId: selectedClient.salespersonId || selectedSalesperson,
         status: saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO,
         observations: notes,
         paymentType,
@@ -436,50 +434,23 @@ export function OrderForm() {
             </div>
             
             {selectedClient && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-medium text-blue-900">{selectedClient.commercialName}</h3>
-                <p className="text-blue-700">{selectedClient.businessName}</p>
-                <p className="text-blue-600">RUC: {selectedClient.ruc}</p>
-                <p className="text-blue-600">{selectedClient.address}, {selectedClient.district}</p>
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                <h3 className="font-medium text-gray-900">{selectedClient.commercialName}</h3>
+                <p className="text-gray-700">{selectedClient.businessName}</p>
+                <p className="text-gray-600">RUC: {selectedClient.ruc}</p>
+                <p className="text-gray-600">{selectedClient.address}, {selectedClient.district}</p>
+                {selectedClient.salesperson && (
+                  <p className="text-gray-600 mt-2">
+                    <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
+                  </p>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Salesperson Selection */}
-        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
-          <div className="card-header">
-            <h2 className="card-title text-xl">Vendedor</h2>
-            <p className="card-description">
-              Vendedor asignado al pedido
-            </p>
-          </div>
-          <div className="card-content">
-            {isCurrentUserSalesperson ? (
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="font-medium">{user?.fullName}</p>
-                <p className="text-gray-600">{user?.cargo}</p>
-              </div>
-            ) : (
-              <select
-                value={selectedSalesperson}
-                onChange={(e) => setSelectedSalesperson(e.target.value)}
-                className="select w-full"
-                required
-              >
-                <option value="">Seleccionar vendedor</option>
-                {salespeople.map((salesperson) => (
-                  <option key={salesperson.id} value={salesperson.id}>
-                    {salesperson.fullName}
-                  </option>
-                ))}
-              </select>
             )}
           </div>
         </div>
 
         {/* Products Section */}
-        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
           <div className="card-header">
             <h2 className="card-title text-xl">Productos</h2>
             <p className="card-description">
@@ -489,40 +460,40 @@ export function OrderForm() {
           <div className="card-content">
             {/* Product Search */}
             <div className="mb-4 space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1 relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                    <Search size={18} />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar producto por nombre o código..."
-                    value={productSearch}
-                    onChange={(e) => handleProductSearch(e.target.value)}
-                    className="input pl-10 w-full"
-                  />
-                  
-                  {showProductResults && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          onClick={() => addProduct(product)}
-                          className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-gray-600">Código: {product.code}</div>
-                          <div className="text-sm text-gray-500">{formatCurrency(product.wholesalePrice)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                  <Search size={18} />
                 </div>
+                <input
+                  type="text"
+                  placeholder="Buscar producto por nombre o código..."
+                  value={productSearch}
+                  onChange={(e) => handleProductSearch(e.target.value)}
+                  className="input pl-10 w-full"
+                />
                 
+                {showProductResults && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => addProduct(product)}
+                        className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-gray-600">Código: {product.code}</div>
+                        <div className="text-sm text-gray-500">{formatCurrency(product.wholesalePrice)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="select"
+                  className="select w-full"
                 >
                   <option value="">Todas las categorías</option>
                   {categories.map((category) => (
@@ -626,7 +597,7 @@ export function OrderForm() {
         </div>
 
         {/* Payment Terms */}
-        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
           <div className="card-header">
             <h2 className="card-title text-xl">Términos de Pago</h2>
             <p className="card-description">
@@ -769,7 +740,7 @@ export function OrderForm() {
         </div>
 
         {/* Notes */}
-        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
           <div className="card-header">
             <h2 className="card-title text-xl">Observaciones</h2>
             <p className="card-description">
@@ -788,7 +759,7 @@ export function OrderForm() {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '500ms' }}>
+        <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
           <Button
             type="button"
             variant="outline"
@@ -802,7 +773,7 @@ export function OrderForm() {
               variant="outline"
               onClick={(e) => handleSubmit(e, true)}
               loading={isLoading}
-              disabled={!selectedClient || !selectedSalesperson || items.length === 0}
+              disabled={!selectedClient || items.length === 0}
             >
               Guardar Borrador
             </Button>
@@ -811,7 +782,7 @@ export function OrderForm() {
             type="button"
             onClick={(e) => handleSubmit(e, false)}
             loading={isLoading}
-            disabled={!selectedClient || !selectedSalesperson || items.length === 0}
+            disabled={!selectedClient || items.length === 0}
           >
             <Save size={18} className="mr-2" />
             {isEditing ? 'Actualizar Pedido' : 'Confirmar Pedido'}
