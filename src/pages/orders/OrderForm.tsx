@@ -458,6 +458,11 @@ export function OrderForm() {
                     <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
                   </p>
                 )}
+                {selectedClient.salesperson && (
+                  <p className="text-gray-600 mt-2">
+                    <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -738,6 +743,9 @@ export function OrderForm() {
                               <td className="px-6 py-4 text-center">Total</td>
                               <td className="px-6 py-4 text-center">
                                 {formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {formatDateForDisplay(installment.dueDate)}
+                                </div>
                               </td>
                               <td className="px-6 py-4"></td>
                               <td className="px-6 py-4"></td>
