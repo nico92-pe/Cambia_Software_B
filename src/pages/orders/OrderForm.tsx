@@ -742,7 +742,7 @@ export function OrderForm() {
                                     min="0"
                                     value={installment.daysDue || ''}
                                     onChange={(e) => updateInstallmentDays(index, parseInt(e.target.value) || 0)}
-                                    className="w-20 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-28 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
                                   />
                                 </td>
                               </tr>
