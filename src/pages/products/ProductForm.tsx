@@ -7,7 +7,6 @@ import { useProductStore } from '../../store/product-store';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
-import { formatCurrency } from '../../lib/utils';
 
 type ProductFormData = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -195,7 +194,7 @@ export function ProductForm() {
               </div>
 
               <div className="space-y-2">
-                <ladfdabel htmlFor="code" className="block text-sm font-medium">
+                <label htmlFor="code" className="block text-sm font-medium">
                   Código *
                 </label>
                 <div className="relative">
@@ -303,11 +302,14 @@ export function ProductForm() {
                   )}
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <label htmlFor="retailPrice" className="block text-sm font-medium">
                     Precio Minorista *
                   </label>
                   <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                      <DollarSign size={18} />
+                    </div>
                     <input
                       id="retailPrice"
                       type="number"
@@ -322,10 +324,6 @@ export function ProductForm() {
                         },
                       })}
                     />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium">
-    {formatCurrency(product.retailPrice)}
-  </span>
-
                   </div>
                   {errors.retailPrice && (
                     <p className="text-destructive text-sm mt-1">
