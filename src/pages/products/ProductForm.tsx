@@ -277,7 +277,6 @@ export function ProductForm() {
                     Precio Mayorista *
                   </label>
                   <div className="relative">
-
                     <input
                       id="wholesalePrice"
                       type="number"
