@@ -302,7 +302,7 @@ export function ProductForm() {
                   )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label htmlFor="retailPrice" className="block text-sm font-medium">
                     Precio Minorista *
                   </label>
