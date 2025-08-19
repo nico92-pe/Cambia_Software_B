@@ -328,6 +328,10 @@ export function ProductForm() {
                       {errors.retailPrice.message}
                     </p>
                   )}
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium">
+    {formatCurrency(product.retailPrice)}
+  </span>
+
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="distributorPrice" className="block text-sm font-medium">
