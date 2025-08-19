@@ -311,6 +311,7 @@ export function ProductForm() {
                       id="retailPrice"
                       type="number"
                       step="0.01"
+                      formatCurrency(product.retailPrice)
                       className={`input pl-10 ${errors.retailPrice ? 'border-destructive' : ''}`}
                       placeholder="0.00"
                       {...register('retailPrice', {
