@@ -276,7 +276,6 @@ export function ProductForm() {
                   <label htmlFor="wholesalePrice" className="block text-sm font-medium">
                     Precio Mayorista *
                   </label>
-                  <div className="relative">
                     <input
                       id="wholesalePrice"
                       type="number"
@@ -291,7 +290,6 @@ export function ProductForm() {
                         },
                       })}
                     />
-                  </div>
                   {errors.wholesalePrice && (
                     <p className="text-destructive text-sm mt-1">
                       {errors.wholesalePrice.message}
