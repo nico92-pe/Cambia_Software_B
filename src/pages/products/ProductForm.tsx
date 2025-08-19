@@ -325,6 +325,7 @@ export function ProductForm() {
                       })}
                     />
                   </div>
+                  <span className="font-medium">{formatCurrency(retailPrice)}</span>
                   {errors.retailPrice && (
                     <p className="text-destructive text-sm mt-1">
                       {errors.retailPrice.message}
