@@ -195,7 +195,7 @@ export function ProductForm() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="code" className="block text-sm font-medium">
+                <ladfdabel htmlFor="code" className="block text-sm font-medium">
                   Código *
                 </label>
                 <div className="relative">
