@@ -7,6 +7,7 @@ import { useProductStore } from '../../store/product-store';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
+import { formatCurrency } from '../../lib/utils';
 
 type ProductFormData = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>;
 
