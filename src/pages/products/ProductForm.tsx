@@ -307,13 +307,12 @@ export function ProductForm() {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                      <DollarSign size={18} />
                     </div>
                     <input
                       id="retailPrice"
                       type="number"
                       step="0.01"
-                      className={`input pl-10 ${errors.retailPrice ? 'border-destructive' : ''}`}
+                      className={`input ${errors.retailPrice ? 'border-destructive' : ''}`}
                       placeholder="0.00"
                       {...register('retailPrice', {
                         required: 'El precio es requerido',
@@ -336,13 +335,12 @@ export function ProductForm() {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                      <DollarSign size={18} />
                     </div>
                     <input
                       id="distributorPrice"
                       type="number"
                       step="0.01"
-                      className={`input pl-10 ${errors.distributorPrice ? 'border-destructive' : ''}`}
+                      className={`input ${errors.distributorPrice ? 'border-destructive' : ''}`}
                       placeholder="0.00"
                       {...register('distributorPrice', {
                         required: 'El precio es requerido',
@@ -366,13 +364,12 @@ export function ProductForm() {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                      <DollarSign size={18} />
                     </div>
                     <input
                       id="creditPrice"
                       type="number"
                       step="0.01"
-                      className={`input pl-10 ${errors.creditPrice ? 'border-destructive' : ''}`}
+                      className={`input ${errors.creditPrice ? 'border-destructive' : ''}`}
                       placeholder="0.00"
                       {...register('creditPrice', {
                         required: 'El precio es requerido',
@@ -396,13 +393,12 @@ export function ProductForm() {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                      <DollarSign size={18} />
                     </div>
                     <input
                       id="cashPrice"
                       type="number"
                       step="0.01"
-                      className={`input pl-10 ${errors.cashPrice ? 'border-destructive' : ''}`}
+                      className={`input ${errors.cashPrice ? 'border-destructive' : ''}`}
                       placeholder="0.00"
                       {...register('cashPrice', {
                         required: 'El precio es requerido',
