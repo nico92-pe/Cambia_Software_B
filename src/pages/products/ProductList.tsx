@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
 import { Badge } from '../../components/ui/Badge';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, formatDate } from '../../lib/utils';
 
 export function ProductList() {
   const { products, categories, getProducts, getCategories, deleteProduct, isLoading, error } = useProductStore();
