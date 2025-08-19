@@ -276,11 +276,14 @@ export function ProductForm() {
                   <label htmlFor="wholesalePrice" className="block text-sm font-medium">
                     Precio Mayorista *
                   </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                    </div>
                     <input
                       id="wholesalePrice"
                       type="number"
                       step="0.01"
-                      className={`input pl-10 ${errors.wholesalePrice ? 'border-destructive' : ''}`}
+                      className={`input ${errors.wholesalePrice ? 'border-destructive' : ''}`}
                       placeholder="0.00"
                       {...register('wholesalePrice', {
                         required: 'El precio es requerido',
@@ -290,6 +293,7 @@ export function ProductForm() {
                         },
                       })}
                     />
+                  </div>
                   {errors.wholesalePrice && (
                     <p className="text-destructive text-sm mt-1">
                       {errors.wholesalePrice.message}
