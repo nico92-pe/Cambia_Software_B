@@ -300,43 +300,72 @@ export function OrderDetail() {
               </p>
             </div>
             <div className="card-content">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Cuota
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Monto
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Fecha de Vencimiento
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Días
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {order.installmentDetails.map((installment) => (
-                      <tr key={installment.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
-                          {installment.installmentNumber}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+              {/* Mobile Card View */}
+              <div className="block sm:hidden">
+                <div className="space-y-4">
+                  {order.installmentDetails.map((installment) => (
+                    <div key={installment.id} className="bg-gray-50 rounded-lg p-4 border">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-medium text-gray-900">Cuota {installment.installmentNumber}</h3>
+                        <span className="text-lg font-bold text-primary">
                           {formatCurrency(installment.amount)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          {formatDate(new Date(installment.dueDate))}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          {installment.daysDue} días
-                        </td>
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Fecha de Vencimiento:</span>
+                          <span className="font-medium">{formatDate(new Date(installment.dueDate))}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Días:</span>
+                          <span className="font-medium">{installment.daysDue} días</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Desktop Table View */}
+              <div className="hidden sm:block">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Cuota
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Monto
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Fecha de Vencimiento
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Días
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {order.installmentDetails.map((installment) => (
+                        <tr key={installment.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                            {installment.installmentNumber}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                            {formatCurrency(installment.amount)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {formatDate(new Date(installment.dueDate))}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {installment.daysDue} días
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
