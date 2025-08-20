@@ -97,6 +97,7 @@ export function OrderForm() {
   const [selectedSalesperson, setSelectedSalesperson] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isDraft, setIsDraft] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const isEditing = !!id;
   const canEdit = user?.role !== UserRole.ASESOR_VENTAS || !isEditing;
@@ -116,6 +117,8 @@ export function OrderForm() {
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
+      setIsDataLoaded(false);
+      
       await Promise.all([
         getClients(),
         getProducts(),
@@ -168,13 +171,19 @@ export function OrderForm() {
               }));
               setInstallments(formInstallments);
             }
+            
+            setIsDataLoaded(true);
           }
         } catch (error) {
           setFormError('Error al cargar el pedido');
+          setIsDataLoaded(true);
         }
       } else if (isCurrentUserSalesperson && user) {
         // Pre-select current user as salesperson for new orders
         setSelectedSalesperson(user.id);
+        setIsDataLoaded(true);
+      } else {
+        setIsDataLoaded(true);
       }
     };
 
@@ -409,6 +418,15 @@ export function OrderForm() {
   });
 
   if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader size="lg" />
+      </div>
+    );
+  }
+  
+  // Show loader while data is being loaded for editing
+  if (isEditing && !isDataLoaded) {
     return (
       <div className="flex justify-center py-12">
         <Loader size="lg" />
