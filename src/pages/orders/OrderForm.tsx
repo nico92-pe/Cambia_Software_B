@@ -622,20 +622,20 @@ export function OrderForm() {
                 {/* Totals */}
                 {items.length > 0 && (
                   <div className="mt-4 flex justify-end">
-                  <div className="w-64 space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span className="font-medium">{formatCurrency(subtotal)}</span>
+                    <div className="w-64 space-y-2">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span className="font-medium">{formatCurrency(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>IGV (18%):</span>
+                        <span className="font-medium">{formatCurrency(igv)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total:</span>
+                        <span className="font-medium">{formatCurrency(total)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span>IGV (18%):</span>
-                      <span className="font-medium">{formatCurrency(igv)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total:</span>
-                      <span className="font-medium">{formatCurrency(total)}</span>
-                    </div>
-                  </div>
                   </div>
                 )}
               </div>
@@ -767,16 +767,20 @@ export function OrderForm() {
                             ))}
                           </tbody>
                           <tfoot>
-                      </div>
-                      
-                      {/* Installments Total */}
-                      <div className="mt-4 flex justify-end">
-                        <div className="w-64">
-                          <div className="flex justify-between font-bold text-lg border-t pt-2">
-                            <span>Total Cuotas:</span>
-                            <span>{formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}</span>
-                          </div>
-                        </div>
+                            <tr>
+                              <td colSpan={4} className="px-6 py-4">
+                                <div className="flex justify-end">
+                                  <div className="w-64">
+                                    <div className="flex justify-between font-bold text-lg border-t pt-2">
+                                      <span>Total Cuotas:</span>
+                                      <span>{formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
                       </div>
                     </div>
                   )}
