@@ -59,12 +59,16 @@ Deno.serve(async (req) => {
     // Initialize Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      throw new Error('Resend API key not configured');
+      throw new Error('RESEND_API_KEY not configured in environment variables');
     }
 
     const resend = new Resend(resendApiKey);
 
-    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'contacto@griferiascambia.com';
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@yourdomain.com';
+    
+    if (!fromEmail.includes('@')) {
+      throw new Error('RESEND_FROM_EMAIL must be a valid email address');
+    }
 
     const { data, error } = await resend.emails.send({
       from: fromEmail,
@@ -74,7 +78,12 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
-      throw new Error(`Failed to send email: ${error.message}`);
+      console.error('Resend API error:', error);
+      throw new Error(`Failed to send email: ${error.message || 'Unknown Resend API error'}`);
+    }
+    
+    if (!data) {
+      throw new Error('No data returned from Resend API');
     }
 
     return new Response(

@@ -174,9 +174,16 @@ export const useUserStore = create<UserState>((set, get) => ({
           console.warn('No se pudo enviar el email de bienvenida:', error);
           
           // Show a warning but don't fail the user creation
-          if (error.error?.includes('SendGrid API key not configured')) {
-            console.warn('SendGrid no está configurado. El usuario fue creado exitosamente pero no se envió el email de bienvenida.');
+          if (error.error?.includes('RESEND_API_KEY not configured')) {
+            console.warn('Resend API no está configurado. El usuario fue creado exitosamente pero no se envió el email de bienvenida.');
+          } else if (error.error?.includes('RESEND_FROM_EMAIL')) {
+            console.warn('Email de origen no configurado correctamente. El usuario fue creado exitosamente pero no se envió el email de bienvenida.');
+          } else {
+            console.warn('Error del servicio de email:', error.error);
           }
+          
+          // You could show a toast notification here instead of throwing
+          // For now, we'll just log the warning and continue
         }
       } catch (emailError) {
         console.warn('Error al enviar email de bienvenida:', emailError);
