@@ -118,10 +118,10 @@ export function ProductList() {
   // Show loading screen during initial load
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader size="lg" />
-          <p className="text-muted-foreground mt-4 text-lg">Cargando productos...</p>
+          <p className="text-muted-foreground mt-4">Cargando</p>
         </div>
       </div>
     );
