@@ -453,16 +453,6 @@ export function OrderForm() {
                     <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
                   </p>
                 )}
-                {selectedClient.salesperson && (
-                  <p className="text-gray-600 mt-2">
-                    <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
-                  </p>
-                )}
-                {selectedClient.salesperson && (
-                  <p className="text-gray-600 mt-2">
-                    <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
-                  </p>
-                )}
               </div>
             )}
           </div>
