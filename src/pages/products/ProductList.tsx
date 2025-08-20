@@ -121,6 +121,7 @@ export function ProductList() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader size="lg" />
+          <Loader size="lg" />
           <p className="text-muted-foreground mt-4">Cargando</p>
         </div>
       </div>
