@@ -78,7 +78,6 @@ export function ProductDetailModal({
           {/* Prices Grid */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
               Precios
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
