@@ -14,6 +14,7 @@ export function ClientList() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     getClients();
