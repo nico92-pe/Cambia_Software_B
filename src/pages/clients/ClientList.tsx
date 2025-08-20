@@ -16,6 +16,8 @@ export function ClientList() {
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
+
   useEffect(() => {
     getClients();
   }, [getClients]);
