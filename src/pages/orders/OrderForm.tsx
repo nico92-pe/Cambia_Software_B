@@ -154,7 +154,6 @@ export function OrderForm() {
               productId: item.productId,
               product: item.product,
               quantity: item.quantity,
-              console.log(quantity),
               unitPrice: item.unitPrice,
               subtotal: typeof item.subtotal === 'number' ? item.subtotal : (item.quantity * item.unitPrice),
             }));
