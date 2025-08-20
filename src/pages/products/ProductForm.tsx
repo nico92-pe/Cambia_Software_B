@@ -286,12 +286,7 @@ export function ProductForm() {
                       step="0.01"
                       className="input pr-20 text-transparent caret-black"
                       placeholder="0.00"
-                      {...register('wholesalePrice', {
-                        required: 'El precio es requerido',
-                        min: {
-                          value: 0,
-                          message: 'El precio debe ser mayor a 0',
-                        },
+
                       })}
                       name="wholesalePrice"
                       onInput={(e)=>{
