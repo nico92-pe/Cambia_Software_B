@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Building, Building2, MapPin, Save } from 'lucide-react';
+import { ArrowLeft, Building, Building2, MapPin, Save, User as UserIcon, Phone } from 'lucide-react';
 import { Client } from '../../lib/types';
 import { useClientStore } from '../../store/client-store';
 import { useUserStore } from '../../store/user-store';
@@ -264,6 +264,60 @@ export function ClientForm() {
                     {errors.commercialName.message}
                   </p>
                 )}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-6">
+              <h3 className="font-medium text-lg mb-4">Datos de Contacto</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label htmlFor="contactName" className="block text-sm font-medium">
+                    Nombre de Contacto *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                      <UserIcon size={18} />
+                    </div>
+                    <input
+                      id="contactName"
+                      type="text"
+                      className={`input pl-10 ${errors.contactName ? 'border-destructive' : ''}`}
+                      {...register('contactName', {
+                        required: 'El nombre de contacto es requerido',
+                      })}
+                    />
+                  </div>
+                  {errors.contactName && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.contactName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="contactPhone" className="block text-sm font-medium">
+                    Celular de Contacto *
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                      <Phone size={18} />
+                    </div>
+                    <input
+                      id="contactPhone"
+                      type="text"
+                      className={`input pl-10 ${errors.contactPhone ? 'border-destructive' : ''}`}
+                      placeholder="+51 999 888 777"
+                      {...register('contactPhone', {
+                        required: 'El celular de contacto es requerido',
+                      })}
+                    />
+                  </div>
+                  {errors.contactPhone && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.contactPhone.message}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

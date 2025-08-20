@@ -289,12 +289,12 @@ export default function OrderList() {
                       </div>
                     </div>
                     <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
-                      {canCreateOrder && (
+                      {canCreateOrder && (!isAsesorVentas || ['borrador', 'tomado'].includes(order.status)) && (
                         <Link to={`/orders/edit/${order.id}`}>
                           <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
                         </Link>
                       )}
-                      {canManageOrders && (
+                      {!isAsesorVentas && canManageOrders && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -401,12 +401,12 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        {canCreateOrder && (
+                        {canCreateOrder && (!isAsesorVentas || ['borrador', 'tomado'].includes(order.status)) && (
                           <Link to={`/orders/edit/${order.id}`}>
                             <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
                           </Link>
                         )}
-                        {canManageOrders && (
+                        {!isAsesorVentas && canManageOrders && (
                           <Button
                             variant="ghost"
                             size="sm"

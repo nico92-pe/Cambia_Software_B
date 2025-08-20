@@ -20,6 +20,8 @@ export type Client = {
   ruc: string;
   businessName: string;
   commercialName: string;
+  contactName: string;
+  contactPhone: string;
   address: string;
   district: string;
   province: string;

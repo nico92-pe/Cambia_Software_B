@@ -103,6 +103,9 @@ export function OrderForm() {
   const canEdit = user?.role !== UserRole.ASESOR_VENTAS || !isEditing;
   const canChangeStatus = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
   const isCurrentUserSalesperson = user?.role === UserRole.ASESOR_VENTAS;
+  
+  // Check if asesor can edit this order
+  const canAsesorEdit = !isCurrentUserSalesperson || !order || ['borrador', 'tomado'].includes(order.status);
 
   // Calculate totals - ensure we have valid numbers
   const total = items.reduce((sum, item) => {
@@ -360,7 +363,7 @@ export function OrderForm() {
       const orderData = {
         clientId: selectedClient.id,
         salespersonId: selectedClient.salespersonId || selectedSalesperson,
-        status: saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO,
+        status: isEditing && order ? order.status : (saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO),
         observations: notes,
         paymentType,
         creditType: paymentType === 'credito' ? creditType : undefined,
@@ -429,6 +432,24 @@ export function OrderForm() {
     return (
       <div className="flex justify-center py-12">
         <Loader size="lg" />
+      </div>
+    );
+  }
+
+  // Check if user can edit this order
+  if (isEditing && !canAsesorEdit) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <Alert variant="destructive" className="mb-6">
+          No tienes permisos para editar este pedido. Los asesores de ventas solo pueden editar pedidos en estado "Borrador" o "Tomado".
+        </Alert>
+        <Button
+          variant="outline"
+          icon={<ArrowLeft size={18} />}
+          onClick={() => navigate('/orders')}
+        >
+          Volver a Pedidos
+        </Button>
       </div>
     );
   }
