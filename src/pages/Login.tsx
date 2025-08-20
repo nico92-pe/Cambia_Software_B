@@ -15,6 +15,11 @@ export function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading, error } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState<string | null>(null);
+  const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(null);
   
   const {
     register,
@@ -47,6 +52,106 @@ export function Login() {
     setShowPassword(!showPassword);
   };
   
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotPasswordEmail) {
+      setForgotPasswordError('Por favor ingresa tu correo electrónico');
+      return;
+    }
+    
+    setForgotPasswordLoading(true);
+    setForgotPasswordError(null);
+    setForgotPasswordMessage(null);
+    
+    try {
+      const { supabase } = await import('../lib/supabase');
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      setForgotPasswordMessage(
+        'Se ha enviado un enlace de recuperación a tu correo electrónico. Revisa tu bandeja de entrada y sigue las instrucciones.'
+      );
+      setForgotPasswordEmail('');
+    } catch (error) {
+      setForgotPasswordError(
+        error instanceof Error ? error.message : 'Error al enviar el correo de recuperación'
+      );
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+  
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <div className="mb-8 text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 text-primary mb-4">
+                <Mail size={28} />
+              </div>
+              <h1 className="text-2xl font-bold">Recuperar Contraseña</h1>
+              <p className="text-muted-foreground mt-2">
+                Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
+              </p>
+            </div>
+            
+            {forgotPasswordMessage && (
+              <Alert variant="success" className="mb-6">
+                {forgotPasswordMessage}
+              </Alert>
+            )}
+            
+            {forgotPasswordError && (
+              <Alert variant="destructive" className="mb-6">
+                {forgotPasswordError}
+              </Alert>
+            )}
+            
+            <form onSubmit={handleForgotPassword} className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="forgotEmail" className="block text-sm font-medium">
+                  Correo electrónico
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                    <Mail size={18} />
+                  </div>
+                  <input
+                    id="forgotEmail"
+                    type="email"
+                    className="input pl-10"
+                    placeholder="ejemplo@empresa.com"
+                    value={forgotPasswordEmail}
+                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <Button type="submit" className="w-full" loading={forgotPasswordLoading}>
+                Enviar Enlace de Recuperación
+              </Button>
+            </form>
+            
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(false)}
+                className="text-primary hover:text-primary/80 text-sm font-medium"
+              >
+                ← Volver al inicio de sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
       <div className="w-full max-w-md">
@@ -139,6 +244,13 @@ export function Login() {
           </form>
           
           <div className="mt-6 pt-6 border-t border-gray-200 text-center text-sm">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-primary hover:text-primary/80 font-medium"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
           </div>
         </div>
       </div>
