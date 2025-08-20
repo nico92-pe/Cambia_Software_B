@@ -153,9 +153,9 @@ export function OrderForm() {
               id: item.id,
               productId: item.productId,
               product: item.product,
-              quantity: Number(item.quantity),
-              unitPrice: Number(item.unitPrice),
-              subtotal: quantity * unitPrice,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: typeof item.subtotal === 'number' ? item.subtotal : (item.quantity * item.unitPrice),
             }));
             setItems(formItems);
             
@@ -418,15 +418,6 @@ export function OrderForm() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader size="lg" />
-      </div>
-    );
-  }
-  
-  // Show loader while data is being loaded for editing
-  if (isEditing && !isDataLoaded) {
     return (
       <div className="flex justify-center py-12">
         <Loader size="lg" />
