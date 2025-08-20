@@ -403,9 +403,21 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        {canCreateOrder && (!isAsesorVentas || ['borrador', 'tomado'].includes(order.status)) && (
-                          <Link to={`/orders/edit/${order.id}`}>
-                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                        {canCreateOrder && (!isAsesorVentas || ['borrador', 'tomado'].includes(order.status)) ? (
+                          <>
+                            <Link to={`/orders/edit/${order.id}`}>
+                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                            </Link>
+                          </>
+                        {canCreateOrder && (!isAsesorVentas || ['borrador', 'tomado'].includes(order.status)) ? (
+                          <>
+                            <Link to={`/orders/edit/${order.id}`}>
+                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                            </Link>
+                          </>
+                        ) : (
+                          <Link to={`/orders/detail/${order.id}`}>
+                            <Button variant="ghost" size="sm" icon={<Eye size={16} />} />
                           </Link>
                         )}
                         {!isAsesorVentas && canManageOrders && (
