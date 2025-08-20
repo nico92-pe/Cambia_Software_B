@@ -159,27 +159,48 @@ export const useUserStore = create<UserState>((set, get) => ({
             email: userData.email,
             subject: 'Bienvenido a Cambia - Credenciales de acceso',
             content: `
-              <h2>Bienvenido a Cambia</h2>
-              <p>Se ha creado una cuenta para ti en el sistema Cambia. Aquí están tus credenciales de acceso:</p>
-              <p><strong>Email:</strong> ${userData.email}</p>
-              <p><strong>Contraseña temporal:</strong> ${tempPassword}</p>
-              <p>Por razones de seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
-              <p>Si tienes alguna pregunta, no dudes en contactar al administrador del sistema.</p>
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <title>Bienvenido a Cambia</title>
+              </head>
+              <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h2 style="color: #2563eb;">Bienvenido a Cambia</h2>
+                  <p>Se ha creado una cuenta para ti en el sistema Cambia. Aquí están tus credenciales de acceso:</p>
+                  <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p><strong>Email:</strong> ${userData.email}</p>
+                    <p><strong>Contraseña temporal:</strong> ${tempPassword}</p>
+                  </div>
+                  <p>Por razones de seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
+                  <p>Si tienes alguna pregunta, no dudes en contactar al administrador del sistema.</p>
+                  <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+                  <p style="font-size: 12px; color: #6b7280;">
+                    Este es un mensaje automático, por favor no responder a este correo.
+                  </p>
+                </div>
+              </body>
+              </html>
             `
           })
         });
 
         if (!emailResult.ok) {
           const error = await emailResult.json();
-          console.warn('No se pudo enviar el email de bienvenida:', error);
+          console.error('Error sending welcome email:', error);
           
           // Show a warning but don't fail the user creation
-          if (error.error?.includes('SendGrid API key not configured')) {
-            console.warn('SendGrid no está configurado. El usuario fue creado exitosamente pero no se envió el email de bienvenida.');
+          if (error.error?.includes('not configured')) {
+            console.warn('Email service not configured. User created successfully but welcome email was not sent.');
+          } else {
+            console.warn('Failed to send welcome email:', error.error);
           }
+        } else {
+          console.log('Welcome email sent successfully');
         }
       } catch (emailError) {
-        console.warn('Error al enviar email de bienvenida:', emailError);
+        console.error('Error sending welcome email:', emailError);
         // Don't throw here since the user was created successfully
       }
       
