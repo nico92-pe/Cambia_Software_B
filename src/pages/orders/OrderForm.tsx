@@ -153,8 +153,8 @@ export function OrderForm() {
               id: item.id,
               productId: item.productId,
               product: item.product,
-              quantity = Number(item.quantity) || 0,
-              unitPrice = Number(item.unitPrice) || 0,
+              const quantity = Number(item.quantity) || 0,
+              const unitPrice = Number(item.unitPrice) || 0,
               subtotal: typeof item.subtotal === 'number' ? item.subtotal : (item.quantity * item.unitPrice),
             }));
             setItems(formItems);
