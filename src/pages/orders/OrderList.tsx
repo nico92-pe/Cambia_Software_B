@@ -409,12 +409,6 @@ export default function OrderList() {
                               <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
                             </Link>
                           </>
-                        {canCreateOrder && (!isAsesorVentas || ['borrador', 'tomado'].includes(order.status)) ? (
-                          <>
-                            <Link to={`/orders/edit/${order.id}`}>
-                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                            </Link>
-                          </>
                         ) : (
                           <Link to={`/orders/detail/${order.id}`}>
                             <Button variant="ghost" size="sm" icon={<Eye size={16} />} />
