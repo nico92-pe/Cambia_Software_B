@@ -363,7 +363,7 @@ export function OrderForm() {
       const orderData = {
         clientId: selectedClient.id,
         salespersonId: selectedClient.salespersonId || selectedSalesperson,
-        status: isEditing && order ? order.status : (saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO),
+        status: isEditing && order ? order.status : (isCurrentUserSalesperson ? currentStatus : (saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO)),
         observations: notes,
         paymentType,
         creditType: paymentType === 'credito' ? creditType : undefined,
@@ -525,9 +525,13 @@ export function OrderForm() {
                 <p className="text-gray-700">{selectedClient.businessName}</p>
                 <p className="text-gray-600">RUC: {selectedClient.ruc}</p>
                 <p className="text-gray-600">{selectedClient.address}, {selectedClient.district}</p>
-                {selectedClient.salesperson && (
+                {(selectedClient.salesperson || salespeople.find(s => s.id === selectedClient.salespersonId)) && (
                   <p className="text-gray-600 mt-2">
-                    <span className="font-medium">Vendedor:</span> {selectedClient.salesperson.fullName}
+                    <span className="font-medium">Vendedor:</span> {
+                      selectedClient.salesperson?.fullName || 
+                      salespeople.find(s => s.id === selectedClient.salespersonId)?.fullName ||
+                      'No disponible'
+                    }
                   </p>
                 )}
               </div>
@@ -849,6 +853,51 @@ export function OrderForm() {
             />
           </div>
         </div>
+
+        {/* Order Status - Only for Asesor de Ventas */}
+        {isCurrentUserSalesperson && (
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '350ms' }}>
+            <div className="card-header">
+              <h2 className="card-title text-xl">Estado del Pedido</h2>
+              <p className="card-description">
+                Selecciona el estado del pedido
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Estado
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="orderStatus"
+                        value={OrderStatus.BORRADOR}
+                        checked={currentStatus === OrderStatus.BORRADOR}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="mr-2"
+                      />
+                      Borrador
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="orderStatus"
+                        value={OrderStatus.TOMADO}
+                        checked={currentStatus === OrderStatus.TOMADO}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="mr-2"
+                      />
+                      Tomado
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
