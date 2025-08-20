@@ -82,7 +82,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
         
       if (error) throw error;
       
