@@ -277,35 +277,24 @@ export function ProductForm() {
                   <label htmlFor="wholesalePrice" className="block text-sm font-medium">
                     Precio Mayorista *
                   </label>
-    <div className="space-y-2">
-      <label
-        htmlFor="wholesalePrice"
-        className="block text-sm font-medium"
-      >
-        Precio Mayorista *
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground"></div>
-        <input
-          id="wholesalePrice"
-          type="number"
-          step="0.01"
-          className="input"
-          placeholder="0.00"
-          name="wholesalePrice"
-          value={value ?? ""}
-          onChange={(e) =>
-            setValue(e.target.value ? parseFloat(e.target.value) : null)
-          }
-        />
-      </div>
-      {/* Formatted preview */}
-      {value !== null && (
-        <p className="text-sm text-muted-foreground">
-          {formatCurrency(value)}
-        </p>
-      )}
-    </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                    </div>
+                    <input
+                      id="wholesalePrice"
+                      type="number"
+                      step="0.01"
+                      className={`input ${errors.wholesalePrice ? 'border-destructive' : ''}`}
+                      placeholder="0.00"
+                      {...register('wholesalePrice', {
+                        required: 'El precio es requerido',
+                        min: {
+                          value: 0,
+                          message: 'El precio debe ser mayor a 0',
+                        },
+                      })}
+                    />
+                  </div>
                   {errors.wholesalePrice && (
                     <p className="text-destructive text-sm mt-1">
                       {errors.wholesalePrice.message}
