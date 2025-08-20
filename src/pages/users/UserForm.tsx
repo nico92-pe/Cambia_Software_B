@@ -39,6 +39,8 @@ export function UserForm() {
     try {
       if (isEditMode && id) {
         await updateUser(id, data);
+        console.log(id);
+        console.log(data);
       } else {
         await createUser(data);
       }
