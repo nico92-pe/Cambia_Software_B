@@ -155,11 +155,19 @@ export function OrderForm() {
               product: item.product,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
-              subtotal: typeof item.subtotal === 'number' ? item.subtotal : (item.quantity * item.unitPrice),
+              subtotal: typeof item.subtotal === 'number' && item.subtotal > 0 
+                ? item.subtotal 
+                : Number((item.quantity * item.unitPrice).toFixed(2)),
             }));
             setItems(formItems);
             
-            console.log('Loaded order items:', formItems);
+            console.log('Loaded order items with subtotals:', formItems.map(item => ({
+              name: item.product?.name,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: item.subtotal,
+              calculated: item.quantity * item.unitPrice
+            })));
 
             // Load installments if credit order
             if (orderData.paymentType === 'credito' && orderData.installmentDetails) {
