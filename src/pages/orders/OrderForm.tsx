@@ -363,7 +363,7 @@ export function OrderForm() {
       const orderData = {
         clientId: selectedClient.id,
         salespersonId: selectedClient.salespersonId || selectedSalesperson,
-        status: isEditing && order ? order.status : (isCurrentUserSalesperson ? currentStatus : (saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO)),
+        status: isCurrentUserSalesperson ? currentStatus : (isEditing && order ? order.status : (saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO)),
         observations: notes,
         paymentType,
         creditType: paymentType === 'credito' ? creditType : undefined,
