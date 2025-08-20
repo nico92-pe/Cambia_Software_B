@@ -138,7 +138,8 @@ export function Login() {
             </Button>
           </form>
           
-
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center text-sm">
+          </div>
         </div>
       </div>
     </div>
