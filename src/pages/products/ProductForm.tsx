@@ -284,7 +284,7 @@ export function ProductForm() {
                       id="wholesalePrice"
                       type="number"
                       step="0.01"
-                      className="input pr-20"
+                      className="input pr-20 text-transparent caret-black"
                       placeholder="0.00"
                       {...register('wholesalePrice', {
                         required: 'El precio es requerido',
