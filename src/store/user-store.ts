@@ -248,6 +248,8 @@ export const useUserStore = create<UserState>((set, get) => ({
           
           Debes entregar estas credenciales manualmente al usuario.`);
       }
+    }
+  }
   
   updateUser: async (id, userData) => {
     set({ isLoading: true, error: null });
