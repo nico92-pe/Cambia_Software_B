@@ -296,6 +296,11 @@ export default function OrderList() {
                           <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
                         </Link>
                       )}
+                      {(!canCreateOrder || (isAsesorVentas && !['borrador', 'tomado'].includes(order.status))) && (
+                        <Link to={`/orders/detail/${order.id}`}>
+                          <Button variant="ghost" size="sm" icon={<Eye size={16} />} />
+                        </Link>
+                      )}
                       {!isAsesorVentas && canManageOrders && (
                         <Button
                           variant="ghost"
