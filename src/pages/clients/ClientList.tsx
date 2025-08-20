@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, MapPin, Plus, Search, Trash, User, Phone } from 'lucide-react';
+import { Edit, MapPin, Plus, Search, Trash, User } from 'lucide-react';
 import { useClientStore } from '../../store/client-store';
 import { useAuthStore } from '../../store/auth-store';
 import { UserRole } from '../../lib/types';
@@ -171,9 +171,6 @@ export function ClientList() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Ubicación
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Provincia
-                    </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Acciones
                     </th>
@@ -186,19 +183,10 @@ export function ClientList() {
                         <div>
                           <div className="font-medium">{client.commercialName}</div>
                           <div className="text-sm text-muted-foreground">{client.businessName}</div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            <span className="font-medium">Contacto:</span> {client.contactName}
-                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">{client.ruc}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <Phone className="h-4 w-4 text-muted-foreground mr-2" />
-                          <span className="text-sm">{client.contactPhone}</span>
-                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -211,23 +199,25 @@ export function ClientList() {
                           {client.province}
                         </Badge>
                       </td>
-                      {!isAsesorVentas && (
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Link to={`/clients/edit/${client.id}`}>
-                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex" />
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              icon={<Trash size={16} />}
-                              onClick={() => handleDelete(client.id)}
-                              loading={deleteLoading === client.id}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10 hidden sm:inline-flex"
-                            />
-                          </div>
-                        </td>
-                      )}
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <div className="flex items-center justify-end space-x-2">
+                          {!isAsesorVentas && (
+                            <>
+                              <Link to={`/clients/edit/${client.id}`}>
+                                <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex" />
+                              </Link>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<Trash size={16} />}
+                                onClick={() => handleDelete(client.id)}
+                                loading={deleteLoading === client.id}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 hidden sm:inline-flex"
+                              />
+                            </>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
