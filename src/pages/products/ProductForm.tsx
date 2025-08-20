@@ -278,12 +278,13 @@ export function ProductForm() {
                     Precio Mayorista *
                   </label>
                   <div className="relative">
-
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                    </div>
                     <input
                       id="wholesalePrice"
                       type="number"
                       step="0.01"
-                      className={`input ${errors.wholesalePrice ? 'border-destructive' : ''}`}
+                      className="input pr-20"
                       placeholder="0.00"
                       {...register('wholesalePrice', {
                         required: 'El precio es requerido',
@@ -292,7 +293,16 @@ export function ProductForm() {
                           message: 'El precio debe ser mayor a 0',
                         },
                       })}
+                      name="wholesalePrice"
+                      onInput={(e)=>{
+                       const input = e.currentTarget;
+                        const formatted = formatCurrency(parseFloat(input.value) || 0);
+                        const display = input.nextElementSibling as HTMLSpanElement;
+                        display.textContent = formatted
+                      }}
                     />
+                    <span className="absolute inset-y-0 right-3 flex items-center text-muted-foreground pointer-events-none"> S/ 0.00
+                    </span>
                   </div>
                   {errors.wholesalePrice && (
                     <p className="text-destructive text-sm mt-1">
