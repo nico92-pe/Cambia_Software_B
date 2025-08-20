@@ -370,6 +370,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       
       return newOrder;
     } catch (error) {
+      console.error('Error creating order:', error);
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Error al crear pedido'
