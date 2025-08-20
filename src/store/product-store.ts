@@ -192,12 +192,44 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select(`
+          *,
+          category:categories(*)
+        `)
+        .order('created_at', { ascending: true });
         
       if (error) throw error;
       
-      const products = data.map(mapDbRowToProduct);
+      // Get categories to sort them by creation date
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: true });
+        
+      if (categoriesError) throw categoriesError;
+      
+      // Create a map of category order
+      const categoryOrder = new Map();
+      categoriesData.forEach((cat, index) => {
+        categoryOrder.set(cat.id, index);
+      });
+      
+      // Map products and sort them
+      const products = data
+        .map(mapDbRowToProduct)
+        .sort((a, b) => {
+          // First sort by category order (oldest categories first)
+          const categoryOrderA = categoryOrder.get(a.categoryId) ?? 999;
+          const categoryOrderB = categoryOrder.get(b.categoryId) ?? 999;
+          
+          if (categoryOrderA !== categoryOrderB) {
+            return categoryOrderA - categoryOrderB;
+          }
+          
+          // Then sort by product creation date within the same category (oldest first)
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+        
       set({ products, isLoading: false });
     } catch (error) {
       set({
