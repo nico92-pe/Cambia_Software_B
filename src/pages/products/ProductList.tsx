@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Edit, Package, Plus, Search, Tag, Trash } from 'lucide-react';
+import { Box, Edit, Package, Plus, Search, Tag, Trash, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProductStore } from '../../store/product-store';
 import { useAuthStore } from '../../store/auth-store';
 import { ProductDetailModal } from '../../components/products/ProductDetailModal';
@@ -20,20 +20,33 @@ export function ProductList() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  
+  const PRODUCTS_PER_PAGE = 10;
   
   const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
 
   useEffect(() => {
-    getProducts();
-    getCategories();
+    const loadData = async () => {
+      setIsInitialLoading(true);
+      try {
+        await Promise.all([getProducts(), getCategories()]);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+    loadData();
   }, [getProducts, getCategories]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const handleCategoryFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCategoryFilter(e.target.value);
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const handleDelete = async (id: string) => {
@@ -78,6 +91,41 @@ export function ProductList() {
       return matchesSearch && matchesCategory;
     }
   );
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const endIndex = startIndex + PRODUCTS_PER_PAGE;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
+  
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
+
+  // Show loading screen during initial load
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-muted-foreground mt-4 text-lg">Cargando productos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -146,11 +194,7 @@ export function ProductList() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader />
-            </div>
-          ) : filteredProducts.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="text-center py-8">
               <Box className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
               <h3 className="mt-4 text-lg font-medium">No se encontraron productos</h3>
@@ -174,7 +218,7 @@ export function ProductList() {
               {/* Mobile Card View */}
               <div className="block sm:hidden">
                 <div className="space-y-4 p-4">
-                  {filteredProducts.map((product) => (
+                  {currentProducts.map((product) => (
                     <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                       <div className="flex items-start gap-4 mb-3">
                         <div className="flex-shrink-0">
@@ -288,7 +332,7 @@ export function ProductList() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
-                  {filteredProducts.map((product) => (
+                  {currentProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-muted/30">
                       <td className="px-6 py-4 whitespace-nowrap">
                         {product.imageUrl ? (
@@ -364,6 +408,63 @@ export function ProductList() {
             </>
           )}
         </div>
+        
+        {/* Pagination */}
+        {filteredProducts.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredProducts.length)} de {filteredProducts.length} productos
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                icon={<ChevronLeft size={16} />}
+              >
+                Anterior
+              </Button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNumber)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                icon={<ChevronRight size={16} />}
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
       
       <ProductDetailModal
