@@ -219,12 +219,12 @@ export function ProductList() {
                           </Badge>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Precio Mayorista:</span>
-                          <span className="font-medium">{formatCurrency(product.wholesalePrice)}</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span className="text-gray-500">Precio Minorista:</span>
                           <span className="font-medium">{formatCurrency(product.retailPrice)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Precio Mayorista:</span>
+                          <span className="font-medium">{formatCurrency(product.wholesalePrice)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Unidades/Caja:</span>
@@ -269,10 +269,10 @@ export function ProductList() {
                       Categoría
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Precio Mayorista
+                      Precio Minorista
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Precio Minorista
+                      Precio Mayorista
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Unidades/Caja
@@ -329,10 +329,10 @@ export function ProductList() {
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium">{formatCurrency(product.wholesalePrice)}</div>
+                        <div className="text-sm font-medium">{formatCurrency(product.retailPrice)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium">{formatCurrency(product.retailPrice)}</div>
+                        <div className="text-sm font-medium">{formatCurrency(product.wholesalePrice)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">{product.unitsPerBox}</div>
