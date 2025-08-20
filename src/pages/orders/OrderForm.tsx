@@ -103,10 +103,13 @@ export function OrderForm() {
   const canChangeStatus = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
   const isCurrentUserSalesperson = user?.role === UserRole.ASESOR_VENTAS;
 
-  // Calculate totals
-  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+  // Calculate totals - ensure we have valid numbers
+  const total = items.reduce((sum, item) => {
+    const itemSubtotal = typeof item.subtotal === 'number' ? item.subtotal : 0;
+    return sum + itemSubtotal;
+  }, 0);
   const subtotal = total / 1.18;
-  const igv = subtotal * 0.18;
+  const igv = total - subtotal;
   
   console.log('Calculated totals:', { total, subtotal, igv, itemsCount: items.length });
 
@@ -149,7 +152,7 @@ export function OrderForm() {
               product: item.product,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
-              subtotal: item.subtotal,
+              subtotal: typeof item.subtotal === 'number' ? item.subtotal : (item.quantity * item.unitPrice),
             }));
             setItems(formItems);
             
@@ -245,7 +248,7 @@ export function OrderForm() {
         product,
         quantity: 1,
         unitPrice: product.wholesalePrice,
-        subtotal: product.wholesalePrice,
+        subtotal: Number(product.wholesalePrice.toFixed(2)),
       };
       setItems([...items, newItem]);
     }
@@ -257,14 +260,14 @@ export function OrderForm() {
   const updateItemQuantity = (index: number, quantity: number) => {
     const updatedItems = [...items];
     updatedItems[index].quantity = quantity;
-    updatedItems[index].subtotal = quantity * updatedItems[index].unitPrice;
+    updatedItems[index].subtotal = Number((quantity * updatedItems[index].unitPrice).toFixed(2));
     setItems(updatedItems);
   };
 
   const updateItemPrice = (index: number, price: number) => {
     const updatedItems = [...items];
     updatedItems[index].unitPrice = price;
-    updatedItems[index].subtotal = updatedItems[index].quantity * price;
+    updatedItems[index].subtotal = Number((updatedItems[index].quantity * price).toFixed(2));
     setItems(updatedItems);
   };
 
