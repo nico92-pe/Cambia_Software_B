@@ -59,7 +59,8 @@ Deno.serve(async (req) => {
     // Initialize Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY not configured in environment variables');
+      console.error('RESEND_API_KEY not found in environment variables');
+      throw new Error('RESEND_API_KEY not configured. Please add it to Supabase Secrets.');
     }
 
     const resend = new Resend(resendApiKey);
@@ -67,8 +68,11 @@ Deno.serve(async (req) => {
     const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@yourdomain.com';
     
     if (!fromEmail.includes('@')) {
-      throw new Error('RESEND_FROM_EMAIL must be a valid email address');
+      console.error('RESEND_FROM_EMAIL is invalid:', fromEmail);
+      throw new Error('RESEND_FROM_EMAIL must be a valid email address. Please configure it in Supabase Secrets.');
     }
+
+    console.log('Attempting to send email from:', fromEmail, 'to:', email);
 
     const { data, error } = await resend.emails.send({
       from: fromEmail,
@@ -79,12 +83,14 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('Resend API error:', error);
-      throw new Error(`Failed to send email: ${error.message || 'Unknown Resend API error'}`);
+      throw new Error(`Resend API error: ${JSON.stringify(error)}`);
     }
     
     if (!data) {
-      throw new Error('No data returned from Resend API');
+      throw new Error('No data returned from Resend API - check your API key and domain verification');
     }
+
+    console.log('Email sent successfully with ID:', data.id);
 
     return new Response(
       JSON.stringify({ 

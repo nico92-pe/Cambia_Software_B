@@ -197,8 +197,57 @@ export const useUserStore = create<UserState>((set, get) => ({
         error: error instanceof Error ? error.message : 'Error al crear usuario'
       });
       throw error;
-    }
-  },
+      // Send welcome email with credentials
+      const session = await getCurrentSession();
+      if (!session) {
+        throw new Error('No authenticated session');
+      }
+
+      const functionUrl = new URL('/functions/v1/send-email', import.meta.env.VITE_SUPABASE_URL).toString();
+      try {
+        const emailResult = await fetch(functionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            email: userData.email,
+            subject: 'Bienvenido a Cambia - Credenciales de acceso',
+            content: `
+              <h2>Bienvenido a Cambia</h2>
+              <p>Se ha creado una cuenta para ti en el sistema Cambia. Aquí están tus credenciales de acceso:</p>
+              <p><strong>Email:</strong> ${userData.email}</p>
+              <p><strong>Contraseña temporal:</strong> ${tempPassword}</p>
+              <p>Por razones de seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
+              <p>Si tienes alguna pregunta, no dudes en contactar al administrador del sistema.</p>
+            `
+          })
+        });
+
+        if (!emailResult.ok) {
+          const error = await emailResult.json();
+          console.error('Error del servicio de email:', error);
+          
+          // Log the credentials for manual delivery
+          console.info(`⚠️ EMAIL NO ENVIADO - Credenciales del usuario creado:
+            📧 Email: ${userData.email}
+            🔑 Contraseña temporal: ${tempPassword}
+            
+            Debes entregar estas credenciales manualmente al usuario.`);
+          
+          // Don't throw error, just warn
+        } else {
+          console.info('✅ Email de bienvenida enviado exitosamente');
+        }
+      } catch (emailError) {
+        console.error('Error al conectar con el servicio de email:', emailError);
+        console.info(`⚠️ EMAIL NO ENVIADO - Credenciales del usuario creado:
+          📧 Email: ${userData.email}
+          🔑 Contraseña temporal: ${tempPassword}
+          
+          Debes entregar estas credenciales manualmente al usuario.`);
+      }
   
   updateUser: async (id, userData) => {
     set({ isLoading: true, error: null });
