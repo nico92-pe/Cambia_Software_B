@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Eye, Edit, Trash2, Filter, AlertTriangle } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
@@ -109,6 +109,8 @@ export default function OrderList() {
 
   const canCreateOrder = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
   const canManageOrders = user?.role && ['super_admin', 'admin'].includes(user.role);
+
+  const isAsesorVentas = useMemo(() => user?.role === 'asesor_ventas', [user?.role]);
 
   if (isLoading) {
     return (
