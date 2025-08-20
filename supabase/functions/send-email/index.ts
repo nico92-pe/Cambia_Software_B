@@ -1,5 +1,5 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
-import { Resend } from 'npm:resend@3';
+import { createClient } from 'npm:@supabase/supabase-js@2.39.3';
+import { Resend } from 'npm:resend@2.1.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,16 +59,12 @@ Deno.serve(async (req) => {
     // Initialize Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      console.error('RESEND_API_KEY environment variable not found');
-      throw new Error('SendGrid API key not configured');
+      throw new Error('Resend API key not configured');
     }
 
     const resend = new Resend(resendApiKey);
 
-    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
-    
-    console.log('Attempting to send email to:', email);
-    console.log('From email:', fromEmail);
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'contacto@griferiascambia.com';
 
     const { data, error } = await resend.emails.send({
       from: fromEmail,
@@ -78,12 +74,9 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
-      console.error('Resend API error:', error);
       throw new Error(`Failed to send email: ${error.message}`);
     }
 
-    console.log('Email sent successfully:', data);
-    
     return new Response(
       JSON.stringify({ 
         message: 'Email sent successfully',
@@ -97,29 +90,12 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error sending email:', error);
     
-    // More detailed error response
-    let errorMessage = 'An unexpected error occurred';
-    let statusCode = 500;
-    
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      if (error.message.includes('Unauthorized')) {
-        statusCode = 403;
-      } else if (error.message.includes('not configured')) {
-        statusCode = 500;
-        errorMessage = 'Email service not properly configured';
-      } else if (error.message.includes('Failed to send email')) {
-        statusCode = 400;
-      }
-    }
-    
     return new Response(
       JSON.stringify({ 
-        error: errorMessage,
-        details: error instanceof Error ? error.stack : undefined
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
       }),
       {
-        status: statusCode,
+        status: error.message.includes('Unauthorized') ? 403 : 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
