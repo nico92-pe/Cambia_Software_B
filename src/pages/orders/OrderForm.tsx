@@ -107,6 +107,8 @@ export function OrderForm() {
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
   const subtotal = total / 1.18;
   const igv = subtotal * 0.18;
+  
+  console.log('Calculated totals:', { total, subtotal, igv, itemsCount: items.length });
 
   // Load initial data
   useEffect(() => {
@@ -150,6 +152,8 @@ export function OrderForm() {
               subtotal: item.subtotal,
             }));
             setItems(formItems);
+            
+            console.log('Loaded order items:', formItems);
 
             // Load installments if credit order
             if (orderData.paymentType === 'credito' && orderData.installmentDetails) {
@@ -616,7 +620,8 @@ export function OrderForm() {
                 </table>
                 
                 {/* Totals */}
-                <div className="mt-4 flex justify-end">
+                {items.length > 0 && (
+                  <div className="mt-4 flex justify-end">
                   <div className="w-64 space-y-2">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
@@ -631,7 +636,8 @@ export function OrderForm() {
                       <span className="font-medium">{formatCurrency(total)}</span>
                     </div>
                   </div>
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -761,16 +767,16 @@ export function OrderForm() {
                             ))}
                           </tbody>
                           <tfoot>
-                            <tr className="bg-gray-100 font-bold">
-                              <td className="px-6 py-4 text-center">Total</td>
-                              <td className="px-6 py-4 text-center">
-                                {formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}
-                              </td>
-                              <td className="px-6 py-4"></td>
-                              <td className="px-6 py-4"></td>
-                            </tr>
-                          </tfoot>
-                        </table>
+                      </div>
+                      
+                      {/* Installments Total */}
+                      <div className="mt-4 flex justify-end">
+                        <div className="w-64">
+                          <div className="flex justify-between font-bold text-lg border-t pt-2">
+                            <span>Total Cuotas:</span>
+                            <span>{formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
