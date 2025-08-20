@@ -67,7 +67,7 @@ export function Login() {
     try {
       const { supabase } = await import('../lib/supabase');
       const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: 'https://import-distribution-0geo.bolt.host/reset-password',
       });
       
       if (error) throw error;
