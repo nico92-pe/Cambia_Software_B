@@ -1147,7 +1147,6 @@ export function OrderForm() {
         </form>
       </div>
     </div>
-    </Modal>
   );
 }
 
