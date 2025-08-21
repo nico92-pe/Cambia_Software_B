@@ -387,6 +387,7 @@ export function OrderForm() {
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
+            pulsadorType: item.pulsadorType,
           });
         }
         
