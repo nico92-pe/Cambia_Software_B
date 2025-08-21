@@ -30,7 +30,6 @@ const mapDbRowToOrderItem = (row: any): OrderItem => ({
   quantity: row.quantity,
   unitPrice: parseFloat(row.unit_price),
   subtotal: parseFloat(row.subtotal),
-  pulsadorType: row.pulsador_type,
   createdAt: row.created_at,
 });
 
@@ -52,7 +51,6 @@ const mapOrderItemToDbFormat = (item: Partial<OrderItem>) => ({
   product_id: item.productId,
   quantity: item.quantity,
   unit_price: item.unitPrice,
-  pulsador_type: item.pulsadorType,
 });
 
 interface OrderState {

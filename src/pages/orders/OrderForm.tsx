@@ -85,7 +85,6 @@ export function OrderForm() {
   const [clientSearch, setClientSearch] = useState('');
   const [showClientResults, setShowClientResults] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(OrderStatus.BORRADOR);
-  const [items, setItems] = useState<OrderFormItem[]>([]);
   const [productSearch, setProductSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [paymentType, setPaymentType] = useState<'contado' | 'credito'>('contado');
@@ -262,7 +261,7 @@ export function OrderForm() {
 
   const addProduct = (product: Product) => {
     const existingItemIndex = items.findIndex(item => item.productId === product.id);
-    
+      (item) => item.product.id === product.id
     if (existingItemIndex >= 0) {
       // Update existing item quantity
       const updatedItems = [...items];
