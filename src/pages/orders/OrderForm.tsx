@@ -292,10 +292,7 @@ export function OrderForm() {
     const updatedItems = [...items];
     updatedItems[index].unitPrice = price;
     updatedItems[index].subtotal = Number((updatedItems[index].quantity * price).toFixed(2));
-    const kitNumber = productName.toLowerCase().match(/kit ahorrador (\d+)/);
-    if (!kitNumber) return false;
-    const number = parseInt(kitNumber[1]);
-    return [3, 4, 5, 6, 9, 10].includes(number);
+    setItems(updatedItems);
   };
 
   const updateItemPulsador = (index: number, pulsadorType: 'pequeño' | 'grande') => {
@@ -305,62 +302,6 @@ export function OrderForm() {
   };
 
   // Filter Kit Ahorrador items
-
-  const splitKitItem = (index: number) => {
-    setItems(prevItems => {
-      const newItems = [...prevItems];
-      const item = newItems[index];
-      
-      if (item.quantity <= 1) return prevItems;
-      
-      const halfQuantity = Math.floor(item.quantity / 2);
-      const remainingQuantity = item.quantity - halfQuantity;
-      
-      // Update original item
-      newItems[index] = {
-        ...item,
-        quantity: halfQuantity,
-        pulsadorType: 'pequeño',
-        subtotal: halfQuantity * item.unitPrice
-      };
-      
-      // Add new item with remaining quantity
-      const newItem: OrderFormItem = {
-        ...item,
-        quantity: remainingQuantity,
-        pulsadorType: 'grande',
-        subtotal: remainingQuantity * item.unitPrice
-      };
-      
-      newItems.splice(index + 1, 0, newItem);
-      return newItems;
-    });
-  };
-
-  const unifyKitItems = (index: number) => {
-    setItems(prevItems => {
-      const newItems = [...prevItems];
-      const currentItem = newItems[index];
-      const nextItem = newItems[index + 1];
-      
-      if (!nextItem || currentItem.productId !== nextItem.productId) {
-        return prevItems;
-      }
-      
-      // Combine quantities
-      const totalQuantity = currentItem.quantity + nextItem.quantity;
-      newItems[index] = {
-        ...currentItem,
-        quantity: totalQuantity,
-        pulsadorType: 'pequeño',
-        subtotal: totalQuantity * currentItem.unitPrice
-      };
-      
-      // Remove the next item
-      newItems.splice(index + 1, 1);
-      return newItems;
-    });
-  };
   const kitAhorradorItems = items.filter(item => 
     item.product?.name.toLowerCase().includes('kit ahorrador')
   );
@@ -786,11 +727,6 @@ export function OrderForm() {
                   const totalQuantity = productItems.reduce((sum, item) => sum + item.quantity, 0);
                   const hasSplit = productItems.length > 1;
                   
-                  const nextItem = items[originalIndex + 1];
-                  const canUnify = nextItem && 
-                    nextItem.productId === item.productId && 
-                    isKitAhorrador(nextItem.product?.name || '');
-                  
                   return (
                     <div key={`kit-group-${productId}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <div className="mb-4">
@@ -1129,52 +1065,23 @@ export function OrderForm() {
           
           <div className="flex justify-end space-x-3">
             <Button
-                    <div key={originalIndex} className="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-200">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">{item.product?.name}</h4>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-muted-foreground mt-1">
-                            <span>Código: {item.product?.code}</span>
-                            <span>Cantidad: {item.quantity}</span>
-                            <span>Precio: {formatCurrency(item.unitPrice)}</span>
-                          </div>
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
               onClick={deleteItem}
-                        
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            >
               Eliminar
             </Button>
           </div>
-                            className="select w-full sm:w-48 text-sm"
+        </div>
       </Modal>
     </div>
   );
 }
-                          
-                          <div className="flex gap-2">
-                            {item.quantity > 1 && !canUnify && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => splitKitItem(originalIndex)}
-                                className="text-xs whitespace-nowrap"
-                              >
-                                Dividir pulsadores
-                              </Button>
-                            )}
-                            
-                            {canUnify && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => unifyKitItems(originalIndex)}
-                                className="text-xs whitespace-nowrap bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-                              >
-                                Unificar
-                              </Button>
-                            )}
-                          </div>
                         </div>
                       </div>
                     </div>
