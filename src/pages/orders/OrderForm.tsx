@@ -305,6 +305,43 @@ export function OrderForm() {
   const kitAhorradorItems = items.filter(item => 
     item.product?.name.toLowerCase().includes('kit ahorrador')
   );
+
+  const splitKitItem = (index: number) => {
+    const item = items[index];
+    if (item.quantity <= 1) return;
+    
+    const updatedItems = [...items];
+    // Split into individual items
+    updatedItems.splice(index, 1);
+    
+    for (let i = 0; i < item.quantity; i++) {
+      updatedItems.push({
+        ...item,
+        quantity: 1,
+        subtotal: item.unitPrice,
+      });
+    }
+    
+    setItems(updatedItems);
+  };
+
+  const mergeKitItems = (productId: string) => {
+    const productItems = items.filter(item => item.productId === productId);
+    if (productItems.length <= 1) return;
+    
+    const totalQuantity = productItems.reduce((sum, item) => sum + item.quantity, 0);
+    const firstItem = productItems[0];
+    
+    const updatedItems = items.filter(item => item.productId !== productId);
+    updatedItems.push({
+      ...firstItem,
+      quantity: totalQuantity,
+      subtotal: Number((totalQuantity * firstItem.unitPrice).toFixed(2)),
+    });
+    
+    setItems(updatedItems);
+  };
+
   const handlePriceInput = (e: React.FormEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
     const value = input.value;
@@ -804,7 +841,7 @@ export function OrderForm() {
         )}
 
         {/* Payment Terms */}
-        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
           <div className="card-header">
             <h2 className="card-title text-xl">Términos de Pago</h2>
             <p className="card-description">
@@ -951,7 +988,7 @@ export function OrderForm() {
         </div>
 
         {/* Notes */}
-        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
           <div className="card-header">
             <h2 className="card-title text-xl">Observaciones</h2>
             <p className="card-description">
@@ -971,7 +1008,7 @@ export function OrderForm() {
 
         {/* Order Status - Only for Asesor de Ventas */}
         {isCurrentUserSalesperson && (
-          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '350ms' }}>
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '450ms' }}>
             <div className="card-header">
               <h2 className="card-title text-xl">Estado del Pedido</h2>
               <p className="card-description">
@@ -1015,7 +1052,7 @@ export function OrderForm() {
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
+        <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '500ms' }}>
           <Button
             type="button"
             variant="outline"
