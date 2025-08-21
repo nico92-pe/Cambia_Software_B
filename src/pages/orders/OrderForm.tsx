@@ -468,39 +468,34 @@ export function OrderForm() {
         const newOrder = await createOrder(orderData);
         orderId = newOrder.id;
       }
-      
-      // Save order items for new orders
-      if (!isEditing && orderId) {
+
+      // Update order items
+      if (orderId) {
+        // Remove existing items if editing
+        if (isEditing && order?.items) {
+          for (const existingItem of order.items) {
+            await removeOrderItem(orderId, existingItem.id);
+          }
+        }
+
+        // Add current items
         for (const item of items) {
-          await addOrderItem(orderId, {
+          const orderItemData = {
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
+            subtotal: item.subtotal,
             pulsadorType: item.pulsadorType,
-          });
-        }
-        
-        // Save installments for credit orders
-        if (paymentType === 'credito' && installments.length > 0) {
-          const { supabase } = await import('../../lib/supabase');
+            pulsadorPequenoQty: item.pulsadorPequenoQty,
+            pulsadorGrandeQty: item.pulsadorGrandeQty,
+          };
           
-          for (const installment of installments) {
-            await supabase
-              .from('order_installments')
-              .insert({
-                order_id: orderId,
-                installment_number: installment.installmentNumber,
-                amount: installment.amount,
-                due_date: installment.dueDate,
-                days_due: installment.daysDue,
-              });
-          }
+          await addOrderItem(orderId, orderItemData);
         }
       }
-      
+
       navigate('/orders');
     } catch (error) {
-      console.error('Error saving order:', error);
       setFormError('Error al guardar el pedido');
     }
   };
