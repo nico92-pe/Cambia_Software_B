@@ -1143,6 +1143,7 @@ export function OrderForm() {
               {isEditMode ? 'Actualizar Pedido' : 'Crear Pedido'}
             </Button>
           </div>
+        </div>
         </form>
       </div>
     </div>
