@@ -87,7 +87,6 @@ export function OrderForm() {
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(OrderStatus.BORRADOR);
   const [items, setItems] = useState<OrderFormItem[]>([]);
   const [productSearch, setProductSearch] = useState('');
-  const [showProductResults, setShowProductResults] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [paymentType, setPaymentType] = useState<'contado' | 'credito'>('contado');
   const [creditType, setCreditType] = useState<'factura' | 'letras'>('factura');
@@ -1176,43 +1175,6 @@ export function OrderForm() {
           >
             <Save size={18} className="mr-2" />
             {isEditing ? 'Actualizar Pedido' : 'Confirmar Pedido'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title="Confirmar Eliminación"
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-8 w-8 text-destructive" />
-            <div>
-              <h3 className="font-medium">¿Eliminar producto?</h3>
-              <p className="text-sm text-muted-foreground">
-                Esta acción eliminará el producto del pedido.
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteModal(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={deleteItem}
-            >
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
