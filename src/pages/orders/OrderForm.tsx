@@ -295,7 +295,7 @@ export function OrderForm() {
     setItems(updatedItems);
   };
 
-  const updateItemPulsador = (index: number, pulsadorType: 'pequeño' | 'grande') => {
+  const updateItemPulsador = (index: number, pulsadorType: 'pequeño' | 'grande' | 'mixto') => {
     const updatedItems = [...items];
     updatedItems[index].pulsadorType = pulsadorType;
     setItems(updatedItems);
