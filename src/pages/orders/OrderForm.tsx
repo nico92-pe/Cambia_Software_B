@@ -28,6 +28,7 @@ interface OrderFormItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  pulsadorType?: 'pequeño' | 'grande';
 }
 
 interface OrderInstallmentForm {
@@ -161,6 +162,7 @@ export function OrderForm() {
               subtotal: typeof item.subtotal === 'number' && item.subtotal > 0 
                 ? item.subtotal 
                 : Number((item.quantity * item.unitPrice).toFixed(2)),
+              pulsadorType: item.pulsadorType,
             }));
             setItems(formItems);
             
@@ -263,12 +265,14 @@ export function OrderForm() {
       setItems(updatedItems);
     } else {
       // Add new item
+      const isKitAhorrador = product.name.toLowerCase().includes('kit ahorrador');
       const newItem: OrderFormItem = {
         productId: product.id,
         product,
         quantity: 1,
         unitPrice: product.wholesalePrice,
         subtotal: Number(product.wholesalePrice.toFixed(2)),
+        pulsadorType: isKitAhorrador ? 'pequeño' : undefined,
       };
       setItems([...items, newItem]);
     }
@@ -291,6 +295,16 @@ export function OrderForm() {
     setItems(updatedItems);
   };
 
+  const updateItemPulsador = (index: number, pulsadorType: 'pequeño' | 'grande') => {
+    const updatedItems = [...items];
+    updatedItems[index].pulsadorType = pulsadorType;
+    setItems(updatedItems);
+  };
+
+  // Filter Kit Ahorrador items
+  const kitAhorradorItems = items.filter(item => 
+    item.product?.name.toLowerCase().includes('kit ahorrador')
+  );
   const handlePriceInput = (e: React.FormEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
     const value = input.value;
@@ -688,6 +702,47 @@ export function OrderForm() {
             )}
           </div>
         </div>
+
+        {/* Kit Ahorrador Pulsador Selection */}
+        {kitAhorradorItems.length > 0 && (
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '250ms' }}>
+            <div className="card-header">
+              <h2 className="card-title text-xl">Configuración de Pulsadores</h2>
+              <p className="card-description">
+                Selecciona el tipo de pulsador para cada Kit Ahorrador
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-4">
+                {kitAhorradorItems.map((item, kitIndex) => {
+                  const originalIndex = items.findIndex(i => i.productId === item.productId);
+                  return (
+                    <div key={`kit-${item.productId}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">{item.product?.name}</h3>
+                          <p className="text-sm text-gray-600">
+                            Código: {item.product?.code} | Cantidad: {item.quantity}
+                          </p>
+                        </div>
+                        <div className="ml-4">
+                          <select
+                            value={item.pulsadorType || 'pequeño'}
+                            onChange={(e) => updateItemPulsador(originalIndex, e.target.value as 'pequeño' | 'grande')}
+                            className="select w-48"
+                          >
+                            <option value="pequeño">Pulsador dual pequeño</option>
+                            <option value="grande">Pulsador dual grande</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Payment Terms */}
         <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
