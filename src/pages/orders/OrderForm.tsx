@@ -165,6 +165,8 @@ export function OrderForm() {
                 ? item.subtotal 
                 : Number((item.quantity * item.unitPrice).toFixed(2)),
               pulsadorType: item.pulsadorType,
+              pulsadorPequenoQty: item.pulsadorPequenoQty,
+              pulsadorGrandeQty: item.pulsadorGrandeQty,
               pulsadorPequenoQty: item.pulsadorPequenoQty || 0,
               pulsadorGrandeQty: item.pulsadorGrandeQty || 0,
             }));
