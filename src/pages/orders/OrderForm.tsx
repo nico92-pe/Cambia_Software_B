@@ -295,7 +295,7 @@ export function OrderForm() {
     setItems(updatedItems);
   };
 
-  const updateItemPulsador = (index: number, pulsadorType: 'pequeño' | 'grande' | 'mixto') => {
+  const updateItemPulsador = (index: number, pulsadorType: 'pequeño' | 'grande') => {
     const updatedItems = [...items];
     updatedItems[index].pulsadorType = pulsadorType;
     setItems(updatedItems);
@@ -705,35 +705,383 @@ export function OrderForm() {
 
         {/* Kit Ahorrador Pulsador Selection */}
         {kitAhorradorItems.length > 0 && (
-          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '250ms' }}>
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
             <div className="card-header">
               <h2 className="card-title text-xl">Configuración de Pulsadores</h2>
               <p className="card-description">
-                Selecciona el tipo de pulsador para cada Kit Ahorrador
+                Selecciona el tipo de pulsador para cada Kit Ahorrador (3, 4, 5, 6, 9, 10)
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-6">
+                {/* Group items by product */}
+                {Object.entries(
+                  kitAhorradorItems.reduce((groups, item) => {
+                    const key = item.productId;
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item);
+                    return groups;
+                  }, {} as Record<string, OrderFormItem[]>)
+                ).map(([productId, productItems]) => {
+                  const product = productItems[0].product;
+                  const totalQuantity = productItems.reduce((sum, item) => sum + item.quantity, 0);
+                  const hasSplit = productItems.length > 1;
+                  
+                  return (
+                    <div key={`kit-group-${productId}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate">{product?.name}</h3>
+                            <p className="text-sm text-gray-600">
+                              Código: {product?.code} | Cantidad total: {totalQuantity}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {!hasSplit && totalQuantity > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const itemIndex = items.findIndex(i => i.productId === productId);
+                                  if (itemIndex !== -1) splitKitItem(itemIndex);
+                                }}
+                                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                              >
+                                Dividir pulsadores
+                              </button>
+                            )}
+                            {hasSplit && (
+                              <button
+                                type="button"
+                                onClick={() => mergeKitItems(productId)}
+                                className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                              >
+                                Unificar pulsadores
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Individual items */}
+                      <div className="space-y-3">
+                        {productItems.map((item, itemIndex) => {
+                          const originalIndex = items.findIndex(i => 
+                            i.productId === item.productId && 
+                            i.quantity === item.quantity &&
+                            i.pulsadorType === item.pulsadorType
+                          );
+                          
+                          return (
+                            <div key={`item-${originalIndex}-${itemIndex}`} className="bg-white rounded-md p-3 border border-gray-200">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    Cantidad: {item.quantity} {productItems.length > 1 ? `(Parte ${itemIndex + 1})` : ''}
+                                  </p>
+                                </div>
+                                <div className="flex-shrink-0 w-full sm:w-auto">
+                                  <select
+                                    value={item.pulsadorType || 'pequeño'}
+                                    onChange={(e) => updateItemPulsador(originalIndex, e.target.value as 'pequeño' | 'grande')}
+                                    className="w-full sm:w-48 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                                  >
+                                    <option value="pequeño">Pulsador dual pequeño</option>
+                                    <option value="grande">Pulsador dual grande</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Terms */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Términos de Pago</h2>
+            <p className="card-description">
+              Configura los términos de pago del pedido
+            </p>
+          </div>
+          <div className="card-content">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Tipo de Pago
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="contado"
+                      checked={paymentType === 'contado'}
+                      onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                      className="mr-2"
+                    />
+                    Contado
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="credito"
+                      checked={paymentType === 'credito'}
+                      onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                      className="mr-2"
+                    />
+                    Crédito
+                  </label>
+                </div>
+              </div>
+
+              {paymentType === 'credito' && (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Tipo de Crédito
+                      </label>
+                      <select
+                        value={creditType}
+                        onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
+                        className="select w-full"
+                      >
+                        <option value="factura">Factura</option>
+                        <option value="letras">Letras</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Número de Cuotas
+                      </label>
+                      <select
+                        value={installmentCount}
+                        onChange={(e) => setInstallmentCount(parseInt(e.target.value))}
+                        className="select w-full"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
+                          <option key={num} value={num}>{num} cuota{num > 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {installments.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">Detalle de Cuotas</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Cuota
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Monto
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Fecha
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Días
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {installments.map((installment, index) => (
+                              <tr key={index} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                                  {installment.installmentNumber}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                                  {formatCurrency(installment.amount)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <input
+                                    type="date"
+                                    value={installment.dueDate}
+                                    onChange={(e) => updateInstallmentDate(index, e.target.value)}
+                                    className="w-44 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={installment.daysDue || ''}
+                                    onChange={(e) => updateInstallmentDays(index, parseInt(e.target.value) || 0)}
+                                    className="w-28 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan={4} className="px-6 py-4">
+                                <div className="flex justify-end">
+                                  <div className="w-64">
+                                    <div className="flex justify-between font-bold text-lg border-t pt-2">
+                                      <span>Total Cuotas:</span>
+                                      <span>{formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Observaciones</h2>
+            <p className="card-description">
+              Notas adicionales del pedido
+            </p>
+          </div>
+          <div className="card-content">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              className="input w-full resize-none"
+              placeholder="Observaciones adicionales del pedido..."
+            />
+          </div>
+        )}
+
+        {/* Order Status - Only for Asesor de Ventas */}
+        {isCurrentUserSalesperson && (
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '450ms' }}>
+            <div className="card-header">
+              <h2 className="card-title text-xl">Estado del Pedido</h2>
+              <p className="card-description">
+                Selecciona el estado del pedido
               </p>
             </div>
             <div className="card-content">
               <div className="space-y-4">
-                {kitAhorradorItems.map((item, kitIndex) => {
-                  const originalIndex = items.findIndex(i => i.productId === item.productId);
-                  return (
-                    <div key={`kit-${item.productId}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{item.product?.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            Código: {item.product?.code} | Cantidad: {item.quantity}
-                          </p>
-                        </div>
-                        <div className="ml-4">
-                          <select
-                            value={item.pulsadorType || 'pequeño'}
-                            onChange={(e) => updateItemPulsador(originalIndex, e.target.value as 'pequeño' | 'grande')}
-                            className="select w-48"
-                          >
-                            <option value="pequeño">Pulsador dual pequeño</option>
-                            <option value="grande">Pulsador dual grande</option>
-                          </select>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Estado
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="orderStatus"
+                        value={OrderStatus.BORRADOR}
+                        checked={currentStatus === OrderStatus.BORRADOR}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="mr-2"
+                      />
+                      Borrador
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="orderStatus"
+                        value={OrderStatus.TOMADO}
+                        checked={currentStatus === OrderStatus.TOMADO}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="mr-2"
+                      />
+                      Tomado
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '500ms' }}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/orders')}
+          >
+            Cancelar
+          </Button>
+          {!isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => handleSubmit(e, true)}
+              loading={isLoading}
+              disabled={!selectedClient || items.length === 0}
+            >
+              Guardar Borrador
+            </Button>
+          )}
+          <Button
+            type="button"
+            onClick={(e) => handleSubmit(e, false)}
+            loading={isLoading}
+            disabled={!selectedClient || items.length === 0}
+          >
+            <Save size={18} className="mr-2" />
+            {isEditing ? 'Actualizar Pedido' : 'Confirmar Pedido'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+            <div>
+              <h3 className="font-medium">¿Eliminar producto?</h3>
+              <p className="text-sm text-muted-foreground">
+                Esta acción eliminará el producto del pedido.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteItem}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
                         </div>
                       </div>
                     </div>
