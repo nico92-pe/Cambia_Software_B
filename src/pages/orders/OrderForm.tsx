@@ -1,262 +1,432 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { ArrowLeft, Plus, Save, Trash2, X, Package, User, CreditCard, FileText, AlertTriangle } from 'lucide-react';
-import { Order, OrderItem, Product, Client, User as UserType, OrderStatus } from '../../lib/types';
+import { ArrowLeft, Search, Plus, Trash2, Save, AlertTriangle } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useClientStore } from '../../store/client-store';
 import { useProductStore } from '../../store/product-store';
 import { useUserStore } from '../../store/user-store';
 import { useAuthStore } from '../../store/auth-store';
-import { UserRole } from '../../lib/types';
+import { OrderStatus, Client, Product, OrderItem, UserRole } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
 import { Modal } from '../../components/ui/Modal';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, formatDate } from '../../lib/utils';
 
-interface OrderFormData {
-  clientId: string;
-  salespersonId: string;
-  observations: string;
-  paymentType: 'contado' | 'credito';
-  creditType?: 'factura' | 'letras';
-  installments?: number;
-}
+const statusLabels = {
+  borrador: 'Borrador',
+  tomado: 'Tomado',
+  confirmado: 'Confirmado',
+  en_preparacion: 'En Preparación',
+  despachado: 'Despachado',
+};
 
-interface OrderFormItem extends Omit<OrderItem, 'id' | 'orderId' | 'createdAt'> {
+interface OrderFormItem {
+  id?: string;
+  productId: string;
   product?: Product;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
   pulsadorType?: 'pequeño' | 'grande';
 }
+
+interface OrderInstallmentForm {
+  installmentNumber: number;
+  amount: number;
+  dueDate: string;
+  daysDue: number;
+}
+
+// Helper function to format date for input (YYYY-MM-DD)
+const formatDateForInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper function to calculate days between dates
+const calculateDaysBetween = (startDate: Date, endDate: Date): number => {
+  const timeDiff = endDate.getTime() - startDate.getTime();
+  return Math.ceil(timeDiff / (1000 * 3600 * 24));
+};
+
+// Helper function to add days to a date
+const addDaysToDate = (date: Date, days: number): Date => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+// Helper function to format date for display (dd/mm/yyyy)
+const formatDateForDisplay = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 
 export function OrderForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { createOrder, updateOrder, getOrderById, addOrderItem, updateOrderItem, removeOrderItem, isLoading, error } = useOrderStore();
+  
+  const { user } = useAuthStore();
+  const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, isLoading, error } = useOrderStore();
   const { clients, getClients } = useClientStore();
-  const { products, getProducts } = useProductStore();
+  const { products, categories, getProducts, getCategories } = useProductStore();
   const { getUsersByRole } = useUserStore();
-  const { user: currentUser } = useAuthStore();
   
-  const [salespeople, setSalespeople] = useState<UserType[]>([]);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [order, setOrder] = useState(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientResults, setShowClientResults] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(OrderStatus.BORRADOR);
   const [items, setItems] = useState<OrderFormItem[]>([]);
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState<{ [key: string]: number }>({});
-  const [subtotal, setSubtotal] = useState(0);
-  const [igv, setIgv] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [installmentDays, setInstallmentDays] = useState<number[]>([]);
+  const [productSearch, setProductSearch] = useState('');
+  const [showProductResults, setShowProductResults] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [paymentType, setPaymentType] = useState<'contado' | 'credito'>('contado');
+  const [creditType, setCreditType] = useState<'factura' | 'letras'>('factura');
+  const [installmentCount, setInstallmentCount] = useState(1);
+  const [installments, setInstallments] = useState<OrderInstallmentForm[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [notes, setNotes] = useState('');
+  const [salespeople, setSalespeople] = useState([]);
+  const [selectedSalesperson, setSelectedSalesperson] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isDraft, setIsDraft] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  const isEditing = !!id;
+  const canEdit = user?.role !== UserRole.ASESOR_VENTAS || !isEditing;
+  const canChangeStatus = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
+  const isCurrentUserSalesperson = user?.role === UserRole.ASESOR_VENTAS;
   
-  const isEditMode = Boolean(id);
-  const isCurrentUserSalesperson = currentUser?.role === UserRole.ASESOR_VENTAS;
+  // Check if asesor can edit this order
+  const canAsesorEdit = !isCurrentUserSalesperson || !order || ['borrador', 'tomado'].includes(order.status);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    watch,
-    setValue,
-  } = useForm<OrderFormData>();
+  // Calculate totals - ensure we have valid numbers
+  const total = items.reduce((sum, item) => {
+    const itemSubtotal = typeof item.subtotal === 'number' ? item.subtotal : 0;
+    return sum + itemSubtotal;
+  }, 0);
+  const subtotal = total / 1.18;
+  const igv = total - subtotal;
+  
+  console.log('Calculated totals:', { total, subtotal, igv, itemsCount: items.length });
 
-  const paymentType = watch('paymentType');
-  const creditType = watch('creditType');
-  const installments = watch('installments');
-
-  // Load data on component mount
+  // Load initial data
   useEffect(() => {
     const loadData = async () => {
+      setIsDataLoaded(false);
+      
+      await Promise.all([
+        getClients(),
+        getProducts(),
+        getCategories(),
+      ]);
+
+      // Load salespeople
       try {
-        await Promise.all([
-          getClients(),
-          getProducts(),
-        ]);
+        const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
+        setSalespeople(salespeople);
+      } catch (error) {
+        console.error('Error loading salespeople:', error);
+      }
 
-        const salespeopleData = await getUsersByRole(UserRole.ASESOR_VENTAS);
-        setSalespeople(salespeopleData);
-
-        if (id) {
-          const order = await getOrderById(id);
-          if (order) {
-            reset({
-              clientId: order.clientId,
-              salespersonId: order.salespersonId,
-              observations: order.observations || '',
-              paymentType: order.paymentType,
-              creditType: order.creditType,
-              installments: order.installments,
-            });
-
-            const formItems: OrderFormItem[] = order.items.map(item => ({
+      // Load order if editing
+      if (id) {
+        try {
+          const orderData = await getOrderById(id);
+          if (orderData) {
+            setOrder(orderData);
+            setSelectedClient(orderData.client || null);
+            setCurrentStatus(orderData.status);
+            setNotes(orderData.observations || '');
+            setSelectedSalesperson(orderData.salespersonId);
+            setPaymentType(orderData.paymentType || 'contado');
+            setCreditType(orderData.creditType || 'factura');
+            setInstallmentCount(orderData.installments || 1);
+            setIsDraft(orderData.status === OrderStatus.BORRADOR);
+            
+            // Convert order items to form items
+            const formItems: OrderFormItem[] = orderData.items.map(item => ({
+              id: item.id,
               productId: item.productId,
+              product: item.product,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: typeof item.subtotal === 'number' && item.subtotal > 0 
+                ? item.subtotal 
+                : Number((item.quantity * item.unitPrice).toFixed(2)),
+              pulsadorType: item.pulsadorType,
+            }));
+            setItems(formItems);
+            
+            console.log('Loaded order items with subtotals:', formItems.map(item => ({
+              name: item.product?.name,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               subtotal: item.subtotal,
-              product: item.product,
-              pulsadorType: item.pulsadorType,
-            }));
-            
-            setItems(formItems);
-            
-            if (order.installmentDetails) {
-              setInstallmentDays(order.installmentDetails.map(inst => inst.daysDue));
+              calculated: item.quantity * item.unitPrice
+            })));
+
+            // Load installments if credit order
+            if (orderData.paymentType === 'credito' && orderData.installmentDetails) {
+              const formInstallments: OrderInstallmentForm[] = orderData.installmentDetails.map(inst => ({
+                installmentNumber: inst.installmentNumber,
+                amount: inst.amount,
+                dueDate: formatDateForInput(new Date(inst.dueDate)),
+                daysDue: inst.daysDue,
+              }));
+              setInstallments(formInstallments);
             }
+            
+            setIsDataLoaded(true);
           }
-        } else if (isCurrentUserSalesperson && currentUser) {
-          setValue('salespersonId', currentUser.id);
+        } catch (error) {
+          setFormError('Error al cargar el pedido');
+          setIsDataLoaded(true);
         }
-      } catch (error) {
-        setFormError('Error al cargar los datos');
+      } else if (isCurrentUserSalesperson && user) {
+        // Pre-select current user as salesperson for new orders
+        setSelectedSalesperson(user.id);
+        setIsDataLoaded(true);
+      } else {
+        setIsDataLoaded(true);
       }
     };
 
     loadData();
-  }, [id, getClients, getProducts, getUsersByRole, getOrderById, reset, setValue, isCurrentUserSalesperson, currentUser]);
+  }, [id, getOrderById, getClients, getProducts, getCategories, getUsersByRole, isCurrentUserSalesperson, user]);
 
-  // Calculate totals when items change
+  // Generate installments when payment type changes to credit
   useEffect(() => {
-    const newSubtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-    const newIgv = newSubtotal * 0.18;
-    const newTotal = newSubtotal + newIgv;
-    
-    setSubtotal(newSubtotal);
-    setIgv(newIgv);
-    setTotal(newTotal);
-  }, [items]);
-
-  // Update installment days when installments change
-  useEffect(() => {
-    if (installments && installments > 0) {
-      const days = Array.from({ length: installments }, (_, i) => (i + 1) * 30);
-      setInstallmentDays(days);
+    if (paymentType === 'credito' && total > 0) {
+      generateInstallments();
+    } else {
+      setInstallments([]);
     }
-  }, [installments]);
+  }, [paymentType, installmentCount, total]);
 
-  const addProductsToOrder = () => {
-    const newItems: OrderFormItem[] = [];
+  const generateInstallments = () => {
+    const baseAmount = Math.floor((total * 100) / installmentCount) / 100;
+    const remainder = Math.round((total - (baseAmount * installmentCount)) * 100) / 100;
+    const orderDate = new Date();
     
-    Object.entries(selectedProducts).forEach(([productId, quantity]) => {
-      if (quantity > 0) {
-        const product = products.find(p => p.id === productId);
-        if (product) {
-          const unitPrice = paymentType === 'credito' ? product.creditPrice : product.cashPrice;
-          const subtotal = quantity * unitPrice;
-          
-          // Check if it's a Kit Ahorrador that needs pulsador selection
-          const isKitAhorrador = isKitAhorradorProduct(product);
-          
-          newItems.push({
-            productId,
-            quantity,
-            unitPrice,
-            subtotal,
-            product,
-            pulsadorType: isKitAhorrador ? 'pequeño' : undefined,
-          });
-        }
-      }
-    });
+    const newInstallments: OrderInstallmentForm[] = [];
     
-    setItems(prev => [...prev, ...newItems]);
-    setSelectedProducts({});
-    setShowProductModal(false);
+    for (let i = 1; i <= installmentCount; i++) {
+      const amount = i === installmentCount ? baseAmount + remainder : baseAmount;
+      const daysDue = i * 30;
+      const dueDate = addDaysToDate(orderDate, daysDue);
+      
+      newInstallments.push({
+        installmentNumber: i,
+        amount,
+        dueDate: formatDateForInput(dueDate),
+        daysDue,
+      });
+    }
+    
+    setInstallments(newInstallments);
   };
 
-  const removeItem = (index: number) => {
-    setItems(prev => prev.filter((_, i) => i !== index));
+  const handleClientSearch = (value: string) => {
+    setClientSearch(value);
+    setShowClientResults(value.length > 0);
+  };
+
+  const selectClient = (client: Client) => {
+    setSelectedClient(client);
+    setClientSearch(client.commercialName);
+    setShowClientResults(false);
+    
+    // Auto-select the client's salesperson
+    setSelectedSalesperson(client.salespersonId || '');
+  };
+
+  const handleProductSearch = (value: string) => {
+    setProductSearch(value);
+    setShowProductResults(value.length > 0);
+  };
+
+  const addProduct = (product: Product) => {
+    const existingItemIndex = items.findIndex(item => item.productId === product.id);
+    
+    if (existingItemIndex >= 0) {
+      // Update existing item quantity
+      const updatedItems = [...items];
+      updatedItems[existingItemIndex].quantity += 1;
+      updatedItems[existingItemIndex].subtotal = updatedItems[existingItemIndex].quantity * updatedItems[existingItemIndex].unitPrice;
+      setItems(updatedItems);
+    } else {
+      // Add new item
+      const isKitAhorrador = product.name.toLowerCase().includes('kit ahorrador');
+      const newItem: OrderFormItem = {
+        productId: product.id,
+        product,
+        quantity: 1,
+        unitPrice: product.wholesalePrice,
+        subtotal: Number(product.wholesalePrice.toFixed(2)),
+        pulsadorType: isKitAhorrador ? 'pequeño' : undefined,
+      };
+      setItems([...items, newItem]);
+    }
+    
+    setProductSearch('');
+    setShowProductResults(false);
   };
 
   const updateItemQuantity = (index: number, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(index);
-      return;
-    }
-    
-    setItems(prev => prev.map((item, i) => {
-      if (i === index) {
-        const newSubtotal = quantity * item.unitPrice;
-        return { ...item, quantity, subtotal: newSubtotal };
-      }
-      return item;
-    }));
+    const updatedItems = [...items];
+    updatedItems[index].quantity = quantity;
+    updatedItems[index].subtotal = Number((quantity * updatedItems[index].unitPrice).toFixed(2));
+    setItems(updatedItems);
+  };
+
+  const updateItemPrice = (index: number, price: number) => {
+    const updatedItems = [...items];
+    updatedItems[index].unitPrice = price;
+    updatedItems[index].subtotal = Number((updatedItems[index].quantity * price).toFixed(2));
+    const kitNumber = productName.toLowerCase().match(/kit ahorrador (\d+)/);
+    if (!kitNumber) return false;
+    const number = parseInt(kitNumber[1]);
+    return [3, 4, 5, 6, 9, 10].includes(number);
   };
 
   const updateItemPulsador = (index: number, pulsadorType: 'pequeño' | 'grande') => {
-    setItems(prev => prev.map((item, i) => {
-      if (i === index) {
-        return { ...item, pulsadorType };
-      }
-      return item;
-    }));
+    const updatedItems = [...items];
+    updatedItems[index].pulsadorType = pulsadorType;
+    setItems(updatedItems);
   };
 
-  const isKitAhorradorProduct = (product: Product): boolean => {
-    const kitMatch = product.name.toLowerCase().match(/kit\s*ahorrador\s*(\d+)/);
-    if (!kitMatch) return false;
-    
-    const kitNumber = parseInt(kitMatch[1]);
-    return [3, 4, 5, 6, 9, 10].includes(kitNumber);
-  };
+  // Filter Kit Ahorrador items
 
   const splitKitItem = (index: number) => {
-    const item = items[index];
-    if (item.quantity <= 1) return;
-    
-    const halfQuantity = Math.floor(item.quantity / 2);
-    const remainingQuantity = item.quantity - halfQuantity;
-    
-    const newItems = [...items];
-    
-    // Update original item
-    newItems[index] = {
-      ...item,
-      quantity: halfQuantity,
-      subtotal: halfQuantity * item.unitPrice,
-      pulsadorType: 'pequeño'
-    };
-    
-    // Add new item with remaining quantity
-    newItems.splice(index + 1, 0, {
-      ...item,
-      quantity: remainingQuantity,
-      subtotal: remainingQuantity * item.unitPrice,
-      pulsadorType: 'grande'
+    setItems(prevItems => {
+      const newItems = [...prevItems];
+      const item = newItems[index];
+      
+      if (item.quantity <= 1) return prevItems;
+      
+      const halfQuantity = Math.floor(item.quantity / 2);
+      const remainingQuantity = item.quantity - halfQuantity;
+      
+      // Update original item
+      newItems[index] = {
+        ...item,
+        quantity: halfQuantity,
+        pulsadorType: 'pequeño',
+        subtotal: halfQuantity * item.unitPrice
+      };
+      
+      // Add new item with remaining quantity
+      const newItem: OrderFormItem = {
+        ...item,
+        quantity: remainingQuantity,
+        pulsadorType: 'grande',
+        subtotal: remainingQuantity * item.unitPrice
+      };
+      
+      newItems.splice(index + 1, 0, newItem);
+      return newItems;
     });
-    
-    setItems(newItems);
   };
 
   const unifyKitItems = (index: number) => {
-    const item = items[index];
-    const nextItem = items[index + 1];
+    setItems(prevItems => {
+      const newItems = [...prevItems];
+      const currentItem = newItems[index];
+      const nextItem = newItems[index + 1];
+      
+      if (!nextItem || currentItem.productId !== nextItem.productId) {
+        return prevItems;
+      }
+      
+      // Combine quantities
+      const totalQuantity = currentItem.quantity + nextItem.quantity;
+      newItems[index] = {
+        ...currentItem,
+        quantity: totalQuantity,
+        pulsadorType: 'pequeño',
+        subtotal: totalQuantity * currentItem.unitPrice
+      };
+      
+      // Remove the next item
+      newItems.splice(index + 1, 1);
+      return newItems;
+    });
+  };
+  const kitAhorradorItems = items.filter(item => 
+    item.product?.name.toLowerCase().includes('kit ahorrador')
+  );
+  const handlePriceInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const value = input.value;
     
-    if (!nextItem || nextItem.productId !== item.productId) return;
-    
-    const totalQuantity = item.quantity + nextItem.quantity;
-    const newItems = [...items];
-    
-    // Update first item with combined quantity
-    newItems[index] = {
-      ...item,
-      quantity: totalQuantity,
-      subtotal: totalQuantity * item.unitPrice,
-      pulsadorType: 'pequeño' // Default back to pequeño
-    };
-    
-    // Remove the second item
-    newItems.splice(index + 1, 1);
-    
-    setItems(newItems);
+    // Allow only numbers and one decimal point with max 2 decimal places
+    const regex = /^\d*\.?\d{0,2}$/;
+    if (!regex.test(value)) {
+      // If invalid, revert to previous valid value
+      const validValue = value.slice(0, -1);
+      input.value = validValue;
+    }
   };
 
-  const updateInstallmentDay = (index: number, days: number) => {
-    setInstallmentDays(prev => prev.map((day, i) => i === index ? days : day));
+  const confirmDeleteItem = (index: number) => {
+    setItemToDelete(index);
+    setShowDeleteModal(true);
   };
 
-  const onSubmit = async (data: OrderFormData) => {
+  const deleteItem = () => {
+    if (itemToDelete !== null) {
+      const updatedItems = items.filter((_, index) => index !== itemToDelete);
+      setItems(updatedItems);
+      setItemToDelete(null);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const updateInstallmentDate = (index: number, dateStr: string) => {
+    const updatedInstallments = [...installments];
+    const orderDate = new Date();
+    const newDate = new Date(dateStr);
+    const daysDue = calculateDaysBetween(orderDate, newDate);
+    
+    updatedInstallments[index].dueDate = dateStr;
+    updatedInstallments[index].daysDue = daysDue;
+    setInstallments(updatedInstallments);
+  };
+
+  const updateInstallmentDays = (index: number, days: number) => {
+    const updatedInstallments = [...installments];
+    const orderDate = new Date();
+    const newDate = addDaysToDate(orderDate, days);
+    
+    updatedInstallments[index].daysDue = days;
+    updatedInstallments[index].dueDate = formatDateForInput(newDate);
+    setInstallments(updatedInstallments);
+  };
+
+  const handleSubmit = async (e: React.FormEvent, saveAsDraft: boolean = false) => {
+    e.preventDefault();
+    
+    if (!selectedClient) {
+      setFormError('Debe seleccionar un cliente');
+      return;
+    }
+    
+    if (!selectedClient.salespersonId && !selectedSalesperson) {
+      setFormError('El cliente debe tener un vendedor asignado');
+      return;
+    }
+    
     if (items.length === 0) {
-      setFormError('Debe agregar al menos un producto al pedido');
+      setFormError('Debe agregar al menos un producto');
       return;
     }
 
@@ -264,74 +434,73 @@ export function OrderForm() {
       setFormError(null);
       
       const orderData = {
-        ...data,
-        createdBy: currentUser?.id || '',
-        status: OrderStatus.BORRADOR,
+        clientId: selectedClient.id,
+        salespersonId: selectedClient.salespersonId || selectedSalesperson,
+        status: isCurrentUserSalesperson ? currentStatus : (isEditing && order ? order.status : (saveAsDraft ? OrderStatus.BORRADOR : OrderStatus.CONFIRMADO)),
+        observations: notes,
+        paymentType,
+        creditType: paymentType === 'credito' ? creditType : undefined,
+        installments: paymentType === 'credito' ? installmentCount : undefined,
+        createdBy: user?.id || '',
       };
 
-      let order: Order;
+      let orderId = id;
       
-      if (isEditMode && id) {
-        order = await updateOrder(id, orderData);
-        
-        // Update existing items or add new ones
-        for (const item of items) {
-          await addOrderItem(order.id, {
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            pulsadorType: item.pulsadorType,
-          });
-        }
+      if (isEditing && id) {
+        await updateOrder(id, orderData);
       } else {
-        order = await createOrder(orderData);
-        
-        // Add all items to the new order
+        const newOrder = await createOrder(orderData);
+        orderId = newOrder.id;
+      }
+      
+      // Save order items for new orders
+      if (!isEditing && orderId) {
         for (const item of items) {
-          await addOrderItem(order.id, {
+          await addOrderItem(orderId, {
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             pulsadorType: item.pulsadorType,
           });
         }
-      }
-
-      // Handle installments for credit orders
-      if (data.paymentType === 'credito' && data.installments && installmentDays.length > 0) {
-        const installmentAmount = total / data.installments;
         
-        for (let i = 0; i < data.installments; i++) {
-          const dueDate = new Date();
-          dueDate.setDate(dueDate.getDate() + installmentDays[i]);
+        // Save installments for credit orders
+        if (paymentType === 'credito' && installments.length > 0) {
+          const { supabase } = await import('../../lib/supabase');
           
-          await supabase.from('order_installments').insert({
-            order_id: order.id,
-            installment_number: i + 1,
-            amount: installmentAmount,
-            due_date: dueDate.toISOString().split('T')[0],
-            days_due: installmentDays[i],
-          });
+          for (const installment of installments) {
+            await supabase
+              .from('order_installments')
+              .insert({
+                order_id: orderId,
+                installment_number: installment.installmentNumber,
+                amount: installment.amount,
+                due_date: installment.dueDate,
+                days_due: installment.daysDue,
+              });
+          }
         }
       }
       
       navigate('/orders');
     } catch (error) {
-      if (error instanceof Error) {
-        setFormError(error.message);
-      } else {
-        setFormError('Error al guardar el pedido');
-      }
+      console.error('Error saving order:', error);
+      setFormError('Error al guardar el pedido');
     }
   };
 
-  // Filter Kit Ahorrador items that need pulsador selection
-  const kitAhorradorItems = items.filter((item, index) => 
-    item.product && isKitAhorradorProduct(item.product)
-  ).map((item, originalIndex) => ({
-    ...item,
-    originalIndex: items.findIndex(i => i === item)
-  }));
+  const filteredClients = clients.filter(client =>
+    client.commercialName.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    client.businessName.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    client.ruc.includes(clientSearch)
+  );
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                         product.code.toLowerCase().includes(productSearch.toLowerCase());
+    const matchesCategory = selectedCategory === '' || product.categoryId === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   if (isLoading) {
     return (
@@ -341,15 +510,33 @@ export function OrderForm() {
     );
   }
 
+  // Check if user can edit this order
+  if (isEditing && !canAsesorEdit) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <Alert variant="destructive" className="mb-6">
+          No tienes permisos para editar este pedido. Los asesores de ventas solo pueden editar pedidos en estado "Borrador" o "Tomado".
+        </Alert>
+        <Button
+          variant="outline"
+          icon={<ArrowLeft size={18} />}
+          onClick={() => navigate('/orders')}
+        >
+          Volver a Pedidos
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div>
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-in fade-in duration-500">
         <div>
           <h1 className="text-3xl font-bold">
-            {isEditMode ? 'Editar Pedido' : 'Nuevo Pedido'}
+            {isEditing ? 'Editar Pedido' : 'Nuevo Pedido'}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {isEditMode ? 'Actualiza la información del pedido' : 'Crea un nuevo pedido para el cliente'}
+            {isEditing ? 'Actualiza la información del pedido' : 'Crea un nuevo pedido en el sistema'}
           </p>
         </div>
         <Button
@@ -367,457 +554,950 @@ export function OrderForm() {
         </Alert>
       )}
 
-      <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
-        <div className="card-header">
-          <h2 className="card-title text-xl">Información del Pedido</h2>
-          <p className="card-description">
-            Completa los datos del pedido
-          </p>
-        </div>
-        <div className="card-content">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {/* Client and Salesperson Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label htmlFor="clientId" className="block text-sm font-medium">
-                  Cliente *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                    <User size={18} />
-                  </div>
-                  <select
-                    id="clientId"
-                    className={`select pl-10 ${errors.clientId ? 'border-destructive' : ''}`}
-                    {...register('clientId', {
-                      required: 'El cliente es requerido',
-                    })}
-                  >
-                    <option value="">Seleccionar cliente</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.commercialName} - {client.ruc}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {errors.clientId && (
-                  <p className="text-destructive text-sm mt-1">
-                    {errors.clientId.message}
-                  </p>
-                )}
+      <div className="space-y-6">
+        {/* Client Selection */}
+        <div className="card animate-in fade-in duration-500">
+          <div className="card-header">
+            <h2 className="card-title text-xl">Cliente</h2>
+            <p className="card-description">
+              Selecciona el cliente para este pedido
+            </p>
+          </div>
+          <div className="card-content">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                <Search size={18} />
               </div>
-
-              <div className="space-y-2">
-                <label htmlFor="salespersonId" className="block text-sm font-medium">
-                  Vendedor Asignado *
-                </label>
-                {isCurrentUserSalesperson ? (
-                  <div>
-                    <input
-                      type="text"
-                      className="input bg-gray-50"
-                      value={currentUser?.fullName || ''}
-                      disabled
-                      readOnly
-                    />
-                    <input
-                      type="hidden"
-                      {...register('salespersonId', {
-                        required: 'El vendedor es requerido',
-                      })}
-                    />
-                  </div>
-                ) : (
-                  <select
-                    id="salespersonId"
-                    className={`select ${errors.salespersonId ? 'border-destructive' : ''}`}
-                    {...register('salespersonId', {
-                      required: 'El vendedor es requerido',
-                    })}
-                  >
-                    <option value="">Seleccionar vendedor</option>
-                    {salespeople.map((salesperson) => (
-                      <option key={salesperson.id} value={salesperson.id}>
-                        {salesperson.fullName}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {errors.salespersonId && (
-                  <p className="text-destructive text-sm mt-1">
-                    {errors.salespersonId.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Products Section */}
-            <div className="border-t border-gray-100 pt-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-medium">Productos del Pedido</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  icon={<Plus size={18} />}
-                  onClick={() => setShowProductModal(true)}
-                >
-                  Agregar Productos
-                </Button>
-              </div>
-
-              {items.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                  <Package className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-4 text-lg font-medium text-gray-900">No hay productos</h3>
-                  <p className="mt-1 text-gray-500">
-                    Agrega productos para crear el pedido
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {items.map((item, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{item.product?.name}</h4>
-                          <p className="text-sm text-gray-500">Código: {item.product?.code}</p>
-                          <p className="text-sm text-gray-500">
-                            Precio unitario: {formatCurrency(item.unitPrice)}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <label className="text-sm font-medium">Cantidad:</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 0)}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                            />
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">{formatCurrency(item.subtotal)}</p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            icon={<Trash2 size={16} />}
-                            onClick={() => removeItem(index)}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          />
-                        </div>
-                      </div>
+              <input
+                type="text"
+                placeholder="Buscar cliente por nombre o RUC..."
+                value={clientSearch}
+                onChange={(e) => handleClientSearch(e.target.value)}
+                className="input pl-10 w-full"
+              />
+              
+              {showClientResults && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {filteredClients.map((client) => (
+                    <div
+                      key={client.id}
+                      onClick={() => selectClient(client)}
+                      className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="font-medium">{client.commercialName}</div>
+                      <div className="text-sm text-gray-600">{client.businessName}</div>
+                      <div className="text-sm text-gray-500">RUC: {client.ruc}</div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+            
+            {selectedClient && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                <h3 className="font-medium text-gray-900">{selectedClient.commercialName}</h3>
+                <p className="text-gray-700">{selectedClient.businessName}</p>
+                <p className="text-gray-600">RUC: {selectedClient.ruc}</p>
+                <p className="text-gray-600">{selectedClient.address}, {selectedClient.district}</p>
+                {(selectedClient.salesperson || salespeople.find(s => s.id === selectedClient.salespersonId)) && (
+                  <p className="text-gray-600 mt-2">
+                    <span className="font-medium">Vendedor:</span> {
+                      selectedClient.salesperson?.fullName || 
+                      salespeople.find(s => s.id === selectedClient.salespersonId)?.fullName ||
+                      'No disponible'
+                    }
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
-            {/* Kit Ahorrador Pulsador Selection */}
-            {kitAhorradorItems.length > 0 && (
-              <div className="border-t border-gray-100 pt-8">
-                <h3 className="text-lg font-medium mb-6">Configuración de Pulsadores</h3>
-                <div className="space-y-6">
-                  {kitAhorradorItems.map(({ originalIndex, product, quantity, pulsadorType }) => {
-                    const nextItem = items[originalIndex + 1];
-                    const canSplit = quantity > 1;
-                    const canUnify = nextItem && nextItem.productId === product?.id;
-                    
-                    return (
-                      <div key={originalIndex} className="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-200">
+        {/* Products Section */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Productos</h2>
+            <p className="card-description">
+              Agrega productos al pedido
+            </p>
+          </div>
+          <div className="card-content">
+            {/* Product Search */}
+            <div className="mb-4 space-y-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                  <Search size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar producto por nombre o código..."
+                  value={productSearch}
+                  onChange={(e) => handleProductSearch(e.target.value)}
+                  className="input pl-10 w-full"
+                />
+                
+                {showProductResults && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => addProduct(product)}
+                        className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-gray-600">Código: {product.code}</div>
+                        <div className="text-sm text-gray-500">{formatCurrency(product.wholesalePrice)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="select w-full"
+                >
+                  <option value="">Todas las categorías</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            {items.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Producto
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Cantidad
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Precio Unit.
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Valor
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {items.map((item, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium">{item.product?.name}</div>
+                          <div className="text-sm text-gray-600">Código: {item.product?.code}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity || ''}
+                            onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 0)}
+                            className="w-20 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.unitPrice || ''}
+                            onChange={(e) => updateItemPrice(index, parseFloat(e.target.value) || 0)}
+                            onInput={handlePriceInput}
+                            className="w-24 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                          {formatCurrency(item.subtotal)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => confirmDeleteItem(index)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {/* Totals */}
+                {items.length > 0 && (
+                  <div className="mt-4 flex justify-end">
+                    <div className="w-64 space-y-2">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span className="font-medium">{formatCurrency(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>IGV (18%):</span>
+                        <span className="font-medium">{formatCurrency(igv)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total:</span>
+                        <span className="font-medium">{formatCurrency(total)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Kit Ahorrador Pulsador Selection */}
+        {kitAhorradorItems.length > 0 && (
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
+            <div className="card-header">
+              <h2 className="card-title text-xl">Configuración de Pulsadores</h2>
+              <p className="card-description">
+                Selecciona el tipo de pulsador para cada Kit Ahorrador (3, 4, 5, 6, 9, 10)
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-6">
+                {/* Group items by product */}
+                {Object.entries(
+                  kitAhorradorItems.reduce((groups, item) => {
+                    const key = item.productId;
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item);
+                    return groups;
+                  }, {} as Record<string, OrderFormItem[]>)
+                ).map(([productId, productItems]) => {
+                  const product = productItems[0].product;
+                  const totalQuantity = productItems.reduce((sum, item) => sum + item.quantity, 0);
+                  const hasSplit = productItems.length > 1;
+                  
+                  const nextItem = items[originalIndex + 1];
+                  const canUnify = nextItem && 
+                    nextItem.productId === item.productId && 
+                    isKitAhorrador(nextItem.product?.name || '');
+                  
+                  return (
+                    <div key={`kit-group-${productId}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="mb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-900 truncate">{product?.name}</h4>
-                            <p className="text-sm text-gray-500">Código: {product?.code}</p>
-                            <p className="text-sm text-gray-500">Cantidad: {quantity}</p>
+                            <h3 className="font-medium text-gray-900 truncate">{product?.name}</h3>
+                            <p className="text-sm text-gray-600">
+                              Código: {product?.code} | Cantidad total: {totalQuantity}
+                            </p>
                           </div>
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <label className="text-sm font-medium whitespace-nowrap">Tipo de pulsador:</label>
-                              <select
-                                value={pulsadorType || 'pequeño'}
-                                onChange={(e) => updateItemPulsador(originalIndex, e.target.value as 'pequeño' | 'grande')}
-                                className="px-3 py-1 border border-gray-300 rounded text-sm w-full sm:w-48"
+                          <div className="flex flex-wrap gap-2">
+                            {!hasSplit && totalQuantity > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const itemIndex = items.findIndex(i => i.productId === productId);
+                                  if (itemIndex !== -1) splitKitItem(itemIndex);
+                                }}
+                                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
                               >
-                                <option value="pequeño">Pulsador dual pequeño</option>
-                                <option value="grande">Pulsador dual grande</option>
-                              </select>
-                            </div>
-                            <div className="flex gap-2">
-                              {canSplit && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => splitKitItem(originalIndex)}
-                                  className="text-xs whitespace-nowrap"
-                                >
-                                  Dividir pulsadores
-                                </Button>
-                              )}
-                              {canUnify && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => unifyKitItems(originalIndex)}
-                                  className="text-xs whitespace-nowrap bg-blue-50 text-blue-600 hover:bg-blue-100"
-                                >
-                                  Unificar
-                                </Button>
-                              )}
-                            </div>
+                                Dividir pulsadores
+                              </button>
+                            )}
+                            {hasSplit && (
+                              <button
+                                type="button"
+                                onClick={() => mergeKitItems(productId)}
+                                className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                              >
+                                Unificar pulsadores
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
+                      
+                      {/* Individual items */}
+                      <div className="space-y-3">
+                        {productItems.map((item, itemIndex) => {
+                          const originalIndex = items.findIndex(i => 
+                            i.productId === item.productId && 
+                            i.quantity === item.quantity &&
+                            i.pulsadorType === item.pulsadorType
+                          );
+                          
+                          return (
+                            <div key={`item-${originalIndex}-${itemIndex}`} className="bg-white rounded-md p-3 border border-gray-200">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    Cantidad: {item.quantity} {productItems.length > 1 ? `(Parte ${itemIndex + 1})` : ''}
+                                  </p>
+                                </div>
+                                <div className="flex-shrink-0 w-full sm:w-auto">
+                                  <select
+                                    value={item.pulsadorType || 'pequeño'}
+                                    onChange={(e) => updateItemPulsador(originalIndex, e.target.value as 'pequeño' | 'grande')}
+                                    className="w-full sm:w-48 px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent"
+                                  >
+                                    <option value="pequeño">Pulsador dual pequeño</option>
+                                    <option value="grande">Pulsador dual grande</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Terms */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Términos de Pago</h2>
+            <p className="card-description">
+              Configura los términos de pago del pedido
+            </p>
+          </div>
+          <div className="card-content">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Tipo de Pago
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="contado"
+                      checked={paymentType === 'contado'}
+                      onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                      className="mr-2"
+                    />
+                    Contado
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="credito"
+                      checked={paymentType === 'credito'}
+                      onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                      className="mr-2"
+                    />
+                    Crédito
+                  </label>
                 </div>
               </div>
-            )}
 
-            {/* Payment Terms */}
-            <div className="border-t border-gray-100 pt-8">
-              <h3 className="text-lg font-medium mb-6">Términos de Pago</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Tipo de Pago *
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="contado"
-                        {...register('paymentType', {
-                          required: 'El tipo de pago es requerido',
-                        })}
-                        className="mr-2"
-                      />
-                      <span>Contado</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        value="credito"
-                        {...register('paymentType', {
-                          required: 'El tipo de pago es requerido',
-                        })}
-                        className="mr-2"
-                      />
-                      <span>Crédito</span>
-                    </label>
-                  </div>
-                  {errors.paymentType && (
-                    <p className="text-destructive text-sm mt-1">
-                      {errors.paymentType.message}
-                    </p>
-                  )}
-                </div>
-
-                {paymentType === 'credito' && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">
-                        Tipo de Crédito *
-                      </label>
-                      <div className="space-y-2">
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            value="factura"
-                            {...register('creditType', {
-                              required: paymentType === 'credito' ? 'El tipo de crédito es requerido' : false,
-                            })}
-                            className="mr-2"
-                          />
-                          <span>Factura</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            value="letras"
-                            {...register('creditType', {
-                              required: paymentType === 'credito' ? 'El tipo de crédito es requerido' : false,
-                            })}
-                            className="mr-2"
-                          />
-                          <span>Letras</span>
-                        </label>
-                      </div>
-                      {errors.creditType && (
-                        <p className="text-destructive text-sm mt-1">
-                          {errors.creditType.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="installments" className="block text-sm font-medium">
-                        Número de Cuotas *
+              {paymentType === 'credito' && (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Tipo de Crédito
                       </label>
                       <select
-                        id="installments"
-                        className={`select ${errors.installments ? 'border-destructive' : ''}`}
-                        {...register('installments', {
-                          required: paymentType === 'credito' ? 'El número de cuotas es requerido' : false,
-                        })}
+                        value={creditType}
+                        onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
+                        className="select w-full"
                       >
-                        <option value="">Seleccionar cuotas</option>
-                        {[1, 2, 3, 4, 5, 6].map(num => (
+                        <option value="factura">Factura</option>
+                        <option value="letras">Letras</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Número de Cuotas
+                      </label>
+                      <select
+                        value={installmentCount}
+                        onChange={(e) => setInstallmentCount(parseInt(e.target.value))}
+                        className="select w-full"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
                           <option key={num} value={num}>{num} cuota{num > 1 ? 's' : ''}</option>
                         ))}
                       </select>
-                      {errors.installments && (
-                        <p className="text-destructive text-sm mt-1">
-                          {errors.installments.message}
-                        </p>
-                      )}
                     </div>
+                  </div>
 
-                    {installments && installments > 0 && (
-                      <div className="md:col-span-2 space-y-4">
-                        <h4 className="font-medium">Configuración de Cuotas</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {Array.from({ length: installments }, (_, i) => (
-                            <div key={i} className="space-y-2">
-                              <label className="block text-sm font-medium">
-                                Cuota {i + 1} - Días
-                              </label>
-                              <input
-                                type="number"
-                                min="1"
-                                value={installmentDays[i] || (i + 1) * 30}
-                                onChange={(e) => updateInstallmentDay(i, parseInt(e.target.value) || 30)}
-                                className="input"
-                              />
-                              <p className="text-xs text-gray-500">
-                                Monto: {formatCurrency(total / installments)}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
+                  {installments.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">Detalle de Cuotas</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Cuota
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Monto
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Fecha
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Días
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {installments.map((installment, index) => (
+                              <tr key={index} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                                  {installment.installmentNumber}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                                  {formatCurrency(installment.amount)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <input
+                                    type="date"
+                                    value={installment.dueDate}
+                                    onChange={(e) => updateInstallmentDate(index, e.target.value)}
+                                    className="w-44 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={installment.daysDue || ''}
+                                    onChange={(e) => updateInstallmentDays(index, parseInt(e.target.value) || 0)}
+                                    className="w-28 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan={4} className="px-6 py-4">
+                                <div className="flex justify-end">
+                                  <div className="w-64">
+                                    <div className="flex justify-between font-bold text-lg border-t pt-2">
+                                      <span>Total Cuotas:</span>
+                                      <span>{formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
                       </div>
-                    )}
-                  </>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+          </div>
+        )}
 
-            {/* Observations */}
-            <div className="border-t border-gray-100 pt-8">
-              <div className="space-y-2">
-                <label htmlFor="observations" className="block text-sm font-medium">
-                  Observaciones
-                </label>
-                <div className="relative">
-                  <div className="absolute top-3 left-3 pointer-events-none text-muted-foreground">
-                    <FileText size={18} />
+        {/* Notes */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Observaciones</h2>
+            <p className="card-description">
+              Notas adicionales del pedido
+            </p>
+          </div>
+          <div className="card-content">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              className="input w-full resize-none"
+              placeholder="Observaciones adicionales del pedido..."
+            />
+          </div>
+        )}
+
+        {/* Order Status - Only for Asesor de Ventas */}
+        {isCurrentUserSalesperson && (
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '450ms' }}>
+            <div className="card-header">
+              <h2 className="card-title text-xl">Estado del Pedido</h2>
+              <p className="card-description">
+                Selecciona el estado del pedido
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Estado
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="orderStatus"
+                        value={OrderStatus.BORRADOR}
+                        checked={currentStatus === OrderStatus.BORRADOR}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="mr-2"
+                      />
+                      Borrador
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="orderStatus"
+                        value={OrderStatus.TOMADO}
+                        checked={currentStatus === OrderStatus.TOMADO}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="mr-2"
+                      />
+                      Tomado
+                    </label>
                   </div>
-                  <textarea
-                    id="observations"
-                    rows={4}
-                    className="input pl-10 resize-none"
-                    placeholder="Observaciones adicionales del pedido..."
-                    {...register('observations')}
-                  />
                 </div>
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Order Summary */}
-            {items.length > 0 && (
-              <div className="border-t border-gray-100 pt-8">
-                <h3 className="text-lg font-medium mb-4">Resumen del Pedido</h3>
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span className="font-medium">{formatCurrency(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>IGV (18%):</span>
-                      <span className="font-medium">{formatCurrency(igv)}</span>
-                    </div>
-                    <div className="flex justify-between border-t pt-2">
-                      <span className="font-bold text-lg">Total:</span>
-                      <span className="font-bold text-lg">{formatCurrency(total)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Form Actions */}
-            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-100">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/orders')}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                icon={<Save size={18} />}
-                loading={isLoading}
-                disabled={items.length === 0}
-              >
-                {isEditMode ? 'Actualizar Pedido' : 'Crear Pedido'}
-              </Button>
-            </div>
-          </form>
+        {/* Actions */}
+        <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '500ms' }}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/orders')}
+          >
+            Cancelar
+          </Button>
+          {!isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => handleSubmit(e, true)}
+              loading={isLoading}
+              disabled={!selectedClient || items.length === 0}
+            >
+              Guardar Borrador
+            </Button>
+          )}
+          <Button
+            type="button"
+            onClick={(e) => handleSubmit(e, false)}
+            loading={isLoading}
+            disabled={!selectedClient || items.length === 0}
+          >
+            <Save size={18} className="mr-2" />
+            {isEditing ? 'Actualizar Pedido' : 'Confirmar Pedido'}
+          </Button>
         </div>
       </div>
 
-      {/* Product Selection Modal */}
+      {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={showProductModal}
-        onClose={() => setShowProductModal(false)}
-        title="Seleccionar Productos"
-        size="xl"
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar Eliminación"
       >
         <div className="space-y-4">
-          <div className="max-h-96 overflow-y-auto">
-            <div className="space-y-2">
-              {products.map((product) => (
-                <div key={product.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                  <div className="flex-1">
-                    <h4 className="font-medium">{product.name}</h4>
-                    <p className="text-sm text-gray-500">Código: {product.code}</p>
-                    <p className="text-sm text-gray-500">
-                      Precio: {formatCurrency(paymentType === 'credito' ? product.creditPrice : product.cashPrice)}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={selectedProducts[product.id] || 0}
-                      onChange={(e) => setSelectedProducts(prev => ({
-                        ...prev,
-                        [product.id]: parseInt(e.target.value) || 0
-                      }))}
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              ))}
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+            <div>
+              <h3 className="font-medium">¿Eliminar producto?</h3>
+              <p className="text-sm text-muted-foreground">
+                Esta acción eliminará el producto del pedido.
+              </p>
             </div>
           </div>
+          
           <div className="flex justify-end space-x-3">
             <Button
+              type="button"
               variant="outline"
-              onClick={() => setShowProductModal(false)}
+              onClick={() => navigate('/orders')}
             >
               Cancelar
             </Button>
-            <Button onClick={addProductsToOrder}>
-              Agregar Productos
+            <Button
+              type="submit"
+              loading={isLoading}
+              disabled={items.length === 0}
+            >
+              {isEditMode ? 'Actualizar Pedido' : 'Crear Pedido'}
+            </Button>
+          </div>
+        </div>
+        </form>
+      </div>
+    </div>
+    </Modal>
+  );
+}
+
+        {/* Kit Ahorrador Configuration Section */}
+        {kitAhorradorItems.length > 0 && (
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
+            <div className="card-header">
+              <h3 className="card-title text-lg">Configuración de Pulsadores</h3>
+              <p className="card-description">
+                Selecciona el tipo de pulsador para cada Kit Ahorrador
+              </p>
+            </div>
+            <div className="card-content space-y-6">
+              {kitAhorradorItems.map((item, originalIndex) => {
+                const kitNumber = extractKitNumber(item.product?.name || '');
+                const splitItems = items.filter(i => 
+                  i.product?.id === item.product?.id && 
+                  i.originalIndex === originalIndex
+                );
+                const isSplit = splitItems.length > 1;
+                
+                return (
+                    <div key={originalIndex} className="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 truncate">{item.product?.name}</h4>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-muted-foreground mt-1">
+                            <span>Código: {item.product?.code}</span>
+                            <span>Cantidad: {item.quantity}</span>
+                            <span>Precio: {formatCurrency(item.unitPrice)}</span>
+                          </div>
+              onClick={deleteItem}
+                        
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              Eliminar
+            </Button>
+          </div>
+                            className="select w-full sm:w-48 text-sm"
+      </Modal>
+    </div>
+  );
+}
+                          
+                          <div className="flex gap-2">
+                            {item.quantity > 1 && !canUnify && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => splitKitItem(originalIndex)}
+                                className="text-xs whitespace-nowrap"
+                              >
+                                Dividir pulsadores
+                              </Button>
+                            )}
+                            
+                            {canUnify && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => unifyKitItems(originalIndex)}
+                                className="text-xs whitespace-nowrap bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                              >
+                                Unificar
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Terms */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Términos de Pago</h2>
+            <p className="card-description">
+              Configura los términos de pago del pedido
+            </p>
+          </div>
+          <div className="card-content">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Tipo de Pago
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="contado"
+                      checked={paymentType === 'contado'}
+                      onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                      className="mr-2"
+                    />
+                    Contado
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="paymentType"
+                      value="credito"
+                      checked={paymentType === 'credito'}
+                      onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                      className="mr-2"
+                    />
+                    Crédito
+                  </label>
+                </div>
+              </div>
+
+              {paymentType === 'credito' && (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Tipo de Crédito
+                      </label>
+                      <select
+                        value={creditType}
+                        onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
+                        className="select w-full"
+                      >
+                        <option value="factura">Factura</option>
+                        <option value="letras">Letras</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Número de Cuotas
+                      </label>
+                      <select
+                        value={installmentCount}
+                        onChange={(e) => setInstallmentCount(parseInt(e.target.value))}
+                        className="select w-full"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
+                          <option key={num} value={num}>{num} cuota{num > 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {installments.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-3">Detalle de Cuotas</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Cuota
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Monto
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Fecha
+                              </th>
+                              <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                Días
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {installments.map((installment, index) => (
+                              <tr key={index} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                                  {installment.installmentNumber}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                                  {formatCurrency(installment.amount)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <input
+                                    type="date"
+                                    value={installment.dueDate}
+                                    onChange={(e) => updateInstallmentDate(index, e.target.value)}
+                                    className="w-44 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={installment.daysDue || ''}
+                                    onChange={(e) => updateInstallmentDays(index, parseInt(e.target.value) || 0)}
+                                    className="w-28 p-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-primary focus:border-transparent"
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan={4} className="px-6 py-4">
+                                <div className="flex justify-end">
+                                  <div className="w-64">
+                                    <div className="flex justify-between font-bold text-lg border-t pt-2">
+                                      <span>Total Cuotas:</span>
+                                      <span>{formatCurrency(installments.reduce((sum, inst) => sum + inst.amount, 0))}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Observaciones</h2>
+            <p className="card-description">
+              Notas adicionales del pedido
+            </p>
+          </div>
+          <div className="card-content">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              className="input w-full resize-none"
+              placeholder="Observaciones adicionales del pedido..."
+            />
+          </div>
+        </div>
+
+        {/* Order Status - Only for Asesor de Ventas */}
+        {isCurrentUserSalesperson && (
+          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '350ms' }}>
+            <div className="card-header">
+              <h2 className="card-title text-xl">Estado del Pedido</h2>
+              <p className="card-description">
+                Selecciona el estado del pedido
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Estado
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="orderStatus"
+                        value={OrderStatus.BORRADOR}
+                        checked={currentStatus === OrderStatus.BORRADOR}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="mr-2"
+                      />
+                      Borrador
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="orderStatus"
+                        value={OrderStatus.TOMADO}
+                        checked={currentStatus === OrderStatus.TOMADO}
+                        onChange={(e) => setCurrentStatus(e.target.value as OrderStatus)}
+                        className="mr-2"
+                      />
+                      Tomado
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-4 animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/orders')}
+          >
+            Cancelar
+          </Button>
+          {!isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => handleSubmit(e, true)}
+              loading={isLoading}
+              disabled={!selectedClient || items.length === 0}
+            >
+              Guardar Borrador
+            </Button>
+          )}
+          <Button
+            type="button"
+            onClick={(e) => handleSubmit(e, false)}
+            loading={isLoading}
+            disabled={!selectedClient || items.length === 0}
+          >
+            <Save size={18} className="mr-2" />
+            {isEditing ? 'Actualizar Pedido' : 'Confirmar Pedido'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+            <div>
+              <h3 className="font-medium">¿Eliminar producto?</h3>
+              <p className="text-sm text-muted-foreground">
+                Esta acción eliminará el producto del pedido.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteItem}
+            >
+              Eliminar
             </Button>
           </div>
         </div>
