@@ -98,8 +98,6 @@ export type OrderItem = {
   unitPrice: number;
   subtotal: number;
   pulsadorType?: 'pequeño' | 'grande';
-  pulsadorPequenoQty?: number;
-  pulsadorGrandeQty?: number;
   createdAt: string;
   // Populated fields
   product?: Product;
