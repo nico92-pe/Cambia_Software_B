@@ -100,6 +100,7 @@ export function OrderForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isDraft, setIsDraft] = useState(true);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [showProductResults, setShowProductResults] = useState(false);
 
   const isEditing = !!id;
   const canEdit = user?.role !== UserRole.ASESOR_VENTAS || !isEditing;
@@ -164,8 +165,6 @@ export function OrderForm() {
                 ? item.subtotal 
                 : Number((item.quantity * item.unitPrice).toFixed(2)),
               pulsadorType: item.pulsadorType,
-              pulsadorPequenoQty: item.pulsadorPequenoQty,
-              pulsadorGrandeQty: item.pulsadorGrandeQty,
               pulsadorPequenoQty: item.pulsadorPequenoQty || 0,
               pulsadorGrandeQty: item.pulsadorGrandeQty || 0,
             }));
@@ -1175,6 +1174,36 @@ export function OrderForm() {
           >
             <Save size={18} className="mr-2" />
             {isEditing ? 'Actualizar Pedido' : 'Confirmar Pedido'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Delete Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Eliminar Producto"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            ¿Estás seguro de que deseas eliminar este producto del pedido?
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteItem}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
