@@ -31,6 +31,8 @@ const mapDbRowToOrderItem = (row: any): OrderItem => ({
   unitPrice: parseFloat(row.unit_price),
   subtotal: parseFloat(row.subtotal),
   pulsadorType: row.pulsador_type,
+  pulsadorPequenoQty: row.pulsador_pequeno_qty || 0,
+  pulsadorGrandeQty: row.pulsador_grande_qty || 0,
   createdAt: row.created_at,
 });
 
@@ -53,6 +55,8 @@ const mapOrderItemToDbFormat = (item: Partial<OrderItem>) => ({
   quantity: item.quantity,
   unit_price: item.unitPrice,
   pulsador_type: item.pulsadorType,
+  pulsador_pequeno_qty: item.pulsadorPequenoQty || 0,
+  pulsador_grande_qty: item.pulsadorGrandeQty || 0,
 });
 
 interface OrderState {

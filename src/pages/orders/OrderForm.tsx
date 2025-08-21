@@ -29,6 +29,8 @@ interface OrderFormItem {
   unitPrice: number;
   subtotal: number;
   pulsadorType?: 'pequeño' | 'grande';
+  pulsadorPequenoQty?: number;
+  pulsadorGrandeQty?: number;
 }
 
 interface OrderInstallmentForm {
@@ -163,6 +165,10 @@ export function OrderForm() {
                 ? item.subtotal 
                 : Number((item.quantity * item.unitPrice).toFixed(2)),
               pulsadorType: item.pulsadorType,
+              pulsadorPequenoQty: item.pulsadorPequenoQty,
+              pulsadorGrandeQty: item.pulsadorGrandeQty,
+              pulsadorPequenoQty: item.pulsadorPequenoQty || 0,
+              pulsadorGrandeQty: item.pulsadorGrandeQty || 0,
             }));
             setItems(formItems);
             
@@ -298,6 +304,27 @@ export function OrderForm() {
   const updateItemPulsador = (index: number, pulsadorType: 'pequeño' | 'grande') => {
     const updatedItems = [...items];
     updatedItems[index].pulsadorType = pulsadorType;
+    setItems(updatedItems);
+  };
+
+  const updatePulsadorDistribution = (index: number, pequenoQty: number, grandeQty: number) => {
+    const updatedItems = [...items];
+    const item = updatedItems[index];
+    
+    // Validate that distribution doesn't exceed total quantity
+    const totalDistribution = pequenoQty + grandeQty;
+    if (totalDistribution > item.quantity) {
+      // Adjust the last changed value to fit within limits
+      const maxAllowed = item.quantity - (totalDistribution - Math.max(pequenoQty, grandeQty));
+      if (pequenoQty > grandeQty) {
+        pequenoQty = Math.max(0, maxAllowed);
+      } else {
+        grandeQty = Math.max(0, maxAllowed);
+      }
+    }
+    
+    updatedItems[index].pulsadorPequenoQty = pequenoQty;
+    updatedItems[index].pulsadorGrandeQty = grandeQty;
     setItems(updatedItems);
   };
 
