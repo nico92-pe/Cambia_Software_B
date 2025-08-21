@@ -1129,45 +1129,6 @@ export function OrderForm() {
           
           <div className="flex justify-end space-x-3">
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate('/orders')}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              loading={isLoading}
-              disabled={items.length === 0}
-            >
-              {isEditMode ? 'Actualizar Pedido' : 'Crear Pedido'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-        {/* Kit Ahorrador Configuration Section */}
-        {kitAhorradorItems.length > 0 && (
-          <div className="card animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
-            <div className="card-header">
-              <h3 className="card-title text-lg">Configuración de Pulsadores</h3>
-              <p className="card-description">
-                Selecciona el tipo de pulsador para cada Kit Ahorrador
-              </p>
-            </div>
-            <div className="card-content space-y-6">
-              {kitAhorradorItems.map((item, originalIndex) => {
-                const kitNumber = extractKitNumber(item.product?.name || '');
-                const splitItems = items.filter(i => 
-                  i.product?.id === item.product?.id && 
-                  i.originalIndex === originalIndex
-                );
-                const isSplit = splitItems.length > 1;
-                
-                return (
                     <div key={originalIndex} className="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-200">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex-1 min-w-0">
