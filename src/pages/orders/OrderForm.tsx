@@ -100,6 +100,7 @@ export function OrderForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isDraft, setIsDraft] = useState(true);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [showProductResults, setShowProductResults] = useState(false);
 
   const isEditing = !!id;
   const canEdit = user?.role !== UserRole.ASESOR_VENTAS || !isEditing;
