@@ -12,7 +12,7 @@ import { Badge } from '../../components/ui/Badge';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 export function ProductList() {
-  const { products, categories, getProducts, getCategories, deleteProduct, isLoading, error } = useProductStore();
+  const { products, categories, totalProducts, getProducts, getCategories, deleteProduct, isLoading, error } = useProductStore();
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -21,23 +21,18 @@ export function ProductList() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   
   const PRODUCTS_PER_PAGE = 10;
   
   const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
 
   useEffect(() => {
-    const loadData = async () => {
-      setIsInitialLoading(true);
-      try {
-        await Promise.all([getProducts(), getCategories()]);
-      } finally {
-        setIsInitialLoading(false);
-      }
-    };
-    loadData();
-  }, [getProducts, getCategories]);
+    getCategories();
+  }, [getCategories]);
+
+  useEffect(() => {
+    getProducts(currentPage, PRODUCTS_PER_PAGE, searchTerm, categoryFilter);
+  }, [getProducts, currentPage, searchTerm, categoryFilter]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -195,7 +190,14 @@ export function ProductList() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          {filteredProducts.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <Loader size="lg" />
+                <p className="text-muted-foreground mt-4">Cargando productos...</p>
+              </div>
+            </div>
+          ) : products.length === 0 ? (
             <div className="text-center py-8">
               <Box className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
               <h3 className="mt-4 text-lg font-medium">No se encontraron productos</h3>
@@ -219,7 +221,7 @@ export function ProductList() {
               {/* Mobile Card View */}
               <div className="block sm:hidden">
                 <div className="space-y-4 p-4">
-                  {currentProducts.map((product) => (
+                  {products.map((product) => (
                     <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                       <div className="flex items-start gap-4 mb-3">
                         <div className="flex-shrink-0">
@@ -333,7 +335,7 @@ export function ProductList() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
-                  {currentProducts.map((product) => (
+                  {products.map((product) => (
                     <tr key={product.id} className="hover:bg-muted/30">
                       <td className="px-6 py-4 whitespace-nowrap">
                         {product.imageUrl ? (
@@ -411,10 +413,10 @@ export function ProductList() {
         </div>
         
         {/* Pagination */}
-        {filteredProducts.length > 0 && totalPages > 1 && (
+        {totalProducts > 0 && totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
             <div className="text-sm text-muted-foreground">
-              Mostrando {startIndex + 1} a {Math.min(endIndex, filteredProducts.length)} de {filteredProducts.length} productos
+              Mostrando {startIndex} a {endIndex} de {totalProducts} productos
             </div>
             <div className="flex items-center space-x-2">
               <Button

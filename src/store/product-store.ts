@@ -51,6 +51,7 @@ const mapProductToDbFormat = (product: Partial<Product>) => ({
 interface ProductState {
   products: Product[];
   categories: Category[];
+  totalProducts: number;
   isLoading: boolean;
   error: string | null;
   
@@ -61,7 +62,7 @@ interface ProductState {
   deleteCategory: (id: string) => Promise<void>;
   
   // Product operations
-  getProducts: () => Promise<void>;
+  getProducts: (page?: number, pageSize?: number, searchTerm?: string, categoryFilter?: string) => Promise<void>;
   getProductsByCategory: (categoryId: string) => Promise<Product[]>;
   createProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Product>;
   updateProduct: (id: string, productData: Partial<Product>) => Promise<Product>;
@@ -71,6 +72,7 @@ interface ProductState {
 export const useProductStore = create<ProductState>((set, get) => ({
   products: [],
   categories: [],
+  totalProducts: 0,
   isLoading: false,
   error: null,
   
@@ -186,21 +188,29 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
   
   // Product operations
-  getProducts: async () => {
+  getProducts: async (page = 1, pageSize = 10, searchTerm = '', categoryFilter = '') => {
     set({ isLoading: true, error: null });
     
     try {
-      const { data, error } = await supabase
+      // Build the query
+      let query = supabase
         .from('products')
         .select(`
           *,
           category:categories(*)
-        `)
-        .order('created_at', { ascending: true });
-        
-      if (error) throw error;
+        `, { count: 'exact' });
       
-      // Get categories to sort them by creation date
+      // Apply search filter
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+      }
+      
+      // Apply category filter
+      if (categoryFilter) {
+        query = query.eq('category_id', categoryFilter);
+      }
+      
+      // Get categories to sort them by creation date for ordering
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
@@ -214,11 +224,21 @@ export const useProductStore = create<ProductState>((set, get) => ({
         categoryOrder.set(cat.id, index);
       });
       
+      // Apply pagination and execute query
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      const { data, error, count } = await query
+        .range(from, to)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
       // Map products and sort them
       const products = data
         .map(mapDbRowToProduct)
         .sort((a, b) => {
-          // First sort by category order (oldest categories first)
+          // Sort by category order (oldest categories first)
           const categoryOrderA = categoryOrder.get(a.categoryId) ?? 999;
           const categoryOrderB = categoryOrder.get(b.categoryId) ?? 999;
           
@@ -226,11 +246,15 @@ export const useProductStore = create<ProductState>((set, get) => ({
             return categoryOrderA - categoryOrderB;
           }
           
-          // Then sort by product creation date within the same category (oldest first)
+          // Then sort by product creation date within the same category
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
         
-      set({ products, isLoading: false });
+      set({ 
+        products, 
+        totalProducts: count || 0,
+        isLoading: false 
+      });
     } catch (error) {
       set({
         isLoading: false,
