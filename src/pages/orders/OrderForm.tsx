@@ -90,6 +90,7 @@ export function OrderForm() {
   const [paymentType, setPaymentType] = useState<'contado' | 'credito'>('contado');
   const [creditType, setCreditType] = useState<'factura' | 'letras'>('factura');
   const [installmentCount, setInstallmentCount] = useState(1);
+  const [items, setItems] = useState<Array<{ productId: string; quantity: number; unitPrice: number; subtotal: number }>>([]);
   const [installments, setInstallments] = useState<OrderInstallmentForm[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
