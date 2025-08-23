@@ -22,6 +22,8 @@ export function ProductList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   
+  const PRODUCTS_PER_PAGE = 10;
+  
   // Calculate pagination values
   const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
   const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE + 1;
@@ -44,8 +46,6 @@ export function ProductList() {
       goToPage(currentPage + 1);
     }
   };
-  
-  const PRODUCTS_PER_PAGE = 10;
   
   const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
 
