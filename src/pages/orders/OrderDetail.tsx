@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, CreditCard, FileText, MapPin, Package, Phone, User } from 'lucide-react';
+import { ArrowLeft, Calendar, CreditCard, FileText, MapPin, Package, Phone, User, Download, Share } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
+import { OrderImageTemplate } from '../../components/orders/OrderImageTemplate';
+import { useOrderImageDownload } from '../../hooks/useOrderImageDownload';
 import { Order, OrderStatus } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
@@ -30,6 +32,10 @@ export function OrderDetail() {
   const navigate = useNavigate();
   const { getOrderById, isLoading, error } = useOrderStore();
   const [order, setOrder] = useState<Order | null>(null);
+  const { downloadOrderAsImage, shareOrderAsImage } = useOrderImageDownload();
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadOrder = async () => {
@@ -49,6 +55,34 @@ export function OrderDetail() {
 
     loadOrder();
   }, [id, getOrderById, navigate]);
+
+  const handleDownloadOrder = async () => {
+    if (!order) return;
+    
+    try {
+      setDownloadLoading(true);
+      setActionError(null);
+      await downloadOrderAsImage(order);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Error al descargar el pedido');
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
+
+  const handleShareOrder = async () => {
+    if (!order) return;
+    
+    try {
+      setShareLoading(true);
+      setActionError(null);
+      await shareOrderAsImage(order);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Error al compartir el pedido');
+    } finally {
+      setShareLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -101,14 +135,40 @@ export function OrderDetail() {
             Información completa del pedido
           </p>
         </div>
-        <Button
-          variant="outline"
-          icon={<ArrowLeft size={18} />}
-          onClick={() => navigate('/orders')}
-        >
-          Volver
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            icon={<Download size={18} />}
+            onClick={handleDownloadOrder}
+            loading={downloadLoading}
+            className="text-blue-600 hover:text-blue-700 border-blue-300 hover:border-blue-400"
+          >
+            Descargar
+          </Button>
+          <Button
+            variant="outline"
+            icon={<Share size={18} />}
+            onClick={handleShareOrder}
+            loading={shareLoading}
+            className="text-green-600 hover:text-green-700 border-green-300 hover:border-green-400"
+          >
+            Compartir
+          </Button>
+          <Button
+            variant="outline"
+            icon={<ArrowLeft size={18} />}
+            onClick={() => navigate('/orders')}
+          >
+            Volver
+          </Button>
+        </div>
       </header>
+
+      {actionError && (
+        <Alert variant="destructive" className="mb-6">
+          {actionError}
+        </Alert>
+      )}
 
       <div className="space-y-6">
         {/* Order Status and Basic Info */}
@@ -386,6 +446,13 @@ export function OrderDetail() {
           </div>
         )}
       </div>
+
+      {/* Hidden Order Template for Image Generation */}
+      {order && (
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <OrderImageTemplate order={order} />
+        </div>
+      )}
     </div>
   );
 }

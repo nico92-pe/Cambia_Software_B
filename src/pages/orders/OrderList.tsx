@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Filter, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Filter, AlertTriangle, Download, Share } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useAuthStore } from '../../store/auth-store';
+import { OrderImageTemplate } from '../../components/orders/OrderImageTemplate';
+import { useOrderImageDownload } from '../../hooks/useOrderImageDownload';
 import { UserRole, OrderStatus } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -30,6 +32,7 @@ const statusLabels = {
 export default function OrderList() {
   const { orders, isLoading, error, getOrders, deleteOrder, updateOrderStatus } = useOrderStore();
   const { user } = useAuthStore();
+  const { downloadOrderAsImage, shareOrderAsImage } = useOrderImageDownload();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [monthFilter, setMonthFilter] = useState('all');
@@ -42,6 +45,11 @@ export default function OrderList() {
   
   // Status update states
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  
+  // Download states
+  const [downloadingOrder, setDownloadingOrder] = useState<string | null>(null);
+  const [sharingOrder, setSharingOrder] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     getOrders();
@@ -84,6 +92,30 @@ export default function OrderList() {
       // Error handled by store
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  const handleDownloadOrder = async (order: any) => {
+    try {
+      setDownloadingOrder(order.id);
+      setDownloadError(null);
+      await downloadOrderAsImage(order);
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : 'Error al descargar el pedido');
+    } finally {
+      setDownloadingOrder(null);
+    }
+  };
+
+  const handleShareOrder = async (order: any) => {
+    try {
+      setSharingOrder(order.id);
+      setDownloadError(null);
+      await shareOrderAsImage(order);
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : 'Error al compartir el pedido');
+    } finally {
+      setSharingOrder(null);
     }
   };
 
@@ -140,6 +172,12 @@ export default function OrderList() {
 
       {error && (
         <Alert type="error" message={error} />
+      )}
+
+      {downloadError && (
+        <Alert variant="destructive" className="mb-6">
+          {downloadError}
+        </Alert>
       )}
 
       {/* Filters */}
@@ -309,6 +347,24 @@ export default function OrderList() {
                           onClick={() => handleDeleteClick(order.id)}
                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Download size={16} />}
+                          onClick={() => handleDownloadOrder(order)}
+                          loading={downloadingOrder === order.id}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          title="Descargar como imagen"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Share size={16} />}
+                          onClick={() => handleShareOrder(order)}
+                          loading={sharingOrder === order.id}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          title="Compartir"
+                        />
                       )}
                     </div>
                   </div>
@@ -428,6 +484,24 @@ export default function OrderList() {
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           />
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Download size={16} />}
+                          onClick={() => handleDownloadOrder(order)}
+                          loading={downloadingOrder === order.id}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 hidden sm:inline-flex"
+                          title="Descargar como imagen"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Share size={16} />}
+                          onClick={() => handleShareOrder(order)}
+                          loading={sharingOrder === order.id}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 hidden sm:inline-flex"
+                          title="Compartir"
+                        />
                       </div>
                     </td>
                   </tr>
@@ -473,6 +547,13 @@ export default function OrderList() {
           </div>
         </div>
       </Modal>
+
+      {/* Hidden Order Templates for Image Generation */}
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        {filteredOrders.map((order) => (
+          <OrderImageTemplate key={order.id} order={order} />
+        ))}
+      </div>
     </div>
   );
 }
