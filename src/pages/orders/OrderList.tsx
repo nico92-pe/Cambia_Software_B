@@ -340,31 +340,33 @@ export default function OrderList() {
                         </Link>
                       )}
                       {!isAsesorVentas && canManageOrders && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Trash2 size={16} />}
-                          onClick={() => handleDeleteClick(order.id)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Download size={16} />}
-                          onClick={() => handleDownloadOrder(order)}
-                          loading={downloadingOrder === order.id}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          title="Descargar como imagen"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Share size={16} />}
-                          onClick={() => handleShareOrder(order)}
-                          loading={sharingOrder === order.id}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          title="Compartir"
-                        />
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Trash2 size={16} />}
+                            onClick={() => handleDeleteClick(order.id)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Download size={16} />}
+                            onClick={() => handleDownloadOrder(order)}
+                            loading={downloadingOrder === order.id}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="Descargar como imagen"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Share size={16} />}
+                            onClick={() => handleShareOrder(order)}
+                            loading={sharingOrder === order.id}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="Compartir"
+                          />
+                        </>
                       )}
                     </div>
                   </div>
@@ -476,32 +478,36 @@ export default function OrderList() {
                           </Link>
                         )}
                         {!isAsesorVentas && canManageOrders && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Trash2 size={16} />}
+                              onClick={() => handleDeleteClick(order.id)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            />
+                          </>
+                        )}
+                        <>
                           <Button
                             variant="ghost"
                             size="sm"
-                            icon={<Trash2 size={16} />}
-                            onClick={() => handleDeleteClick(order.id)}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            icon={<Download size={16} />}
+                            onClick={() => handleDownloadOrder(order)}
+                            loading={downloadingOrder === order.id}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 hidden sm:inline-flex"
+                            title="Descargar como imagen"
                           />
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Download size={16} />}
-                          onClick={() => handleDownloadOrder(order)}
-                          loading={downloadingOrder === order.id}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 hidden sm:inline-flex"
-                          title="Descargar como imagen"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Share size={16} />}
-                          onClick={() => handleShareOrder(order)}
-                          loading={sharingOrder === order.id}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50 hidden sm:inline-flex"
-                          title="Compartir"
-                        />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Share size={16} />}
+                            onClick={() => handleShareOrder(order)}
+                            loading={sharingOrder === order.id}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50 hidden sm:inline-flex"
+                            title="Compartir"
+                          />
+                        </>
                       </div>
                     </td>
                   </tr>
