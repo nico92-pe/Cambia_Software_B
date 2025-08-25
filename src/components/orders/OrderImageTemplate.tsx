@@ -149,7 +149,7 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
       </div>
 
       {/* Installments Details - Only for credit orders */}
-      {order.paymentType === 'credito' && order.installmentDetails && order.installmentDetails.length > 0 ? (
+      {order.paymentType === 'credito' && order.installmentDetails && order.installmentDetails.length > 0 && (
         <div className="mb-6">
           <h3 className="text-lg font-bold text-gray-800 mb-3 border-b border-gray-300 pb-1">
             DETALLE DE CUOTAS
@@ -159,7 +159,7 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
               <tr className="bg-gray-100">
                 <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Cuota</th>
                 <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Monto</th>
-                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Fecha Vencimiento</th>
+                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Fecha</th>
                 <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Días</th>
               </tr>
             </thead>
@@ -181,16 +181,20 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={4} className="border border-gray-300 px-3 py-2">
+                  <div className="flex justify-end">
+                    <div className="font-bold text-gray-800">
+                      Total Cuotas: {formatCurrency(order.installmentDetails.reduce((sum, inst) => sum + inst.amount, 0))}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
           </table>
-          <div className="mt-2 flex justify-end">
-            <div className="bg-gray-50 border border-gray-300 px-4 py-2">
-              <span className="text-sm font-bold">
-                Total Cuotas: {formatCurrency(order.installmentDetails.reduce((sum, inst) => sum + inst.amount, 0))}
-              </span>
-            </div>
-          </div>
         </div>
-      ) : null}
+      )}
 
       {/* Observations */}
       {order.observations && (
