@@ -263,6 +263,53 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
   },
   
+  getAllProducts: async (searchTerm = '', categoryFilter = '') => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Build the query without pagination
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          category:categories(*)
+        `);
+      
+      // Apply search filter
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+      }
+      
+      // Apply category filter
+      if (categoryFilter) {
+        query = query.eq('category_id', categoryFilter);
+      }
+      
+      const { data, error } = await query
+        .order('created_at', { ascending: true })
+        .limit(1000); // Reasonable limit to prevent performance issues
+      
+      if (error) throw error;
+      
+      // Map products
+      const products = data.map(mapDbRowToProduct);
+      
+      set({ 
+        products, 
+        totalProducts: products.length,
+        isLoading: false 
+      });
+      
+      return products;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al cargar productos'
+      });
+      return [];
+    }
+  },
+  
   getProductsByCategory: async (categoryId) => {
     set({ isLoading: true, error: null });
     

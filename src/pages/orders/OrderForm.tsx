@@ -77,7 +77,7 @@ export function OrderForm() {
   const { user } = useAuthStore();
   const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, saveOrderInstallments, isLoading, error } = useOrderStore();
   const { clients, getClients } = useClientStore();
-  const { products, categories, getProducts, getCategories } = useProductStore();
+  const { products, categories, getProducts, getAllProducts, getCategories } = useProductStore();
   const { getUsersByRole } = useUserStore();
   
   const [order, setOrder] = useState(null);
@@ -125,7 +125,7 @@ export function OrderForm() {
       
       await Promise.all([
         getClients(),
-        getProducts(),
+        getAllProducts(), // Use getAllProducts instead of getProducts for order form
         getCategories(),
       ]);
 
@@ -206,7 +206,6 @@ export function OrderForm() {
     };
 
     loadData();
-  }, [id, getOrderById, getClients, getProducts, getCategories, getUsersByRole, isCurrentUserSalesperson, user]);
 
   // Generate installments when payment type changes to credit
   useEffect(() => {
