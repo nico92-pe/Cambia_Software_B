@@ -837,7 +837,7 @@ export function OrderForm() {
                       <select
                         value={installmentCount}
                         onChange={(e) => setInstallmentCount(parseInt(e.target.value))
-                        console.log(e.target.value);
+                        console.log(e.target.value)
                         }
                         className="select w-full"
                       >
