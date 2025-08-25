@@ -483,10 +483,6 @@ export function OrderForm() {
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            subtotal: item.subtotal,
-            pulsadorType: item.pulsadorType,
-            pulsadorPequenoQty: item.pulsadorPequenoQty,
-            pulsadorGrandeQty: item.pulsadorGrandeQty,
           };
           
           await addOrderItem(orderId, orderItemData);
@@ -495,9 +491,6 @@ export function OrderForm() {
         // Save installments if payment type is credit
         if (paymentType === 'credito' && installments.length > 0) {
           await saveOrderInstallments(orderId, installments);
-        } else if (paymentType === 'contado') {
-          // Clear any existing installments if payment type changed to cash
-          await saveOrderInstallments(orderId, []);
         }
       }
 
