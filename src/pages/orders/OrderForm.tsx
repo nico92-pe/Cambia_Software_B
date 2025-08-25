@@ -210,9 +210,10 @@ export function OrderForm() {
 
   // Generate installments when payment type changes to credit
   useEffect(() => {
-    if (paymentType === 'credito' && total > 0 && installments.length === 0 && !isEditing) {
+    if (paymentType === 'credito' && total > 0) {
       generateInstallments();
-    } else if (paymentType === 'contado') {
+    }
+    if (paymentType === 'contado') {
       setInstallments([]);
     }
   }, [paymentType, installmentCount, total, isEditing]);
@@ -238,6 +239,7 @@ export function OrderForm() {
     }
     
     setInstallments(newInstallments);
+    console.log('Generated installments:', newInstallments);
   };
 
   const handleClientSearch = (value: string) => {
