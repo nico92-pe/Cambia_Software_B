@@ -206,6 +206,7 @@ export function OrderForm() {
     };
 
     loadData();
+  }, [id, getOrderById, getClients, getAllProducts, getCategories, getUsersByRole, isCurrentUserSalesperson, user]);
 
   // Generate installments when payment type changes to credit
   useEffect(() => {
@@ -262,7 +263,6 @@ export function OrderForm() {
 
   const addProduct = (product: Product) => {
     const existingItemIndex = items.findIndex(item => item.productId === product.id);
-      (item) => item.product.id === product.id
     if (existingItemIndex >= 0) {
       // Update existing item quantity
       const updatedItems = [...items];
