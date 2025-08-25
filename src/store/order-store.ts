@@ -78,6 +78,14 @@ interface OrderState {
   // Utility
   clearCurrentOrder: () => void;
   setCurrentOrder: (order: Order | null) => void;
+  
+  // Installments operations
+  saveOrderInstallments: (orderId: string, installments: Array<{
+    installmentNumber: number;
+    amount: number;
+    dueDate: string;
+    daysDue: number;
+  }>) => Promise<void>;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
@@ -616,5 +624,44 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   
   setCurrentOrder: (order) => {
     set({ currentOrder: order });
+  },
+  
+  saveOrderInstallments: async (orderId, installments) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // First, delete existing installments for this order
+      const { error: deleteError } = await supabase
+        .from('order_installments')
+        .delete()
+        .eq('order_id', orderId);
+        
+      if (deleteError) throw deleteError;
+      
+      // If there are installments to save, insert them
+      if (installments.length > 0) {
+        const installmentData = installments.map(installment => ({
+          order_id: orderId,
+          installment_number: installment.installmentNumber,
+          amount: installment.amount,
+          due_date: installment.dueDate,
+          days_due: installment.daysDue,
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('order_installments')
+          .insert(installmentData);
+          
+        if (insertError) throw insertError;
+      }
+      
+      set({ isLoading: false });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al guardar las cuotas'
+      });
+      throw error;
+    }
   },
 }));

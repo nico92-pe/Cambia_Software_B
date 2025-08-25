@@ -75,7 +75,7 @@ export function OrderForm() {
   const navigate = useNavigate();
   
   const { user } = useAuthStore();
-  const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, isLoading, error } = useOrderStore();
+  const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, saveOrderInstallments, isLoading, error } = useOrderStore();
   const { clients, getClients } = useClientStore();
   const { products, categories, getProducts, getCategories } = useProductStore();
   const { getUsersByRole } = useUserStore();
@@ -492,6 +492,14 @@ export function OrderForm() {
           };
           
           await addOrderItem(orderId, orderItemData);
+        }
+        
+        // Save installments if payment type is credit
+        if (paymentType === 'credito' && installments.length > 0) {
+          await saveOrderInstallments(orderId, installments);
+        } else if (paymentType === 'contado') {
+          // Clear any existing installments if payment type changed to cash
+          await saveOrderInstallments(orderId, []);
         }
       }
 
