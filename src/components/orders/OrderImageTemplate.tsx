@@ -148,6 +148,53 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
         </div>
       </div>
 
+      {/* Installments Details - Only for credit orders */}
+      {order.paymentType === 'credito' && order.installmentDetails && order.installmentDetails.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-3 border-b border-gray-300 pb-1">
+            DETALLE DE CUOTAS
+          </h3>
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Cuota</th>
+                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Monto</th>
+                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Fecha Vencimiento</th>
+                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Días</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.installmentDetails.map((installment, index) => (
+                <tr key={index}>
+                  <td className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">
+                    {installment.installmentNumber}
+                  </td>
+                  <td className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">
+                    {formatCurrency(installment.amount)}
+                  </td>
+                  <td className="border border-gray-300 px-3 py-2 text-center text-sm">
+                    {formatDate(new Date(installment.dueDate))}
+                  </td>
+                  <td className="border border-gray-300 px-3 py-2 text-center text-sm">
+                    {installment.daysDue} días
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={3} className="border border-gray-300 px-3 py-2 text-right text-sm font-bold bg-gray-50">
+                  Total Cuotas:
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-center text-sm font-bold bg-gray-50">
+                  {formatCurrency(order.installmentDetails.reduce((sum, inst) => sum + inst.amount, 0))}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+
       {/* Observations */}
       {order.observations && (
         <div className="mb-6">
