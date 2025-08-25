@@ -21,12 +21,12 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
       <div className="border-b-2 border-blue-600 pb-6 mb-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-blue-600 mb-2">Griferías Cambia</h1>
+            <h1 className="text-3xl font-bold text-blue-600 mb-2">Importaciones Cambia</h1>
             <p className="text-gray-600">Especialistas en griferías y accesorios</p>
-            <p className="text-gray-600">+51 999 888 777</p>
+            <p className="text-gray-600">943 830 608</p>
           </div>
           <div className="text-right">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">PEDIDO</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Pedido</h2>
             <p className="text-gray-600">Fecha: {formatDate(new Date(order.createdAt))}</p>
             <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mt-2">
               {order.status.toUpperCase()}
@@ -210,8 +210,9 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
 
       {/* Footer */}
       <div className="border-t border-gray-300 pt-4 text-center text-xs text-gray-500">
-        <p>Griferías Cambia - Av. Industrial 123, Lima, Perú</p>
-        <p>contacto@griferiascambia.com - +51 999 888 777</p>
+        <p>Importaciones Cambia - 20607867462</p>
+        <p>Av. José Bernardo Alcedo 525, San Martín de Porres, Lima, Perú</p>
+        <p>contacto@griferiascambia.com - 943 830 608</p>
         <p className="mt-2">Documento generado el {formatDate(new Date())}</p>
       </div>
     </div>
