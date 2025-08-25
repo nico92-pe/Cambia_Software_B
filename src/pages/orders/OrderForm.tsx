@@ -189,6 +189,7 @@ export function OrderForm() {
                 daysDue: inst.daysDue,
               }));
               setInstallments(formInstallments);
+              console.log('Loaded installments:', formInstallments);
             }
             
             setIsDataLoaded(true);
@@ -211,25 +212,12 @@ export function OrderForm() {
 
   // Generate installments when payment type changes to credit
   useEffect(() => {
-    if (paymentType === 'credito' && total > 0 && installments.length === 0) {
+    if (paymentType === 'credito' && total > 0 && installments.length === 0 && !isEditing) {
       generateInstallments();
     } else if (paymentType === 'contado') {
       setInstallments([]);
     }
-  }, [paymentType, installmentCount, total]);
-
-  // Load existing installments when editing an order
-  useEffect(() => {
-    if (order && order.paymentType === 'credito' && order.installmentDetails && order.installmentDetails.length > 0) {
-      const formInstallments: OrderInstallmentForm[] = order.installmentDetails.map(inst => ({
-        installmentNumber: inst.installmentNumber,
-        amount: inst.amount,
-        dueDate: formatDateForInput(new Date(inst.dueDate)),
-        daysDue: inst.daysDue,
-      }));
-      setInstallments(formInstallments);
-    }
-  }, [order]);
+  }, [paymentType, installmentCount, total, isEditing]);
 
   const generateInstallments = () => {
     const baseAmount = Math.floor((total * 100) / installmentCount) / 100;
