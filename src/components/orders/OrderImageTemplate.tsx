@@ -149,6 +149,11 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
       </div>
 
       {/* Installments Details - Only for credit orders */}
+      
+      {console.log('Order Payment Type:', order.paymentType)}
+      {console.log('Order Installment Details:', order.installmentDetails)}
+      {console.log('Order Installment Details Length:', order.installmentDetails?.length)}
+
       {order.paymentType === 'credito' && order.installmentDetails && order.installmentDetails.length > 0 && (
         <div className="mb-6">
           <h3 className="text-lg font-bold text-gray-800 mb-3 border-b border-gray-300 pb-1">
