@@ -834,14 +834,12 @@ export function OrderForm() {
                       <label className="block text-sm font-medium mb-2">
                         Número de Cuotas
                       </label>
-                    <select
-                      value={installmentCount}
-                      onChange={(e) => {
-                        setInstallmentCount(parseInt(e.target.value));
-                        console.log(e.target.value);
-                      }}
-                      className="select w-full"
-                    >
+                      <select
+                        value={installmentCount}
+                        onChange={(e) => setInstallmentCount(parseInt(e.target.value))
+                        }
+                        className="select w-full"
+                      >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
                           <option key={num} value={num}>{num} cuota{num > 1 ? 's' : ''}</option>
                         ))}
