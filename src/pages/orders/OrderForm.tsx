@@ -206,7 +206,7 @@ export function OrderForm() {
     };
 
     loadData();
-  }, [id, getOrderById, getClients, getAllProducts, getCategories, getUsersByRole, isCurrentUserSalesperson, user]);
+  }, [id, isCurrentUserSalesperson, user, getClients, getAllProducts, getCategories, getUsersByRole, getOrderById]);
 
   // Generate installments when payment type changes to credit
   useEffect(() => {
@@ -262,7 +262,9 @@ export function OrderForm() {
   };
 
   const addProduct = (product: Product) => {
-    const existingItemIndex = items.findIndex(item => item.productId === product.id);
+    const existingItemIndex = items.findIndex(
+      (item) => item.productId === product.id
+    );
     if (existingItemIndex >= 0) {
       // Update existing item quantity
       const updatedItems = [...items];
@@ -836,8 +838,7 @@ export function OrderForm() {
                       </label>
                       <select
                         value={installmentCount}
-                        onChange={(e) => setInstallmentCount(parseInt(e.target.value))
-                        }
+                        onChange={(e) => setInstallmentCount(parseInt(e.target.value))}
                         className="select w-full"
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
