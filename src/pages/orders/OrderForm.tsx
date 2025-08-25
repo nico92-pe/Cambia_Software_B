@@ -118,8 +118,6 @@ export function OrderForm() {
   const subtotal = total / 1.18;
   const igv = total - subtotal;
   
-  console.log('Calculated totals:', { total, subtotal, igv, itemsCount: items.length });
-
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
