@@ -74,6 +74,19 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
               {order.client?.address}, {order.client?.district}, {order.client?.province}
             </p>
           </div>
+
+        {order.client?.transport && (
+          <div className="col-span-2 mt-4 pt-4 border-t border-gray-200">
+            <h4 className="text-sm font-bold text-gray-700 mb-2">Información de Transporte:      </h4>
+            <p className="text-sm text-gray-600">Transporte:</p>
+            <p className="font-medium text-gray-800">{order.client.transport}</p>
+            <p className="text-sm text-gray-600 mt-2">Dirección de Transporte:</p>
+            <p className="font-medium text-gray-800">
+              {order.client.transportAddress}, {order.client.transportDistrict}
+            </p>
+          </div>
+        )}
+          
         </div>
       </div>
 
