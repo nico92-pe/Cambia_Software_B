@@ -111,6 +111,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           order_items(
             *,
             product:products(*)
+          ),
+          order_installments(
+            *
           )
         `)
         .order('created_at', { ascending: false });
@@ -193,6 +196,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             cargo: row.createdByUser.cargo,
             role: row.createdByUser.role,
           };
+        }
+
+        // Map installment details
+        if (row.order_installments) {
+          order.installmentDetails = row.order_installments.map((inst: any) => ({
+            id: inst.id,
+            orderId: inst.order_id,
+            installmentNumber: inst.installment_number,
+            amount: parseFloat(inst.amount),
+            dueDate: inst.due_date,
+            daysDue: inst.days_due,
+            createdAt: inst.created_at,
+          }));
         }
 
         return order;
