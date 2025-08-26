@@ -159,6 +159,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             ruc: row.client.ruc,
             businessName: row.client.business_name,
             commercialName: row.client.commercial_name,
+            contactName: row.client.contact_name,
+            contactPhone: row.client.contact_phone,
             address: row.client.address,
             district: row.client.district,
             province: row.client.province,
