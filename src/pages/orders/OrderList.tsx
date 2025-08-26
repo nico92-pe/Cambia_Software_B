@@ -353,6 +353,7 @@ export default function OrderList() {
                             size="sm"
                             icon={<Download size={16} />}
                             onClick={() => handleDownloadOrder(order)}
+                            
                             loading={downloadingOrder === order.id}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             title="Descargar como imagen"
