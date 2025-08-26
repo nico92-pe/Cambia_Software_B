@@ -33,7 +33,7 @@ export function ClientForm() {
   } = useForm<ClientFormData>();
 
   const province = watch('province');
-  const isLima = province === 'Lima';
+  const isLima = province === 'Lima' || province === '';
 
   useEffect(() => {
     const loadData = async () => {
