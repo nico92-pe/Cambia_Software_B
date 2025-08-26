@@ -150,10 +150,9 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
 
       {/* Installments Details - Only for credit orders */}
       
-      {console.log('Order Payment Type:', order.paymentType)}
-      {console.log('Order:', order)}
-      {console.log('Order Installment Details:', order.installmentDetails)}
-      {console.log('Order Installment Details Length:', order.installmentDetails?.length)}
+{console.log('Order Payment Type:', order.paymentType)}
+{console.log('Order Installment Details:', order.installmentDetails)}
+{console.log('Order Installment Details Length:', order.installmentDetails?.length)}
 
       {order.paymentType === 'credito' && order.installmentDetails && order.installmentDetails.length > 0 && (
         <div className="mb-6">
