@@ -242,7 +242,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         `)
         .eq('id', id)
         .single();
-        
+
+    console.log('Raw data from Supabase in getOrderById:', data);
+      
       if (error) {
         if (error.code === 'PGRST116') {
           set({ isLoading: false });
