@@ -55,7 +55,18 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
           </div>
           <div>
             <p className="text-sm text-gray-600">Contacto:</p>
-            <p className="font-medium text-gray-800">{order.client?.contactName || 'N/A'}</p>
+            <p className="font-medium text-gray-800">
+              {(() => {
+                const parts = [];
+                if (order.client?.contactName) {
+                  parts.push(order.client.contactName);
+                }
+                if (order.client?.contactPhone) {
+                  parts.push(order.client.contactPhone);
+                }
+                return parts.length > 0 ? parts.join(' - ') : 'N/A';
+              })()}
+            </p>
           </div>
           <div className="col-span-2">
             <p className="text-sm text-gray-600">Dirección:</p>
