@@ -326,7 +326,6 @@ export function ClientForm() {
                       id="contactPhone"
                       type="text"
                       className={`input pl-10 ${errors.contactPhone ? 'border-destructive' : ''}`}
-                      placeholder="+51 999 888 777"
                       maxLength={9}
                       {...register('contactPhone', {
                         required: 'El celular de contacto es requerido',
