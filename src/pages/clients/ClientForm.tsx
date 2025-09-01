@@ -425,6 +425,31 @@ export function ClientForm() {
                 </div>
 
                 <div className="space-y-2">
+                  <label htmlFor="province" className="block text-sm font-medium">
+                    Provincia *
+                  </label>
+                  <select
+                    id="province"
+                    className={`select ${errors.province ? 'border-destructive' : ''}`}
+                    {...register('province', {
+                      required: 'La provincia es requerida',
+                    })}
+                  >
+                    <option value="">Seleccionar provincia</option>
+                    {provinces.map((province) => (
+                      <option key={province} value={province}>
+                        {province}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.province && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.province.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <label htmlFor="district" className="block text-sm font-medium">
                     Distrito *
                   </label>
@@ -457,31 +482,6 @@ export function ClientForm() {
                   {errors.district && (
                     <p className="text-destructive text-sm mt-1">
                       {errors.district.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="province" className="block text-sm font-medium">
-                    Provincia *
-                  </label>
-                  <select
-                    id="province"
-                    className={`select ${errors.province ? 'border-destructive' : ''}`}
-                    {...register('province', {
-                      required: 'La provincia es requerida',
-                    })}
-                  >
-                    <option value="">Seleccionar provincia</option>
-                    {provinces.map((province) => (
-                      <option key={province} value={province}>
-                        {province}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.province && (
-                    <p className="text-destructive text-sm mt-1">
-                      {errors.province.message}
                     </p>
                   )}
                 </div>
