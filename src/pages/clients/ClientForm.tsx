@@ -377,7 +377,6 @@ export function ClientForm() {
                       id="contactPhone2"
                       type="text"
                       className={`input pl-10 ${errors.contactPhone2 ? 'border-destructive' : ''}`}
-                      placeholder="+51 999 888 777"
                       maxLength={9}
                       {...register('contactPhone2', {
                         pattern: {
