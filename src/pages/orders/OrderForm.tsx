@@ -71,7 +71,6 @@ const formatDateForDisplay = (dateStr: string): string => {
 };
 
 export function OrderForm() {
-  console.log('OrderForm: El componente se está renderizando.'); // <-- AÑADE ESTA LÍNEA
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
@@ -113,7 +112,7 @@ export function OrderForm() {
   const isCurrentUserSalesperson = user?.role === UserRole.ASESOR_VENTAS;
   
   // Show loading screen during initial data load
-  if (!isDataLoaded) {
+  if (isDataLoaded) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
