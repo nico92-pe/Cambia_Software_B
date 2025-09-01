@@ -50,7 +50,7 @@ export function ClientDetailModal({
               <User className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Vendedor Asignado</p>
-                <p className="font-medium">{salespersonName || 'No asignado'}</p>
+                <p className="font-medium">{salespersonName || 'No disponible'}</p>
               </div>
             </div>
           </div>

@@ -281,7 +281,7 @@ export function ClientList() {
         client={selectedClient}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        salespersonName={selectedClient ? getSalespersonName(selectedClient.salespersonId) : ''}
+        salespersonName={selectedClient ? getSalespersonName(selectedClient.salespersonId) : undefined}
       />
     </div>
   );
