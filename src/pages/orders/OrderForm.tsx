@@ -94,6 +94,8 @@ export function OrderForm() {
   const [installments, setInstallments] = useState<OrderInstallmentForm[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [showStockModal, setShowStockModal] = useState(false);
+  const [stockModalProduct, setStockModalProduct] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [salespeople, setSalespeople] = useState([]);
   const [selectedSalesperson, setSelectedSalesperson] = useState('');
@@ -274,6 +276,13 @@ export function OrderForm() {
   };
 
   const addProduct = (product: Product) => {
+    // Check if product has stock
+    if (!product.stock || product.stock <= 0) {
+      setStockModalProduct(product.name);
+      setShowStockModal(true);
+      return;
+    }
+    
     const existingItemIndex = items.findIndex(
       (item) => item.productId === product.id
     );
@@ -1069,6 +1078,29 @@ export function OrderForm() {
               onClick={deleteItem}
             >
               Eliminar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Stock Warning Modal */}
+      <Modal
+        isOpen={showStockModal}
+        onClose={() => setShowStockModal(false)}
+        title="Sin Stock Disponible"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-4 bg-warning/10 rounded-lg">
+            <AlertTriangle className="text-warning flex-shrink-0" size={20} />
+            <p className="text-sm">
+              El producto <strong>"{stockModalProduct}"</strong> no cuenta con stock disponible.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setShowStockModal(false)}
+            >
+              Entendido
             </Button>
           </div>
         </div>
