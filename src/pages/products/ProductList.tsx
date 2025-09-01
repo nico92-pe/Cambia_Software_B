@@ -367,11 +367,9 @@ export function ProductList() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="max-w-32">
-                          <Badge className="whitespace-normal break-words leading-tight py-1 px-2 text-xs">
+                        <Badge>
                           {getCategoryName(product.categoryId)}
-                          </Badge>
-                        </div>
+                        </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium">{formatCurrency(product.retailPrice)}</div>
