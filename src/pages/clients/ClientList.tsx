@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { Edit, MapPin, Plus, Search, Trash, User } from 'lucide-react';
 import { useClientStore } from '../../store/client-store';
 import { useAuthStore } from '../../store/auth-store';
-import { UserRole } from '../../lib/types';
+import { useUserStore } from '../../store/user-store';
+import { ClientDetailModal } from '../../components/clients/ClientDetailModal';
+import { UserRole, Client } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
@@ -12,9 +14,12 @@ import { Badge } from '../../components/ui/Badge';
 export function ClientList() {
   const { clients, getClients, deleteClient, isLoading, error } = useClientStore();
   const { user } = useAuthStore();
+  const { users } = useUserStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
 
@@ -42,6 +47,21 @@ export function ClientList() {
         setDeleteLoading(null);
       }
     }
+  };
+
+  const handleClientClick = (client: Client) => {
+    setSelectedClient(client);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedClient(null);
+  };
+
+  const getSalespersonName = (salespersonId: string) => {
+    const salesperson = users.find(u => u.id === salespersonId);
+    return salesperson ? salesperson.fullName : '';
   };
 
   const filteredClients = clients.filter(
@@ -116,8 +136,18 @@ export function ClientList() {
                   {filteredClients.map((client) => (
                     <div key={client.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                       <div className="mb-3">
-                        <h3 className="font-medium text-gray-900">{client.commercialName}</h3>
-                        <p className="text-sm text-muted-foreground">{client.businessName}</p>
+                        <h3 
+                          className="font-medium text-gray-900 cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => handleClientClick(client)}
+                        >
+                          {client.commercialName}
+                        </h3>
+                        <p 
+                          className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => handleClientClick(client)}
+                        >
+                          {client.businessName}
+                        </p>
                       </div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -138,19 +168,21 @@ export function ClientList() {
                           </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
-                        <Link to={`/clients/edit/${client.id}`}>
-                          <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Trash size={16} />}
-                          onClick={() => handleDelete(client.id)}
-                          loading={deleteLoading === client.id}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        />
-                      </div>
+                      {!isAsesorVentas && (
+                        <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
+                          <Link to={`/clients/edit/${client.id}`}>
+                            <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Trash size={16} />}
+                            onClick={() => handleDelete(client.id)}
+                            loading={deleteLoading === client.id}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -170,9 +202,11 @@ export function ClientList() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Provincia
                     </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Acciones
-                    </th>
+                    {!isAsesorVentas && (
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
@@ -180,8 +214,18 @@ export function ClientList() {
                     <tr key={client.id} className="hover:bg-muted/30">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="font-medium">{client.commercialName}</div>
-                          <div className="text-sm text-muted-foreground">{client.businessName}</div>
+                          <div 
+                            className="font-medium cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => handleClientClick(client)}
+                          >
+                            {client.commercialName}
+                          </div>
+                          <div 
+                            className="text-sm text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => handleClientClick(client)}
+                          >
+                            {client.businessName}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -198,25 +242,23 @@ export function ClientList() {
                           {client.province}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="flex items-center justify-end space-x-2">
-                          {!isAsesorVentas && (
-                            <>
-                              <Link to={`/clients/edit/${client.id}`}>
-                                <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex" />
-                              </Link>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                icon={<Trash size={16} />}
-                                onClick={() => handleDelete(client.id)}
-                                loading={deleteLoading === client.id}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10 hidden sm:inline-flex"
-                              />
-                            </>
-                          )}
-                        </div>
-                      </td>
+                      {!isAsesorVentas && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Link to={`/clients/edit/${client.id}`}>
+                              <Button variant="ghost" size="sm" icon={<Edit size={16} />} className="hidden sm:inline-flex" />
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Trash size={16} />}
+                              onClick={() => handleDelete(client.id)}
+                              loading={deleteLoading === client.id}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 hidden sm:inline-flex"
+                            />
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -234,6 +276,13 @@ export function ClientList() {
           </div>
         )}
       </div>
+      
+      <ClientDetailModal
+        client={selectedClient}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        salespersonName={selectedClient ? getSalespersonName(selectedClient.salespersonId) : ''}
+      />
     </div>
   );
 }
