@@ -462,6 +462,24 @@ export function ClientForm() {
                     </p>
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="reference" className="block text-sm font-medium">
+                    Referencia
+                  </label>
+                  <input
+                    id="reference"
+                    type="text"
+                    className={`input ${errors.reference ? 'border-destructive' : ''}`}
+                    placeholder="Referencia de ubicación"
+                    {...register('reference')}
+                  />
+                  {errors.reference && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.reference.message}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
