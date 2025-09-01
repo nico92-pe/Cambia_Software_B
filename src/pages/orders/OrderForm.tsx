@@ -71,6 +71,7 @@ const formatDateForDisplay = (dateStr: string): string => {
 };
 
 export function OrderForm() {
+  console.log('OrderForm: El componente se está renderizando.'); // <-- AÑADE ESTA LÍNEA
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
