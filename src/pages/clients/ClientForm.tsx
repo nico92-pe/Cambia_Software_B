@@ -428,14 +428,32 @@ export function ClientForm() {
                   <label htmlFor="district" className="block text-sm font-medium">
                     Distrito *
                   </label>
-                  <input
-                    id="district"
-                    type="text"
-                    className={`input ${errors.district ? 'border-destructive' : ''}`}
-                    {...register('district', {
-                      required: 'El distrito es requerido',
-                    })}
-                  />
+                  {province === 'Lima' ? (
+                    <select
+                      id="district"
+                      className={`select ${errors.district ? 'border-destructive' : ''}`}
+                      {...register('district', {
+                        required: 'El distrito es requerido',
+                      })}
+                    >
+                      <option value="">Seleccionar distrito</option>
+                      {limaDistricts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      id="district"
+                      type="text"
+                      className={`input ${errors.district ? 'border-destructive' : ''}`}
+                      placeholder="Ingrese el distrito"
+                      {...register('district', {
+                        required: 'El distrito es requerido',
+                      })}
+                    />
+                  )}
                   {errors.district && (
                     <p className="text-destructive text-sm mt-1">
                       {errors.district.message}
@@ -471,32 +489,13 @@ export function ClientForm() {
                 <div className="space-y-2">
                   <label htmlFor="reference" className="block text-sm font-medium">
                     Referencia
-                  {province === 'Lima' ? (
-                    <select
-                      id="district"
-                      className={`select ${errors.district ? 'border-destructive' : ''}`}
-                      {...register('district', {
-                        required: 'El distrito es requerido',
-                      })}
-                    >
-                      <option value="">Seleccionar distrito</option>
-                      {limaDistricts.map((district) => (
-                        <option key={district} value={district}>
-                          {district}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      id="district"
-                      type="text"
-                      className={`input ${errors.district ? 'border-destructive' : ''}`}
-                      placeholder="Ingrese el distrito"
-                      {...register('district', {
-                        required: 'El distrito es requerido',
-                      })}
-                    />
-                  )}
+                  </label>
+                  <input
+                    id="reference"
+                    type="text"
+                    className={`input ${errors.reference ? 'border-destructive' : ''}`}
+                    {...register('reference')}
+                  />
                   {errors.reference && (
                     <p className="text-destructive text-sm mt-1">
                       {errors.reference.message}
