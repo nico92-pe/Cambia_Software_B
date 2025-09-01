@@ -204,24 +204,20 @@ export function OrderForm() {
               setInstallments(formInstallments);
               console.log('Loaded installments:', formInstallments);
             }
-            
-            setIsDataLoaded(true);
           }
         } catch (error) {
           setFormError('Error al cargar el pedido');
-          setIsDataLoaded(true);
         }
       } else if (isCurrentUserSalesperson && user) {
         // Pre-select current user as salesperson for new orders
         setSelectedSalesperson(user.id);
-        setIsDataLoaded(true);
-      } else {
-        setIsDataLoaded(true);
       }
+      
+      // Always set data as loaded after all operations complete
+      setIsDataLoaded(true);
     };
 
     loadData();
-  }, [id, isCurrentUserSalesperson, user, getClients, getCategories, getUsersByRole, getOrderById]);
 
   // Search products when search term or category changes
   useEffect(() => {
