@@ -137,88 +137,102 @@ export function OrderForm() {
   
   // Load initial data
   useEffect(() => {
-    const loadData = async () => {
-      setIsDataLoaded(false);
+    console.log('OrderForm: useEffect is definitely running!'); // <-- NUEVO LOG DE PRUEBA
+    
+    // Temporalmente comentamos toda la lógica compleja para aislar el problema
+    // const loadData = async () => {
+    //   console.log('OrderForm: Iniciando carga de datos...');
+    //   setIsDataLoaded(false);
       
-      await Promise.all([
-        getClients(),
-        getCategories(),
-      ]);
+    //   await Promise.all([
+    //     getClients(),
+    //     getCategories(),
+    //   ]);
+    //   console.log('OrderForm: Clientes y categorías cargados.');
 
-      // Load salespeople
-      try {
-        const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
-        setSalespeople(salespeople);
-      } catch (error) {
-        console.error('Error loading salespeople:', error);
-      }
+    //   // Load salespeople
+    //   try {
+    //     console.log('OrderForm: Cargando vendedores...');
+    //     const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
+    //     setSalespeople(salespeople);
+    //     console.log('OrderForm: Vendedores cargados.');
+    //   } catch (error) {
+    //     console.error('OrderForm: Error al cargar vendedores:', error);
+    //   }
 
-      // Load order if editing
-      if (id) {
-        try {
-          const orderData = await getOrderById(id);
-          if (orderData) {
-            setOrder(orderData);
-            setSelectedClient(orderData.client || null);
-            setCurrentStatus(orderData.status);
-            setNotes(orderData.observations || '');
-            setSelectedSalesperson(orderData.salespersonId);
-            setPaymentType(orderData.paymentType || 'contado');
-            setCreditType(orderData.creditType || 'factura');
-            setInstallmentCount(orderData.installments || 1);
-            setIsDraft(orderData.status === OrderStatus.BORRADOR);
+    //   // Load order if editing
+    //   if (id) {
+    //     try {
+    //       const orderData = await getOrderById(id);
+    //       if (orderData) {
+    //         setOrder(orderData);
+    //         setSelectedClient(orderData.client || null);
+    //         setCurrentStatus(orderData.status);
+    //         setNotes(orderData.observations || '');
+    //         setSelectedSalesperson(orderData.salespersonId);
+    //         setPaymentType(orderData.paymentType || 'contado');
+    //         setCreditType(orderData.creditType || 'factura');
+    //         setInstallmentCount(orderData.installments || 1);
+    //         setIsDraft(orderData.status === OrderStatus.BORRADOR);
             
-            // Convert order items to form items
-            const formItems: OrderFormItem[] = orderData.items.map(item => ({
-              id: item.id,
-              productId: item.productId,
-              product: item.product,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              subtotal: typeof item.subtotal === 'number' && item.subtotal > 0 
-                ? item.subtotal 
-                : Number((item.quantity * item.unitPrice).toFixed(2)),
-              pulsadorType: item.pulsadorType,
-              pulsadorPequenoQty: item.pulsadorPequenoQty,
-              pulsadorGrandeQty: item.pulsadorGrandeQty,
-              pulsadorPequenoQty: item.pulsadorPequenoQty || 0,
-              pulsadorGrandeQty: item.pulsadorGrandeQty || 0,
-            }));
-            setItems(formItems);
+    //         // Convert order items to form items
+    //         const formItems: OrderFormItem[] = orderData.items.map(item => ({
+    //           id: item.id,
+    //           productId: item.productId,
+    //           product: item.product,
+    //           quantity: item.quantity,
+    //           unitPrice: item.unitPrice,
+    //           subtotal: typeof item.subtotal === 'number' && item.subtotal > 0 
+    //             ? item.subtotal 
+    //             : Number((item.quantity * item.unitPrice).toFixed(2)),
+    //           pulsadorType: item.pulsadorType,
+    //           pulsadorPequenoQty: item.pulsadorPequenoQty,
+    //           pulsadorGrandeQty: item.pulsadorGrandeQty,
+    //           pulsadorPequenoQty: item.pulsadorPequenoQty || 0,
+    //           pulsadorGrandeQty: item.pulsadorGrandeQty || 0,
+    //         }));
+    //         setItems(formItems);
             
-            console.log('Loaded order items with subtotals:', formItems.map(item => ({
-              name: item.product?.name,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              subtotal: item.subtotal,
-              calculated: item.quantity * item.unitPrice
-            })));
+    //         console.log('Loaded order items with subtotals:', formItems.map(item => ({
+    //           name: item.product?.name,
+    //           quantity: item.quantity,
+    //           unitPrice: item.unitPrice,
+    //           subtotal: item.subtotal,
+    //           calculated: item.quantity * item.unitPrice
+    //         })));
 
-            // Load installments if credit order
-            if (orderData.paymentType === 'credito' && orderData.installmentDetails) {
-              const formInstallments: OrderInstallmentForm[] = orderData.installmentDetails.map(inst => ({
-                installmentNumber: inst.installmentNumber,
-                amount: inst.amount,
-                dueDate: formatDateForInput(new Date(inst.dueDate)),
-                daysDue: inst.daysDue,
-              }));
-              setInstallments(formInstallments);
-              console.log('Loaded installments:', formInstallments);
-            }
-          }
-        } catch (error) {
-          setFormError('Error al cargar el pedido');
-        }
-      } else if (isCurrentUserSalesperson && user) {
-        // Pre-select current user as salesperson for new orders
-        setSelectedSalesperson(user.id);
-      }
+    //         // Load installments if credit order
+    //         if (orderData.paymentType === 'credito' && orderData.installmentDetails) {
+    //           const formInstallments: OrderInstallmentForm[] = orderData.installmentDetails.map(inst => ({
+    //             installmentNumber: inst.installmentNumber,
+    //             amount: inst.amount,
+    //             dueDate: formatDateForInput(new Date(inst.dueDate)),
+    //             daysDue: inst.daysDue,
+    //           }));
+    //           setInstallments(formInstallments);
+    //           console.log('Loaded installments:', formInstallments);
+    //         }
+    //       }
+    //     } catch (error) {
+    //       setFormError('Error al cargar el pedido');
+    //     }
+    //   } else if (isCurrentUserSalesperson && user) {
+    //     // Pre-select current user as salesperson for new orders
+    //     setSelectedSalesperson(user.id);
+    //   }
       
-      // Always set data as loaded after all operations complete
+    //   // Always set data as loaded after all operations complete
+    //   setIsDataLoaded(true);
+    //   console.log('OrderForm: Carga de datos finalizada.');
+    // };
+
+    // loadData();
+    
+    // Temporalmente establecemos isDataLoaded como true para que el formulario se muestre
+    setTimeout(() => {
+      console.log('OrderForm: Estableciendo isDataLoaded = true después de 1 segundo');
       setIsDataLoaded(true);
-    };
-
-    loadData();
+    }, 1000);
   }, [id, getClients, getCategories, getUsersByRole, getOrderById, isCurrentUserSalesperson, user]);
 
   // Search products when search term or category changes
