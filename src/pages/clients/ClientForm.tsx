@@ -335,6 +335,57 @@ export function ClientForm() {
                     </p>
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="contactName2" className="block text-sm font-medium">
+                    Nombre de Contacto 2
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                      <UserIcon size={18} />
+                    </div>
+                    <input
+                      id="contactName2"
+                      type="text"
+                      className={`input pl-10 ${errors.contactName2 ? 'border-destructive' : ''}`}
+                      {...register('contactName2')}
+                    />
+                  </div>
+                  {errors.contactName2 && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.contactName2.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="contactPhone2" className="block text-sm font-medium">
+                    Celular de Contacto 2
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                      <Phone size={18} />
+                    </div>
+                    <input
+                      id="contactPhone2"
+                      type="text"
+                      className={`input pl-10 ${errors.contactPhone2 ? 'border-destructive' : ''}`}
+                      placeholder="+51 999 888 777"
+                      maxLength={9}
+                      {...register('contactPhone2', {
+                        pattern: {
+                          value: /^[0-9]{9}$/,
+                          message: 'El celular debe tener exactamente 9 dígitos',
+                        },
+                      })}
+                    />
+                  </div>
+                  {errors.contactPhone2 && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.contactPhone2.message}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
