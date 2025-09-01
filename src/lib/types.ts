@@ -49,8 +49,6 @@ export type Product = {
   wholesalePrice: number;
   retailPrice: number;
   distributorPrice: number;
-  creditPrice: number;
-  cashPrice: number;
   unitsPerBox: number;
   categoryId: string;
   stock?: number;

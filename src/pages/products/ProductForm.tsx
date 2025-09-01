@@ -358,63 +358,6 @@ export function ProductForm() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="creditPrice" className="block text-sm font-medium">
-                    Precio Crédito *
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                    </div>
-                    <input
-                      id="creditPrice"
-                      type="number"
-                      step="0.01"
-                      className={`input ${errors.creditPrice ? 'border-destructive' : ''}`}
-                      placeholder="0.00"
-                      {...register('creditPrice', {
-                        required: 'El precio es requerido',
-                        min: {
-                          value: 0,
-                          message: 'El precio debe ser mayor a 0',
-                        },
-                      })}
-                    />
-                  </div>
-                  {errors.creditPrice && (
-                    <p className="text-destructive text-sm mt-1">
-                      {errors.creditPrice.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="cashPrice" className="block text-sm font-medium">
-                    Precio Contado *
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                    </div>
-                    <input
-                      id="cashPrice"
-                      type="number"
-                      step="0.01"
-                      className={`input ${errors.cashPrice ? 'border-destructive' : ''}`}
-                      placeholder="0.00"
-                      {...register('cashPrice', {
-                        required: 'El precio es requerido',
-                        min: {
-                          value: 0,
-                          message: 'El precio debe ser mayor a 0',
-                        },
-                      })}
-                    />
-                  </div>
-                  {errors.cashPrice && (
-                    <p className="text-destructive text-sm mt-1">
-                      {errors.cashPrice.message}
-                    </p>
-                  )}
-                </div>
 
                 <div className="space-y-2">
                   <label htmlFor="unitsPerBox" className="block text-sm font-medium">

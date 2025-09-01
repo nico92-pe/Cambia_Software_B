@@ -24,8 +24,6 @@ export function ProductDetailModal({
     { label: 'Precio Mayorista', value: product.wholesalePrice },
     { label: 'Precio Minorista', value: product.retailPrice },
     { label: 'Precio Distribuidor', value: product.distributorPrice },
-    { label: 'Precio Crédito', value: product.creditPrice },
-    { label: 'Precio Contado', value: product.cashPrice },
   ];
 
   return (
