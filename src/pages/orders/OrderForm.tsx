@@ -218,6 +218,7 @@ export function OrderForm() {
     };
 
     loadData();
+  }, [id, getClients, getCategories, getUsersByRole, getOrderById, isCurrentUserSalesperson, user]);
 
   // Search products when search term or category changes
   useEffect(() => {
