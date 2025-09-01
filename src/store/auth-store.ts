@@ -110,17 +110,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     
     try {
       await supabaseSignOut();
+    } catch (error) {
+      // Log the error but don't throw it - we still want to clear local state
+      console.warn('Error during Supabase logout:', error);
+    } finally {
+      // Always clear the local authentication state regardless of Supabase logout success
       set({
         user: null,
         isAuthenticated: false,
-        isLoading: false
-      });
-    } catch (error) {
-      set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Error al cerrar sesión'
+        error: null
       });
-      throw error;
     }
   },
   
