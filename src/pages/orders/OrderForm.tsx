@@ -77,7 +77,7 @@ export function OrderForm() {
   const { user } = useAuthStore();
   const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, saveOrderInstallments, isLoading, error } = useOrderStore();
   const { clients, getClients } = useClientStore();
-  const { products, categories, getProducts, getAllProducts, getCategories } = useProductStore();
+  const { categories, getCategories } = useProductStore();
   const { getUsersByRole } = useUserStore();
   
   const [order, setOrder] = useState(null);
@@ -103,6 +103,8 @@ export function OrderForm() {
   const [isDraft, setIsDraft] = useState(true);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [showProductResults, setShowProductResults] = useState(false);
+  const [searchedProducts, setSearchedProducts] = useState([]);
+  const [isProductSearchLoading, setIsProductSearchLoading] = useState(false);
 
   const isEditing = !!id;
   const canEdit = user?.role !== UserRole.ASESOR_VENTAS || !isEditing;
@@ -139,7 +141,6 @@ export function OrderForm() {
       
       await Promise.all([
         getClients(),
-        getAllProducts(), // Use getAllProducts instead of getProducts for order form
         getCategories(),
       ]);
 
@@ -220,7 +221,32 @@ export function OrderForm() {
     };
 
     loadData();
-  }, [id, isCurrentUserSalesperson, user, getClients, getAllProducts, getCategories, getUsersByRole, getOrderById]);
+  }, [id, isCurrentUserSalesperson, user, getClients, getCategories, getUsersByRole, getOrderById]);
+
+  // Search products when search term or category changes
+  useEffect(() => {
+    const searchProducts = async () => {
+      if (productSearch.trim() === '' && selectedCategory === '') {
+        setSearchedProducts([]);
+        return;
+      }
+
+      setIsProductSearchLoading(true);
+      try {
+        const { searchProductsForOrderForm } = useProductStore.getState();
+        const results = await searchProductsForOrderForm(productSearch, selectedCategory);
+        setSearchedProducts(results);
+      } catch (error) {
+        console.error('Error searching products:', error);
+        setSearchedProducts([]);
+      } finally {
+        setIsProductSearchLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(searchProducts, 300); // Debounce search
+    return () => clearTimeout(timeoutId);
+  }, [productSearch, selectedCategory]);
 
   // Generate installments when payment type changes to credit
   useEffect(() => {
@@ -529,13 +555,6 @@ export function OrderForm() {
     client.businessName.toLowerCase().includes(clientSearch.toLowerCase()) ||
     client.ruc.includes(clientSearch)
   );
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-                         product.code.toLowerCase().includes(productSearch.toLowerCase());
-    const matchesCategory = selectedCategory === '' || product.categoryId === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
 
   if (isLoading) {
     return (
