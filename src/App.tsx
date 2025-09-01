@@ -19,13 +19,16 @@ import { OrderForm } from './pages/orders/OrderForm';
 import { OrderDetail } from './pages/orders/OrderDetail';
 import { OrderEdit } from './pages/orders/OrderEdit';
 import { useAuthStore } from './store/auth-store';
+import { useProductStore } from './store/product-store';
 
 function App() {
   const { initialize } = useAuthStore();
+  const { getCategories } = useProductStore();
   
   useEffect(() => {
     initialize();
-  }, [initialize]);
+    getCategories();
+  }, [initialize, getCategories]);
 
   return (
     <Routes>

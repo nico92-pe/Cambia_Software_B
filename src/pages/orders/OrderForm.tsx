@@ -652,7 +652,20 @@ export function OrderForm() {
                 
                 {showProductResults && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredProducts.map((product) => (
+                    {isProductSearchLoading ? (
+                      <div className="p-4 text-center">
+                        <Loader size="sm" />
+                        <p className="text-sm text-gray-500 mt-2">Buscando productos...</p>
+                      </div>
+                    ) : searchedProducts.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">
+                        {productSearch.trim() === '' && selectedCategory === '' 
+                          ? 'Escribe para buscar productos...'
+                          : 'No se encontraron productos'
+                        }
+                      </div>
+                    ) : (
+                      searchedProducts.map((product) => (
                       <div
                         key={product.id}
                         onClick={() => addProduct(product)}
@@ -662,7 +675,8 @@ export function OrderForm() {
                         <div className="text-sm text-gray-600">Código: {product.code}</div>
                         <div className="text-sm text-gray-500">{formatCurrency(product.wholesalePrice)}</div>
                       </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 )}
               </div>

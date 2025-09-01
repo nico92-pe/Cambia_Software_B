@@ -207,12 +207,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       }
       
       // Get categories to sort them by creation date for ordering
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .order('created_at', { ascending: true });
-        
-      if (categoriesError) throw categoriesError;
+      const categoriesData = get().categories;
       
       // Create a map of category order
       const categoryOrder = new Map();
@@ -259,11 +254,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
   },
   
-  getAllProducts: async (searchTerm = '', categoryFilter = '') => {
-    set({ isLoading: true, error: null });
-    
+  searchProductsForOrderForm: async (searchTerm = '', categoryFilter = '') => {
     try {
-      // Build the query without pagination
       let query = supabase
         .from('products')
         .select(`
@@ -287,21 +279,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
       
       if (error) throw error;
       
-      // Map products
       const products = data.map(mapDbRowToProduct);
-      
-      set({ 
-        products, 
-        totalProducts: products.length,
-        isLoading: false 
-      });
       
       return products;
     } catch (error) {
-      set({
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Error al cargar productos'
-      });
+      console.error('Error searching products:', error);
       return [];
     }
   },
