@@ -107,6 +107,18 @@ export function OrderForm() {
   const canChangeStatus = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
   const isCurrentUserSalesperson = user?.role === UserRole.ASESOR_VENTAS;
   
+  // Show loading screen during initial data load
+  if (!isDataLoaded) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-muted-foreground mt-4">Cargando formulario...</p>
+        </div>
+      </div>
+    );
+  }
+  
   // Check if asesor can edit this order
   const canAsesorEdit = !isCurrentUserSalesperson || !order || ['borrador', 'tomado'].includes(order.status);
 

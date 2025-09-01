@@ -93,11 +93,7 @@ export function ClientList() {
           </div>
         </div>
         <div className="overflow-x-auto -mx-4 sm:mx-0">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader />
-            </div>
-          ) : filteredClients.length === 0 ? (
+          {filteredClients.length === 0 ? (
             <div className="text-center py-8">
               <User className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
               <h3 className="mt-4 text-lg font-medium">No se encontraron clientes</h3>
@@ -228,6 +224,15 @@ export function ClientList() {
             </>
           )}
         </div>
+        
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <div className="text-center">
+              <Loader size="lg" />
+              <p className="text-muted-foreground mt-4">Cargando clientes...</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

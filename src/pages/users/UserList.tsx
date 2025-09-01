@@ -103,11 +103,7 @@ export function UserList() {
           </div>
         </div>
         <div className="overflow-x-auto -mx-4 sm:mx-0">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader />
-            </div>
-          ) : filteredUsers.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="text-center py-8">
               <Users className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
               <h3 className="mt-4 text-lg font-medium">No se encontraron usuarios</h3>
@@ -234,6 +230,15 @@ export function UserList() {
             </>
           )}
         </div>
+        
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <div className="text-center">
+              <Loader size="lg" />
+              <p className="text-muted-foreground mt-4">Cargando usuarios...</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

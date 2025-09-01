@@ -171,11 +171,7 @@ export function CategoryList() {
             </p>
           </div>
           <div className="card-content">
-            {isLoading ? (
-              <div className="flex justify-center py-4">
-                <Loader />
-              </div>
-            ) : categories.length === 0 ? (
+            {categories.length === 0 ? (
               <div className="text-center py-6">
                 <Tag className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
                 <h3 className="mt-4 text-lg font-medium">No hay categorías</h3>
@@ -241,6 +237,15 @@ export function CategoryList() {
               </ul>
             )}
           </div>
+          
+          {isLoading && (
+            <div className="flex justify-center py-4">
+              <div className="text-center">
+                <Loader />
+                <p className="text-muted-foreground mt-2">Cargando categorías...</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

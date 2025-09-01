@@ -4,13 +4,27 @@ import { useAuthStore } from '../store/auth-store';
 import { useClientStore } from '../store/client-store';
 import { useProductStore } from '../store/product-store';
 import { useOrderStore } from '../store/order-store';
+import { Loader } from '../components/ui/Loader';
 import { formatDate } from '../lib/utils';
 
 export function Dashboard() {
-  const { user } = useAuthStore();
-  const { clients } = useClientStore();
-  const { products } = useProductStore();
-  const { orders } = useOrderStore();
+  const { user, isLoading: authLoading } = useAuthStore();
+  const { clients, isLoading: clientsLoading } = useClientStore();
+  const { products, isLoading: productsLoading } = useProductStore();
+  const { orders, isLoading: ordersLoading } = useOrderStore();
+  
+  const isLoading = authLoading || clientsLoading || productsLoading || ordersLoading;
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-muted-foreground mt-4">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
   
   const stats = [
     {
