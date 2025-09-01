@@ -198,19 +198,6 @@ export function ClientList() {
                           {client.province}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          {client.contactName2 && (
-                            <div className="text-sm font-medium text-gray-900">{client.contactName2}</div>
-                          )}
-                          {client.contactPhone2 && (
-                            <div className="text-sm text-gray-600">{client.contactPhone2}</div>
-                          )}
-                          {!client.contactName2 && !client.contactPhone2 && (
-                            <div className="text-sm text-gray-400">-</div>
-                          )}
-                        </div>
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                         <div className="flex items-center justify-end space-x-2">
                           {!isAsesorVentas && (
