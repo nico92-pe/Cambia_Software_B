@@ -7,6 +7,7 @@ import { useClientStore } from '../../store/client-store';
 import { useUserStore } from '../../store/user-store';
 import { useAuthStore } from '../../store/auth-store';
 import { UserRole } from '../../lib/types';
+import { provinces, limaDistricts } from '../../data/peru-ubigeo';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
@@ -454,14 +455,11 @@ export function ClientForm() {
                     })}
                   >
                     <option value="">Seleccionar provincia</option>
-                    <option value="Lima">Lima</option>
-                    <option value="Arequipa">Arequipa</option>
-                    <option value="Trujillo">Trujillo</option>
-                    <option value="Chiclayo">Chiclayo</option>
-                    <option value="Piura">Piura</option>
-                    <option value="Cusco">Cusco</option>
-                    <option value="Ica">Ica</option>
-                    <option value="Huancayo">Huancayo</option>
+                    {provinces.map((province) => (
+                      <option key={province} value={province}>
+                        {province}
+                      </option>
+                    ))}
                   </select>
                   {errors.province && (
                     <p className="text-destructive text-sm mt-1">
@@ -473,14 +471,32 @@ export function ClientForm() {
                 <div className="space-y-2">
                   <label htmlFor="reference" className="block text-sm font-medium">
                     Referencia
-                  </label>
-                  <input
-                    id="reference"
-                    type="text"
-                    className={`input ${errors.reference ? 'border-destructive' : ''}`}
-                    placeholder="Referencia de ubicación"
-                    {...register('reference')}
-                  />
+                  {province === 'Lima' ? (
+                    <select
+                      id="district"
+                      className={`select ${errors.district ? 'border-destructive' : ''}`}
+                      {...register('district', {
+                        required: 'El distrito es requerido',
+                      })}
+                    >
+                      <option value="">Seleccionar distrito</option>
+                      {limaDistricts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      id="district"
+                      type="text"
+                      className={`input ${errors.district ? 'border-destructive' : ''}`}
+                      placeholder="Ingrese el distrito"
+                      {...register('district', {
+                        required: 'El distrito es requerido',
+                      })}
+                    />
+                  )}
                   {errors.reference && (
                     <p className="text-destructive text-sm mt-1">
                       {errors.reference.message}

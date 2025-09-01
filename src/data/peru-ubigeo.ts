@@ -1,0 +1,40 @@
+export const provinces = [
+  'Áncash',
+  'Arequipa',
+  'Barranca',
+  'Callao',
+  'Chiclayo',
+  'Cusco',
+  'Huacho',
+  'Ica',
+  'La Libertad',
+  'Lambayeque',
+  'Lima',
+  'Piura',
+  'Tumbes'
+];
+
+export const limaDistricts = [
+  'Breña',
+  'Callao',
+  'Cercado de Lima',
+  'Chorrillos',
+  'Comas',
+  'El Agustino',
+  'La Victoria',
+  'Lima',
+  'Lince',
+  'Miraflores',
+  'Rimac',
+  'San Borja',
+  'San Juan de Lurigancho',
+  'San Juan de Miraflores',
+  'San Luis',
+  'San Martín de Porres',
+  'San Miguel',
+  'Santa Beatriz',
+  'Surco',
+  'Surquillo',
+  'Villa El Salvador',
+  'Villa María del Triunfo'
+];
