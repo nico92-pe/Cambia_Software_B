@@ -19,18 +19,6 @@ export function ProductForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const isEditMode = Boolean(id);
 
-  // Show loading screen during initial data load
-  if (isLoading && !isEditMode) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-muted-foreground mt-4">Cargando formulario...</p>
-        </div>
-      </div>
-    );
-  }
-
   const {
     register,
     handleSubmit,
@@ -58,6 +46,18 @@ export function ProductForm() {
 
     loadData();
   }, [id, products, getCategories, reset, navigate]);
+
+  // Show loading screen during initial data load
+  if (isLoading && !isEditMode) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-muted-foreground mt-4">Cargando formulario...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
