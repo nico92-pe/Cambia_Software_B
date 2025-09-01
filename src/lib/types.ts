@@ -22,6 +22,8 @@ export type Client = {
   commercialName: string;
   contactName: string;
   contactPhone: string;
+  contactName2?: string;
+  contactPhone2?: string;
   address: string;
   district: string;
   province: string;
