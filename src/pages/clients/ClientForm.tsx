@@ -21,20 +21,9 @@ export function ClientForm() {
   const { user: currentUser } = useAuthStore();
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isInitialDataLoading, setIsInitialDataLoading] = useState(true);
   const isEditMode = Boolean(id);
   const isCurrentUserSalesperson = currentUser?.role === UserRole.ASESOR_VENTAS;
-
-  // Show loading screen during initial data load
-  if (isLoading && !isEditMode) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-muted-foreground mt-4">Cargando formulario...</p>
-        </div>
-      </div>
-    );
-  }
 
   const {
     register,
@@ -54,6 +43,10 @@ export function ClientForm() {
         await getUsers();
       } catch (error) {
         console.error('Error loading users:', error);
+      } finally {
+        if (!id) {
+          setIsInitialDataLoading(false);
+        }
       }
     };
 
@@ -70,6 +63,8 @@ export function ClientForm() {
           }
         } catch (error) {
           setFormError('Error al cargar el cliente');
+        } finally {
+          setIsInitialDataLoading(false);
         }
       } else if (isCurrentUserSalesperson && currentUser) {
         // For new clients, pre-fill salesperson if current user is a salesperson
@@ -93,6 +88,18 @@ export function ClientForm() {
     console.log('Filtered salespeople:', filteredSalespeople);
     setSalespeople(filteredSalespeople);
   }, [users]);
+
+  // Show loading screen during initial data load
+  if (isInitialDataLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-muted-foreground mt-4">Cargando formulario...</p>
+        </div>
+      </div>
+    );
+  }
 
   const onSubmit = async (data: ClientFormData) => {
     try {
