@@ -225,10 +225,11 @@ export function OrderForm() {
   
   // Product search function
   const searchProducts = async (searchTerm: string, categoryFilter: string) => {
-    if (!searchTerm.trim() && !categoryFilter) {
-      setSearchResults([]);
-      return;
-    }
+    // Always search, even with empty terms to show all products when no filters
+    // if (!searchTerm.trim() && !categoryFilter) {
+    //   setSearchResults([]);
+    //   return;
+    // }
     
     setIsSearching(true);
     try {
@@ -245,7 +246,13 @@ export function OrderForm() {
   // Handle product search
   const handleProductSearch = (term: string) => {
     setProductSearchTerm(term);
-    searchProducts(term, productCategoryFilter);
+    // Add a small delay to prevent too many API calls while typing
+    const timeoutId = setTimeout(() => {
+      searchProducts(term, productCategoryFilter);
+    }, 300);
+    
+    // Clear previous timeout
+    return () => clearTimeout(timeoutId);
   };
   
   const handleCategoryFilter = (categoryId: string) => {
@@ -336,8 +343,8 @@ export function OrderForm() {
       return;
     }
     
-    // Set start date if not already set (for new orders)
-    const startDate = installmentStartDate || new Date();
+    // Use today's date as the base for calculating installments
+    const startDate = new Date();
     if (!installmentStartDate) {
       setInstallmentStartDate(startDate);
     }
@@ -895,6 +902,12 @@ export function OrderForm() {
                       Número de Cuotas
                     </label>
                     <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={installmentCount}
+                        readOnly
+                        className="input text-center w-16 bg-gray-50"
+                      />
                       <button
                         type="button"
                         onClick={() => setInstallmentCount(Math.max(1, installmentCount - 1))}
@@ -903,12 +916,6 @@ export function OrderForm() {
                       >
                         -1
                       </button>
-                      <input
-                        type="text"
-                        value={installmentCount}
-                        readOnly
-                        className="input text-center w-16 bg-gray-50"
-                      />
                       <button
                         type="button"
                         onClick={() => setInstallmentCount(Math.min(12, installmentCount + 1))}
