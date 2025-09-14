@@ -35,9 +35,45 @@ interface OrderInstallmentForm {
 export function OrderForm() {
   console.log('OrderForm: Componente renderizándose correctamente');
   
+  // Hooks
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { clients, getClients } = useClientStore();
+  const { categories, getCategories } = useProductStore();
+  const { getUsersByRole } = useUserStore();
+  const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, saveOrderInstallments, isLoading, error } = useOrderStore();
+  
+  // Determine if current user is salesperson
+  const isCurrentUserSalesperson = user?.role === UserRole.ASESOR_VENTAS;
+  const isEditMode = Boolean(id);
+  
   // Basic state
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  
+  // Form state
+  const [order, setOrder] = useState<any>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedSalesperson, setSelectedSalesperson] = useState<string>('');
+  const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(OrderStatus.BORRADOR);
+  const [isDraft, setIsDraft] = useState(true);
+  const [notes, setNotes] = useState('');
+  const [paymentType, setPaymentType] = useState<'contado' | 'credito'>('contado');
+  const [creditType, setCreditType] = useState<'factura' | 'letras'>('factura');
+  const [installmentCount, setInstallmentCount] = useState(1);
+  const [installments, setInstallments] = useState<OrderInstallmentForm[]>([]);
+  
+  // Product search and selection
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState('');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showProductSearch, setShowProductSearch] = useState(false);
+  
+  // Order items
+  const [items, setItems] = useState<OrderFormItem[]>([]);
   
   // Simulate loading for now
   useEffect(() => {
@@ -47,6 +83,25 @@ export function OrderForm() {
       setIsDataLoaded(true);
     }, 100);
   }, []);
+  
+  // Helper functions
+  const formatDateForInput = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
+  
+  const calculateTotals = () => {
+    const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+    const igv = subtotal * 0.18;
+    const total = subtotal + igv;
+    
+    return {
+      subtotal: Number(subtotal.toFixed(2)),
+      igv: Number(igv.toFixed(2)),
+      total: Number(total.toFixed(2)),
+    };
+  };
+  
+  const totals = calculateTotals();
   
   if (!isDataLoaded) {
     return (
