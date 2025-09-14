@@ -68,6 +68,7 @@ export function OrderForm() {
   const [creditType, setCreditType] = useState<'factura' | 'letras'>('factura');
   const [installmentCount, setInstallmentCount] = useState(1);
   const [installments, setInstallments] = useState<OrderInstallmentForm[]>([]);
+  const [installmentStartDate, setInstallmentStartDate] = useState<Date | null>(null);
   
   // Product search and selection
   const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -130,6 +131,9 @@ export function OrderForm() {
                 subtotal: item.subtotal,
               })) || [];
               setItems(formItems);
+              
+              // Set installment start date from order creation date
+              setInstallmentStartDate(new Date(orderData.createdAt));
               
               // Load installments if credit order
               if (orderData.paymentType === 'credito' && orderData.installmentDetails) {
@@ -313,12 +317,18 @@ export function OrderForm() {
       return;
     }
     
+    // Set start date if not already set (for new orders)
+    const startDate = installmentStartDate || new Date();
+    if (!installmentStartDate) {
+      setInstallmentStartDate(startDate);
+    }
+    
     const installmentAmount = totals.total / installmentCount;
     const newInstallments: OrderInstallmentForm[] = [];
     
     for (let i = 1; i <= installmentCount; i++) {
       const daysDue = creditType === 'factura' ? i * 30 : i * 30; // 30 days between installments
-      const dueDate = new Date();
+      const dueDate = new Date(startDate);
       dueDate.setDate(dueDate.getDate() + daysDue);
       
       newInstallments.push({
@@ -334,8 +344,38 @@ export function OrderForm() {
   
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
+    if (!installmentStartDate) return;
+    
     const updatedInstallments = [...installments];
-    updatedInstallments[index] = { ...updatedInstallments[index], [field]: value };
+    
+    if (field === 'dueDate') {
+      // When date changes, recalculate days
+      const newDate = new Date(value);
+      const startDate = new Date(installmentStartDate);
+      const timeDiff = newDate.getTime() - startDate.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      
+      updatedInstallments[index] = {
+        ...updatedInstallments[index],
+        dueDate: value,
+        daysDue: Math.max(0, daysDiff), // Ensure non-negative days
+      };
+    } else if (field === 'daysDue') {
+      // When days change, recalculate date
+      const newDays = parseInt(value) || 0;
+      const newDate = new Date(installmentStartDate);
+      newDate.setDate(newDate.getDate() + newDays);
+      
+      updatedInstallments[index] = {
+        ...updatedInstallments[index],
+        daysDue: newDays,
+        dueDate: formatDateForInput(newDate),
+      };
+    } else {
+      // For other fields (like amount), just update the value
+      updatedInstallments[index] = { ...updatedInstallments[index], [field]: value };
+    }
+    
     setInstallments(updatedInstallments);
   };
   
