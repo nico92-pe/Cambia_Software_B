@@ -460,6 +460,35 @@ export function OrderForm() {
     try {
       setFormError(null);
       
+      // Recalculate installments if credit payment to ensure latest values
+      let installmentsToSave: OrderInstallmentForm[] = [];
+      if (paymentType === 'credito' && installmentCount > 0 && totals.total > 0) {
+        const startDate = new Date();
+        const baseInstallmentAmount = Math.floor((totals.total * 100) / installmentCount) / 100;
+        let accumulatedAmount = 0;
+        
+        for (let i = 1; i <= installmentCount; i++) {
+          const daysDue = creditType === 'factura' ? i * 30 : i * 30;
+          const dueDate = new Date(startDate);
+          dueDate.setDate(dueDate.getDate() + daysDue);
+          
+          let installmentAmount;
+          if (i === installmentCount) {
+            installmentAmount = totals.total - accumulatedAmount;
+          } else {
+            installmentAmount = baseInstallmentAmount;
+            accumulatedAmount += installmentAmount;
+          }
+          
+          installmentsToSave.push({
+            installmentNumber: i,
+            amount: Number(installmentAmount.toFixed(2)),
+            dueDate: formatDateForInput(dueDate),
+            daysDue,
+          });
+        }
+      }
+      
       const orderData = {
         clientId: selectedClient.id,
         salespersonId: selectedSalesperson,
@@ -497,8 +526,8 @@ export function OrderForm() {
         }
         
         // Save installments if credit order
-        if (paymentType === 'credito' && installments.length > 0) {
-          await saveOrderInstallments(savedOrder.id, installments);
+        if (paymentType === 'credito' && installmentsToSave.length > 0) {
+          await saveOrderInstallments(savedOrder.id, installmentsToSave);
         }
       }
       
