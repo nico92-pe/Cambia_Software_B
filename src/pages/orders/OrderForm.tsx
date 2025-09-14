@@ -426,6 +426,35 @@ export function OrderForm() {
     }
   }, [paymentType, installmentCount, creditType]);
   
+  // Update installment amounts when total changes but preserve custom dates/days
+  useEffect(() => {
+    if (paymentType !== 'credito' || installments.length === 0 || finalDisplayTotals.total <= 0) {
+      return;
+    }
+    
+    // Only update amounts, preserve existing dates and days
+    const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
+    let accumulatedAmount = 0;
+    
+    const updatedInstallments = installments.map((installment, index) => {
+      let installmentAmount;
+      if (index === installmentCount - 1) {
+        // Last installment: total minus accumulated amount
+        installmentAmount = finalDisplayTotals.total - accumulatedAmount;
+      } else {
+        installmentAmount = baseInstallmentAmount;
+        accumulatedAmount += installmentAmount;
+      }
+      
+      return {
+        ...installment, // Preserve existing dueDate and daysDue
+        amount: Number(installmentAmount.toFixed(2)),
+      };
+    });
+    
+    setInstallments(updatedInstallments);
+  }, [finalDisplayTotals.total, installmentCount, paymentType]);
+  
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
     if (!installmentStartDate) return;
