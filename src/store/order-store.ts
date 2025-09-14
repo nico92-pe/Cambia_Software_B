@@ -51,6 +51,7 @@ const mapOrderItemToDbFormat = (item: Partial<OrderItem>) => ({
   product_id: item.productId,
   quantity: item.quantity,
   unit_price: item.unitPrice,
+  subtotal: item.subtotal,
 });
 
 interface OrderState {

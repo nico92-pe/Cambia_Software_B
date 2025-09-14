@@ -581,6 +581,7 @@ export function OrderForm() {
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
+            subtotal: item.subtotal,
           });
         }
         
