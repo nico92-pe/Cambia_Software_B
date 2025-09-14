@@ -925,8 +925,15 @@ export function OrderForm() {
                             type="number"
                             step="0.01"
                             min="0"
-                            value={item.unitPrice}
-                            onChange={(e) => updateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
+                            value={item.unitPrice === 0 ? '' : item.unitPrice}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '') {
+                                updateItemPrice(item.productId, 0);
+                              } else {
+                                updateItemPrice(item.productId, parseFloat(value) || 0);
+                              }
+                            }}
                             className="w-24 text-center border border-gray-300 rounded px-2 py-1"
                           />
                         </td>
