@@ -345,6 +345,36 @@ export function OrderForm() {
       }
     : totals;
 
+  // Check if items have been modified (not just count, but actual content)
+  const itemsModified = useMemo(() => {
+    if (!isEditMode || !order?.items) return false;
+    
+    // If length is different, definitely modified
+    if (items.length !== order.items.length) return true;
+    
+    // Check if any item has been modified
+    return items.some((item, index) => {
+      const originalItem = order.items?.[index];
+      if (!originalItem) return true;
+      
+      return (
+        item.productId !== originalItem.productId ||
+        item.quantity !== originalItem.quantity ||
+        item.unitPrice !== originalItem.unitPrice ||
+        item.subtotal !== originalItem.subtotal
+      );
+    });
+  }, [items, order?.items, isEditMode]);
+
+  // Use modified logic for displaying totals
+  const finalDisplayTotals = isEditMode && order && !itemsModified
+    ? {
+        subtotal: order.subtotal,
+        igv: order.igv,
+        total: order.total,
+      }
+    : totals;
+
   // Generate installments
   const generateInstallments = () => {
     if (paymentType !== 'credito' || installmentCount <= 0) {
@@ -358,7 +388,7 @@ export function OrderForm() {
       setInstallmentStartDate(startDate);
     }
     
-    const baseInstallmentAmount = Math.floor((displayTotals.total * 100) / installmentCount) / 100; // Round down to 2 decimals
+    const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100; // Round down to 2 decimals
     const newInstallments: OrderInstallmentForm[] = [];
     let accumulatedAmount = 0;
     
@@ -370,7 +400,7 @@ export function OrderForm() {
       let installmentAmount;
       if (i === installmentCount) {
         // Last installment: total minus accumulated amount
-        installmentAmount = displayTotals.total - accumulatedAmount;
+        installmentAmount = finalDisplayTotals.total - accumulatedAmount;
       } else {
         installmentAmount = baseInstallmentAmount;
         accumulatedAmount += installmentAmount;
@@ -389,12 +419,12 @@ export function OrderForm() {
   
   // Auto-generate installments when payment type, installment count, or totals change
   useEffect(() => {
-    if (paymentType === 'credito' && installmentCount > 0 && displayTotals.total > 0) {
+    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
       generateInstallments();
     } else if (paymentType === 'contado') {
       setInstallments([]);
     }
-  }, [paymentType, installmentCount, displayTotals.total, creditType]);
+  }, [paymentType, installmentCount, finalDisplayTotals.total, creditType]);
   
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
@@ -471,9 +501,9 @@ export function OrderForm() {
       
       // Recalculate installments if credit payment to ensure latest values
       let installmentsToSave: OrderInstallmentForm[] = [];
-      if (paymentType === 'credito' && installmentCount > 0 && displayTotals.total > 0) {
+      if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
         const startDate = new Date();
-        const baseInstallmentAmount = Math.floor((displayTotals.total * 100) / installmentCount) / 100;
+        const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
         let accumulatedAmount = 0;
         
         for (let i = 1; i <= installmentCount; i++) {
@@ -483,7 +513,7 @@ export function OrderForm() {
           
           let installmentAmount;
           if (i === installmentCount) {
-            installmentAmount = displayTotals.total - accumulatedAmount;
+            installmentAmount = finalDisplayTotals.total - accumulatedAmount;
           } else {
             installmentAmount = baseInstallmentAmount;
             accumulatedAmount += installmentAmount;
@@ -894,15 +924,15 @@ export function OrderForm() {
                   <div className="w-64 space-y-2 bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span className="font-medium">{formatCurrency(displayTotals.subtotal)}</span>
+                      <span className="font-medium">{formatCurrency(finalDisplayTotals.subtotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>IGV (18%):</span>
-                      <span className="font-medium">{formatCurrency(displayTotals.igv)}</span>
+                      <span className="font-medium">{formatCurrency(finalDisplayTotals.igv)}</span>
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="font-bold">Total:</span>
-                      <span className="font-bold text-lg">{formatCurrency(displayTotals.total)}</span>
+                      <span className="font-bold text-lg">{formatCurrency(finalDisplayTotals.total)}</span>
                     </div>
                   </div>
                 </div>
