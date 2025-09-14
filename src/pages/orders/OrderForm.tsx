@@ -385,10 +385,18 @@ export function OrderForm() {
     
     if (field === 'dueDate') {
       // When date changes, recalculate days
-      const newDate = new Date(value);
+      const [year, month, day] = value.split('-').map(Number);
+      const newDate = new Date(year, month - 1, day);
       const startDate = new Date(installmentStartDate);
-      const timeDiff = newDate.getTime() - startDate.getTime();
-      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      
+      // Normalize both dates to midnight UTC for accurate day calculation
+      const normalizedNewDate = new Date(newDate);
+      normalizedNewDate.setUTCHours(0, 0, 0, 0);
+      const normalizedStartDate = new Date(startDate);
+      normalizedStartDate.setUTCHours(0, 0, 0, 0);
+      
+      const timeDiff = normalizedNewDate.getTime() - normalizedStartDate.getTime();
+      const daysDiff = Math.round(timeDiff / (1000 * 3600 * 24));
       
       updatedInstallments[index] = {
         ...updatedInstallments[index],
@@ -398,7 +406,7 @@ export function OrderForm() {
     } else if (field === 'daysDue') {
       // When days change, recalculate date
       const newDays = parseInt(value) || 0;
-      const newDate = new Date(installmentStartDate);
+      const newDate = new Date();
       newDate.setDate(newDate.getDate() + newDays);
       
       updatedInstallments[index] = {
@@ -413,7 +421,9 @@ export function OrderForm() {
   
   // Format date for display (dd/mm/yy)
   const formatDateForDisplay = (dateString: string): string => {
-    const date = new Date(dateString);
+    // Parse the date string as local date to avoid timezone issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = String(date.getFullYear()).slice(-2);
