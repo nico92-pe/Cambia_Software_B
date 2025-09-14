@@ -901,6 +901,7 @@ export function OrderForm() {
                       value={installmentCount}
                       onChange={(e) => setInstallmentCount(parseInt(e.target.value) || 1)}
                       className="input"
+                      onFocus={(e) => e.target.select()}
                     />
                   </div>
                 </>
@@ -941,17 +942,9 @@ export function OrderForm() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <div className="flex flex-col items-center">
-                              <span className="font-medium text-gray-900 mb-1">
-                                {formatDateForDisplay(installment.dueDate)}
-                              </span>
-                              <input
-                                type="date"
-                                value={installment.dueDate}
-                                onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
-                                className="text-xs border border-gray-300 rounded px-1 py-0.5 w-32"
-                              />
-                            </div>
+                            <span className="font-medium text-gray-900">
+                              {formatDateForDisplay(installment.dueDate)}
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             <input
