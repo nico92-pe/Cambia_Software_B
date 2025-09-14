@@ -58,6 +58,8 @@ export function OrderForm() {
   const [selectedSalesperson, setSelectedSalesperson] = useState<string>('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [showClientSearchResults, setShowClientSearchResults] = useState(false);
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(OrderStatus.BORRADOR);
   const [isDraft, setIsDraft] = useState(true);
@@ -178,12 +180,44 @@ export function OrderForm() {
       // Reset selected client if it doesn't belong to the new salesperson
       if (selectedClient && selectedClient.salespersonId !== selectedSalesperson) {
         setSelectedClient(null);
+        setClientSearchTerm('');
       }
     } else {
       setFilteredClients([]);
       setSelectedClient(null);
+      setClientSearchTerm('');
     }
   }, [selectedSalesperson, clients, selectedClient]);
+  
+  // Filter clients based on search term
+  const displayClients = filteredClients.filter(client => 
+    client.commercialName.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.businessName.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.ruc.includes(clientSearchTerm)
+  );
+  
+  // Handle client selection
+  const handleClientSelect = (client: Client) => {
+    setSelectedClient(client);
+    setClientSearchTerm(client.commercialName);
+    setShowClientSearchResults(false);
+  };
+  
+  // Handle client search input
+  const handleClientSearchChange = (value: string) => {
+    setClientSearchTerm(value);
+    if (!value.trim()) {
+      setSelectedClient(null);
+    }
+    setShowClientSearchResults(true);
+  };
+  
+  // Clear client selection
+  const clearClientSelection = () => {
+    setSelectedClient(null);
+    setClientSearchTerm('');
+    setShowClientSearchResults(false);
+  };
   
   // Product search function
   const searchProducts = async (searchTerm: string, categoryFilter: string) => {
@@ -472,24 +506,62 @@ export function OrderForm() {
                 <label className="block text-sm font-medium">
                   Cliente *
                 </label>
-                <select
-                  className="select"
-                  disabled={!selectedSalesperson}
-                  value={selectedClient?.id || ''}
-                  onChange={(e) => {
-                    const client = filteredClients.find(c => c.id === e.target.value);
-                    setSelectedClient(client || null);
-                  }}
-                >
-                  <option value="">
-                    {selectedSalesperson ? 'Seleccionar cliente' : 'Primero selecciona un vendedor'}
-                  </option>
-                  {filteredClients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.commercialName} - {client.ruc}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                      <Building size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      className="input pl-10 pr-10"
+                      placeholder={selectedSalesperson ? 'Buscar cliente por nombre o RUC...' : 'Primero selecciona un vendedor'}
+                      value={clientSearchTerm}
+                      onChange={(e) => handleClientSearchChange(e.target.value)}
+                      onFocus={() => setShowClientSearchResults(true)}
+                      disabled={!selectedSalesperson}
+                    />
+                    {selectedClient && (
+                      <button
+                        type="button"
+                        onClick={clearClientSelection}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                      >
+                        <X size={18} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Search Results Dropdown */}
+                  {showClientSearchResults && selectedSalesperson && clientSearchTerm && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {displayClients.length > 0 ? (
+                        displayClients.map((client) => (
+                          <div
+                            key={client.id}
+                            className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            onClick={() => handleClientSelect(client)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Building className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <p className="font-medium text-gray-900">{client.commercialName}</p>
+                                <p className="text-sm text-gray-500">{client.businessName}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium text-gray-700">{client.ruc}</p>
+                              <p className="text-xs text-gray-500">{client.district}, {client.province}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-3 text-center text-gray-500">
+                          No se encontraron clientes
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {selectedSalesperson && filteredClients.length === 0 && (
                   <p className="text-sm text-muted-foreground mt-1">
                     Este vendedor no tiene clientes asignados
@@ -699,33 +771,27 @@ export function OrderForm() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Payment and Notes */}
-        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
-          <div className="card-header">
-            <h2 className="card-title text-xl">Términos de Pago y Observaciones</h2>
-          </div>
-          <div className="card-content">
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Tipo de Pago
-                  </label>
-                  <select
-                    className="select"
-                    value={paymentType}
-                    onChange={(e) => {
-                      setPaymentType(e.target.value as 'contado' | 'credito');
-                      if (e.target.value === 'contado') {
-                        setInstallments([]);
-                      }
-                    }}
-                  >
-                    <option value="contado">Contado</option>
-                    <option value="credito">Crédito</option>
-                  </select>
+                {selectedClient && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-800">Cliente seleccionado:</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearClientSelection}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="mt-2">
+                      <p className="font-medium text-blue-900">{selectedClient.commercialName}</p>
+                      <p className="text-sm text-blue-700">{selectedClient.businessName}</p>
+                      <p className="text-sm text-blue-600">RUC: {selectedClient.ruc}</p>
+                    </div>
+                  </div>
                 </div>
 
                 {paymentType === 'credito' && (
