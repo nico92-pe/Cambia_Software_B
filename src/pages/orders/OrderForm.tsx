@@ -336,6 +336,15 @@ export function OrderForm() {
   
   const totals = calculateTotals();
   
+  // Use order totals if in edit mode and items haven't changed, otherwise use calculated totals
+  const displayTotals = isEditMode && order && items.length === (order.items?.length || 0) 
+    ? {
+        subtotal: order.subtotal,
+        igv: order.igv,
+        total: order.total,
+      }
+    : totals;
+
   // Generate installments
   const generateInstallments = () => {
     if (paymentType !== 'credito' || installmentCount <= 0) {
@@ -349,7 +358,7 @@ export function OrderForm() {
       setInstallmentStartDate(startDate);
     }
     
-    const baseInstallmentAmount = Math.floor((totals.total * 100) / installmentCount) / 100; // Round down to 2 decimals
+    const baseInstallmentAmount = Math.floor((displayTotals.total * 100) / installmentCount) / 100; // Round down to 2 decimals
     const newInstallments: OrderInstallmentForm[] = [];
     let accumulatedAmount = 0;
     
@@ -361,7 +370,7 @@ export function OrderForm() {
       let installmentAmount;
       if (i === installmentCount) {
         // Last installment: total minus accumulated amount
-        installmentAmount = totals.total - accumulatedAmount;
+        installmentAmount = displayTotals.total - accumulatedAmount;
       } else {
         installmentAmount = baseInstallmentAmount;
         accumulatedAmount += installmentAmount;
@@ -380,12 +389,12 @@ export function OrderForm() {
   
   // Auto-generate installments when payment type, installment count, or totals change
   useEffect(() => {
-    if (paymentType === 'credito' && installmentCount > 0 && totals.total > 0) {
+    if (paymentType === 'credito' && installmentCount > 0 && displayTotals.total > 0) {
       generateInstallments();
     } else if (paymentType === 'contado') {
       setInstallments([]);
     }
-  }, [paymentType, installmentCount, totals.total, creditType]);
+  }, [paymentType, installmentCount, displayTotals.total, creditType]);
   
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
@@ -462,9 +471,9 @@ export function OrderForm() {
       
       // Recalculate installments if credit payment to ensure latest values
       let installmentsToSave: OrderInstallmentForm[] = [];
-      if (paymentType === 'credito' && installmentCount > 0 && totals.total > 0) {
+      if (paymentType === 'credito' && installmentCount > 0 && displayTotals.total > 0) {
         const startDate = new Date();
-        const baseInstallmentAmount = Math.floor((totals.total * 100) / installmentCount) / 100;
+        const baseInstallmentAmount = Math.floor((displayTotals.total * 100) / installmentCount) / 100;
         let accumulatedAmount = 0;
         
         for (let i = 1; i <= installmentCount; i++) {
@@ -474,7 +483,7 @@ export function OrderForm() {
           
           let installmentAmount;
           if (i === installmentCount) {
-            installmentAmount = totals.total - accumulatedAmount;
+            installmentAmount = displayTotals.total - accumulatedAmount;
           } else {
             installmentAmount = baseInstallmentAmount;
             accumulatedAmount += installmentAmount;
@@ -885,15 +894,15 @@ export function OrderForm() {
                   <div className="w-64 space-y-2 bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span className="font-medium">{formatCurrency(totals.subtotal)}</span>
+                      <span className="font-medium">{formatCurrency(displayTotals.subtotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>IGV (18%):</span>
-                      <span className="font-medium">{formatCurrency(totals.igv)}</span>
+                      <span className="font-medium">{formatCurrency(displayTotals.igv)}</span>
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="font-bold">Total:</span>
-                      <span className="font-bold text-lg">{formatCurrency(totals.total)}</span>
+                      <span className="font-bold text-lg">{formatCurrency(displayTotals.total)}</span>
                     </div>
                   </div>
                 </div>
