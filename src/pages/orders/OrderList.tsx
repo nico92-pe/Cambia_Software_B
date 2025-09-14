@@ -140,7 +140,7 @@ export default function OrderList() {
   }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); // Oldest to newest
 
   const canCreateOrder = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
-  const canManageOrders = user?.role && ['super_admin', 'admin'].includes(user.role);
+  const canManageOrders = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
 
   const isAsesorVentas = useMemo(() => user?.role === 'asesor_ventas', [user?.role]);
 
@@ -302,7 +302,7 @@ export default function OrderList() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Estado:</span>
-                        {canManageOrders ? (
+                        {canManageOrders && user?.role ? (
                           <select
                             value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
@@ -310,8 +310,8 @@ export default function OrderList() {
                             className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           >
                             {Object.entries(statusLabels)
-                              .filter(([value]) => {
-                                if (isAsesorVentas) {
+                              .filter(([value, label]) => {
+                                if (user.role === 'asesor_ventas') {
                                   return value === 'borrador' || value === 'tomado';
                                 }
                                 return true;
@@ -445,7 +445,7 @@ export default function OrderList() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {canManageOrders ? (
+                      {canManageOrders && user?.role ? (
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
@@ -453,8 +453,8 @@ export default function OrderList() {
                           className="px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         >
                           {Object.entries(statusLabels)
-                            .filter(([value]) => {
-                              if (isAsesorVentas) {
+                            .filter(([value, label]) => {
+                              if (user.role === 'asesor_ventas') {
                                 return value === 'borrador' || value === 'tomado';
                               }
                               return true;
