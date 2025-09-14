@@ -1047,9 +1047,6 @@ export function OrderForm() {
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium mb-4">Detalle de Cuotas</h3>
-                  <div className="text-sm text-gray-500">
-                    {installments.length} cuota{installments.length !== 1 ? 's' : ''} de {formatCurrency(finalDisplayTotals.total)}
-                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
