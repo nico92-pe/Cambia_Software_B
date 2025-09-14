@@ -426,6 +426,52 @@ export function OrderForm() {
     }
   }, [paymentType, installmentCount, creditType]);
   
+  // Update installment count when user changes it
+  useEffect(() => {
+    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
+      // If we have fewer installments than requested, add new ones
+      if (installments.length < installmentCount) {
+        const startDate = new Date();
+        const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
+        const newInstallments = [...installments];
+        let accumulatedAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
+        
+        for (let i = installments.length + 1; i <= installmentCount; i++) {
+          const daysDue = creditType === 'factura' ? i * 30 : i * 30;
+          const dueDate = new Date(startDate);
+          dueDate.setDate(dueDate.getDate() + daysDue);
+          
+          let installmentAmount;
+          if (i === installmentCount) {
+            installmentAmount = finalDisplayTotals.total - accumulatedAmount;
+          } else {
+            installmentAmount = baseInstallmentAmount;
+            accumulatedAmount += installmentAmount;
+          }
+          
+          newInstallments.push({
+            installmentNumber: i,
+            amount: Number(installmentAmount.toFixed(2)),
+            dueDate: formatDateForInput(dueDate),
+            daysDue,
+          });
+        }
+        
+        setInstallments(newInstallments);
+      }
+      // If we have more installments than requested, remove excess ones
+      else if (installments.length > installmentCount) {
+        const trimmedInstallments = installments.slice(0, installmentCount);
+        // Recalculate the last installment to ensure total matches
+        if (trimmedInstallments.length > 0) {
+          const accumulatedAmount = trimmedInstallments.slice(0, -1).reduce((sum, inst) => sum + inst.amount, 0);
+          trimmedInstallments[trimmedInstallments.length - 1].amount = Number((finalDisplayTotals.total - accumulatedAmount).toFixed(2));
+        }
+        setInstallments(trimmedInstallments);
+      }
+    }
+  }, [installmentCount, paymentType, creditType]);
+  
   // Update installment amounts when total changes but preserve custom dates/days
   useEffect(() => {
     if (paymentType !== 'credito' || installments.length === 0 || finalDisplayTotals.total <= 0) {
@@ -580,7 +626,9 @@ export function OrderForm() {
         // Remove existing items if editing
         if (isEditMode && order?.items) {
           for (const item of order.items) {
-            await removeOrderItem(item.id);
+            if (item.id) {
+              await removeOrderItem(item.id);
+            }
           }
         }
         
@@ -596,11 +644,15 @@ export function OrderForm() {
         // Save installments if credit order
         if (paymentType === 'credito' && installmentsToSave.length > 0) {
           await saveOrderInstallments(savedOrder.id, installmentsToSave);
+        } else if (paymentType === 'contado') {
+          // Clear installments if payment type changed to cash
+          await saveOrderInstallments(savedOrder.id, []);
         }
       }
       
       navigate('/orders');
     } catch (error) {
+      console.error('Error saving order:', error);
       setFormError(error instanceof Error ? error.message : 'Error al guardar el pedido');
     }
   };
