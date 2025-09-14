@@ -55,8 +55,9 @@ export function OrderForm() {
   
   // Form state
   const [order, setOrder] = useState<any>(null);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedSalesperson, setSelectedSalesperson] = useState<string>('');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(OrderStatus.BORRADOR);
   const [isDraft, setIsDraft] = useState(true);
@@ -167,6 +168,22 @@ export function OrderForm() {
       setIsFormLoading(false);
     }
   }, [id]);
+  
+  // Filter clients when salesperson changes
+  useEffect(() => {
+    if (selectedSalesperson) {
+      const clientsForSalesperson = clients.filter(client => client.salespersonId === selectedSalesperson);
+      setFilteredClients(clientsForSalesperson);
+      
+      // Reset selected client if it doesn't belong to the new salesperson
+      if (selectedClient && selectedClient.salespersonId !== selectedSalesperson) {
+        setSelectedClient(null);
+      }
+    } else {
+      setFilteredClients([]);
+      setSelectedClient(null);
+    }
+  }, [selectedSalesperson, clients, selectedClient]);
   
   // Product search function
   const searchProducts = async (searchTerm: string, categoryFilter: string) => {
@@ -425,27 +442,6 @@ export function OrderForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm font-medium">
-                  Cliente *
-                </label>
-                <select
-                  className="select"
-                  value={selectedClient?.id || ''}
-                  onChange={(e) => {
-                    const client = clients.find(c => c.id === e.target.value);
-                    setSelectedClient(client || null);
-                  }}
-                >
-                  <option value="">Seleccionar cliente</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.commercialName} - {client.ruc}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">
                   Vendedor *
                 </label>
                 {isCurrentUserSalesperson ? (
@@ -469,6 +465,35 @@ export function OrderForm() {
                       </option>
                     ))}
                   </select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Cliente *
+                </label>
+                <select
+                  className="select"
+                  disabled={!selectedSalesperson}
+                  value={selectedClient?.id || ''}
+                  onChange={(e) => {
+                    const client = filteredClients.find(c => c.id === e.target.value);
+                    setSelectedClient(client || null);
+                  }}
+                >
+                  <option value="">
+                    {selectedSalesperson ? 'Seleccionar cliente' : 'Primero selecciona un vendedor'}
+                  </option>
+                  {filteredClients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.commercialName} - {client.ruc}
+                    </option>
+                  ))}
+                </select>
+                {selectedSalesperson && filteredClients.length === 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Este vendedor no tiene clientes asignados
+                  </p>
                 )}
               </div>
             </div>
