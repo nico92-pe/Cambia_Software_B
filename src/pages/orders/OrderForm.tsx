@@ -349,13 +349,23 @@ export function OrderForm() {
       setInstallmentStartDate(startDate);
     }
     
-    const installmentAmount = totals.total / installmentCount;
+    const baseInstallmentAmount = Math.floor((totals.total * 100) / installmentCount) / 100; // Round down to 2 decimals
     const newInstallments: OrderInstallmentForm[] = [];
+    let accumulatedAmount = 0;
     
     for (let i = 1; i <= installmentCount; i++) {
       const daysDue = creditType === 'factura' ? i * 30 : i * 30; // 30 days between installments
       const dueDate = new Date(startDate);
       dueDate.setDate(dueDate.getDate() + daysDue);
+      
+      let installmentAmount;
+      if (i === installmentCount) {
+        // Last installment: total minus accumulated amount
+        installmentAmount = totals.total - accumulatedAmount;
+      } else {
+        installmentAmount = baseInstallmentAmount;
+        accumulatedAmount += installmentAmount;
+      }
       
       newInstallments.push({
         installmentNumber: i,
