@@ -287,15 +287,11 @@ export function OrderForm() {
   
   // Update item quantity
   const updateItemQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(productId);
-      return;
-    }
-    
     setItems(items.map(item => {
       if (item.productId === productId) {
-        const subtotal = item.unitPrice * quantity;
-        return { ...item, quantity, subtotal };
+        const safeQuantity = Math.max(0, quantity);
+        const subtotal = item.unitPrice * safeQuantity;
+        return { ...item, quantity: safeQuantity, subtotal };
       }
       return item;
     }));
@@ -911,9 +907,16 @@ export function OrderForm() {
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <input
                             type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => updateItemQuantity(item.productId, parseInt(e.target.value) || 0)}
+                            min="0"
+                            value={item.quantity === 0 ? '' : item.quantity}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '') {
+                                updateItemQuantity(item.productId, 0);
+                              } else {
+                                updateItemQuantity(item.productId, parseInt(value) || 0);
+                              }
+                            }}
                             className="w-20 text-center border border-gray-300 rounded px-2 py-1"
                           />
                         </td>
