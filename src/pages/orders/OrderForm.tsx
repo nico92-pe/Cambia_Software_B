@@ -419,12 +419,12 @@ export function OrderForm() {
   
   // Auto-generate installments when payment type, installment count, or totals change
   useEffect(() => {
-    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
+    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0 && installments.length === 0) {
       generateInstallments();
     } else if (paymentType === 'contado') {
       setInstallments([]);
     }
-  }, [paymentType, installmentCount, finalDisplayTotals.total, creditType]);
+  }, [paymentType, installmentCount, creditType]);
   
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
