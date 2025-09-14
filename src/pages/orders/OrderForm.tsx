@@ -894,15 +894,30 @@ export function OrderForm() {
                     <label className="block text-sm font-medium">
                       Número de Cuotas
                     </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      value={installmentCount}
-                      onChange={(e) => setInstallmentCount(parseInt(e.target.value) || 1)}
-                      className="input"
-                      onFocus={(e) => e.target.select()}
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setInstallmentCount(Math.max(1, installmentCount - 1))}
+                        disabled={installmentCount <= 1}
+                        className="flex items-center justify-center w-8 h-8 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        -1
+                      </button>
+                      <input
+                        type="text"
+                        value={installmentCount}
+                        readOnly
+                        className="input text-center w-16 bg-gray-50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setInstallmentCount(Math.min(12, installmentCount + 1))}
+                        disabled={installmentCount >= 12}
+                        className="flex items-center justify-center w-8 h-8 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        +1
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
