@@ -342,6 +342,15 @@ export function OrderForm() {
     setInstallments(newInstallments);
   };
   
+  // Auto-generate installments when payment type, installment count, or totals change
+  useEffect(() => {
+    if (paymentType === 'credito' && installmentCount > 0 && totals.total > 0) {
+      generateInstallments();
+    } else if (paymentType === 'contado') {
+      setInstallments([]);
+    }
+  }, [paymentType, installmentCount, totals.total, creditType]);
+  
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
     if (!installmentStartDate) return;
@@ -371,12 +380,18 @@ export function OrderForm() {
         daysDue: newDays,
         dueDate: formatDateForInput(newDate),
       };
-    } else {
-      // For other fields (like amount), just update the value
-      updatedInstallments[index] = { ...updatedInstallments[index], [field]: value };
     }
     
     setInstallments(updatedInstallments);
+  };
+  
+  // Format date for display (dd/mm/yy)
+  const formatDateForDisplay = (dateString: string): string => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
   };
   
   // Handle form submission
@@ -887,14 +902,6 @@ export function OrderForm() {
                       onChange={(e) => setInstallmentCount(parseInt(e.target.value) || 1)}
                       className="input"
                     />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={generateInstallments}
-                      className="mt-2"
-                    >
-                      Generar Cuotas
-                    </Button>
                   </div>
                 </>
               )}
@@ -929,21 +936,22 @@ export function OrderForm() {
                             {installment.installmentNumber}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={installment.amount}
-                              onChange={(e) => updateInstallment(index, 'amount', parseFloat(e.target.value) || 0)}
-                              className="w-24 text-center border border-gray-300 rounded px-2 py-1"
-                            />
+                            <span className="font-medium text-gray-900">
+                              {formatCurrency(installment.amount)}
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <input
-                              type="date"
-                              value={installment.dueDate}
-                              onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
-                              className="border border-gray-300 rounded px-2 py-1"
-                            />
+                            <div className="flex flex-col items-center">
+                              <span className="font-medium text-gray-900 mb-1">
+                                {formatDateForDisplay(installment.dueDate)}
+                              </span>
+                              <input
+                                type="date"
+                                value={installment.dueDate}
+                                onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
+                                className="text-xs border border-gray-300 rounded px-1 py-0.5 w-32"
+                              />
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             <input
