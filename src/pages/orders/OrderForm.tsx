@@ -310,6 +310,25 @@ export function OrderForm() {
     setItems(items.filter(item => item.productId !== productId));
   };
   
+  // Helper functions
+  const formatDateForInput = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
+  
+  const calculateTotals = () => {
+    const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+    const subtotal = total / 1.18;
+    const igv = subtotal * 0.18;
+    
+    return {
+      subtotal: Number(subtotal.toFixed(2)),
+      igv: Number(igv.toFixed(2)),
+      total: Number(total.toFixed(2)),
+    };
+  };
+  
+  const totals = calculateTotals();
+  
   // Generate installments
   const generateInstallments = () => {
     if (paymentType !== 'credito' || installmentCount <= 0) {
@@ -461,25 +480,6 @@ export function OrderForm() {
       setFormError(error instanceof Error ? error.message : 'Error al guardar el pedido');
     }
   };
-  
-  // Helper functions
-  const formatDateForInput = (date: Date): string => {
-    return date.toISOString().split('T')[0];
-  };
-  
-  const calculateTotals = () => {
-    const total = items.reduce((sum, item) => sum + item.subtotal, 0);
-    const subtotal = total / 1.18;
-    const igv = subtotal * 0.18;
-    
-    return {
-      subtotal: Number(subtotal.toFixed(2)),
-      igv: Number(igv.toFixed(2)),
-      total: Number(total.toFixed(2)),
-    };
-  };
-  
-  const totals = calculateTotals();
   
   if (!isDataLoaded) {
     return (
