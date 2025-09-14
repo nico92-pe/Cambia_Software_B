@@ -413,9 +413,9 @@ export function OrderForm() {
   };
   
   const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+    const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+    const subtotal = total / 1.18;
     const igv = subtotal * 0.18;
-    const total = subtotal + igv;
     
     return {
       subtotal: Number(subtotal.toFixed(2)),
