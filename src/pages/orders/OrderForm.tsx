@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Trash2, Search, X } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Search, X, Package, User, Building } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useClientStore } from '../../store/client-store';
 import { useProductStore } from '../../store/product-store';
@@ -83,44 +83,30 @@ export function OrderForm() {
       return;
     }
     
-    console.log('OrderForm: useEffect ejecutándose');
-    
     const loadData = async () => {
       setIsFormLoading(true);
       try {
-        console.log('OrderForm: Iniciando carga de datos');
-        
         // Load basic data
-        console.log('OrderForm: Cargando clientes...');
         await getClients();
-        console.log('OrderForm: Clientes cargados');
-        
-        console.log('OrderForm: Cargando categorías...');
         await getCategories();
-        console.log('OrderForm: Categorías cargadas');
         
         // Load salespeople if not current user salesperson
         if (!isCurrentUserSalesperson) {
-          console.log('OrderForm: Cargando vendedores...');
           try {
             const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
-            console.log('OrderForm: Vendedores cargados:', salespeople);
             setSalespeople(salespeople);
           } catch (error) {
-            console.error('OrderForm: Error cargando vendedores:', error);
+            console.error('Error loading salespeople:', error);
           }
         } else if (user) {
-          console.log('OrderForm: Usuario actual es vendedor, usando sus datos');
           setSelectedSalesperson(user.id);
         }
         
         // Load order if editing
         if (isEditMode && id) {
-          console.log('OrderForm: Cargando pedido para editar...');
           try {
             const orderData = await getOrderById(id);
             if (orderData) {
-              console.log('OrderForm: Pedido cargado:', orderData);
               setOrder(orderData);
               // Set form data from order
               setSelectedClient(orderData.client || null);
@@ -153,24 +139,19 @@ export function OrderForm() {
                 setInstallments(formInstallments);
               }
             } else {
-              console.error('OrderForm: Pedido no encontrado');
               setFormError('Pedido no encontrado');
               navigate('/orders');
               return;
             }
           } catch (error) {
-            console.error('OrderForm: Error cargando pedido:', error);
             setFormError('Error al cargar el pedido');
           }
         }
         
-        console.log('OrderForm: Carga de datos completada');
-        
       } catch (error) {
-        console.error('OrderForm: Error durante la carga de datos:', error);
+        console.error('Error loading form data:', error);
         setFormError('Error al cargar los datos del formulario');
       } finally {
-        console.log('OrderForm: Estableciendo isDataLoaded = true');
         setIsDataLoaded(true);
         setIsFormLoading(false);
       }
@@ -186,6 +167,194 @@ export function OrderForm() {
       setIsFormLoading(false);
     }
   }, [id]);
+  
+  // Product search function
+  const searchProducts = async (searchTerm: string, categoryFilter: string) => {
+    if (!searchTerm.trim() && !categoryFilter) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      const results = await useProductStore.getState().searchProductsForOrderForm(searchTerm, categoryFilter);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error searching products:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+  
+  // Handle product search
+  const handleProductSearch = (term: string) => {
+    setProductSearchTerm(term);
+    searchProducts(term, productCategoryFilter);
+  };
+  
+  const handleCategoryFilter = (categoryId: string) => {
+    setProductCategoryFilter(categoryId);
+    searchProducts(productSearchTerm, categoryId);
+  };
+  
+  // Add product to order
+  const addProductToOrder = (product: Product) => {
+    const existingItem = items.find(item => item.productId === product.id);
+    
+    if (existingItem) {
+      // Update quantity if product already exists
+      updateItemQuantity(existingItem.productId, existingItem.quantity + 1);
+    } else {
+      // Add new item
+      const newItem: OrderFormItem = {
+        productId: product.id,
+        product,
+        quantity: 1,
+        unitPrice: product.wholesalePrice,
+        subtotal: product.wholesalePrice,
+      };
+      setItems([...items, newItem]);
+    }
+    
+    // Clear search
+    setProductSearchTerm('');
+    setSearchResults([]);
+    setShowProductSearch(false);
+  };
+  
+  // Update item quantity
+  const updateItemQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeItem(productId);
+      return;
+    }
+    
+    setItems(items.map(item => {
+      if (item.productId === productId) {
+        const subtotal = item.unitPrice * quantity;
+        return { ...item, quantity, subtotal };
+      }
+      return item;
+    }));
+  };
+  
+  // Update item price
+  const updateItemPrice = (productId: string, unitPrice: number) => {
+    setItems(items.map(item => {
+      if (item.productId === productId) {
+        const subtotal = unitPrice * item.quantity;
+        return { ...item, unitPrice, subtotal };
+      }
+      return item;
+    }));
+  };
+  
+  // Remove item
+  const removeItem = (productId: string) => {
+    setItems(items.filter(item => item.productId !== productId));
+  };
+  
+  // Generate installments
+  const generateInstallments = () => {
+    if (paymentType !== 'credito' || installmentCount <= 0) {
+      setInstallments([]);
+      return;
+    }
+    
+    const installmentAmount = totals.total / installmentCount;
+    const newInstallments: OrderInstallmentForm[] = [];
+    
+    for (let i = 1; i <= installmentCount; i++) {
+      const daysDue = creditType === 'factura' ? i * 30 : i * 30; // 30 days between installments
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + daysDue);
+      
+      newInstallments.push({
+        installmentNumber: i,
+        amount: Number(installmentAmount.toFixed(2)),
+        dueDate: formatDateForInput(dueDate),
+        daysDue,
+      });
+    }
+    
+    setInstallments(newInstallments);
+  };
+  
+  // Update installment
+  const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
+    const updatedInstallments = [...installments];
+    updatedInstallments[index] = { ...updatedInstallments[index], [field]: value };
+    setInstallments(updatedInstallments);
+  };
+  
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!selectedClient) {
+      setFormError('Debe seleccionar un cliente');
+      return;
+    }
+    
+    if (!selectedSalesperson) {
+      setFormError('Debe seleccionar un vendedor');
+      return;
+    }
+    
+    if (items.length === 0) {
+      setFormError('Debe agregar al menos un producto');
+      return;
+    }
+    
+    try {
+      setFormError(null);
+      
+      const orderData = {
+        clientId: selectedClient.id,
+        salespersonId: selectedSalesperson,
+        status: currentStatus,
+        observations: notes,
+        paymentType,
+        creditType: paymentType === 'credito' ? creditType : undefined,
+        installments: paymentType === 'credito' ? installmentCount : undefined,
+        createdBy: user!.id,
+      };
+      
+      let savedOrder;
+      if (isEditMode && id) {
+        savedOrder = await updateOrder(id, orderData);
+      } else {
+        savedOrder = await createOrder(orderData);
+      }
+      
+      // Save order items
+      if (savedOrder) {
+        // Remove existing items if editing
+        if (isEditMode && order?.items) {
+          for (const item of order.items) {
+            await removeOrderItem(item.id);
+          }
+        }
+        
+        // Add new items
+        for (const item of items) {
+          await addOrderItem(savedOrder.id, {
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          });
+        }
+        
+        // Save installments if credit order
+        if (paymentType === 'credito' && installments.length > 0) {
+          await saveOrderInstallments(savedOrder.id, installments);
+        }
+      }
+      
+      navigate('/orders');
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Error al guardar el pedido');
+    }
+  };
   
   // Helper functions
   const formatDateForInput = (date: Date): string => {
@@ -219,24 +388,447 @@ export function OrderForm() {
 
   return (
     <div>
-      <h1>OrderForm con carga de datos optimizada</h1>
-      <p>Los datos se han cargado correctamente sin renders infinitos.</p>
-      <div className="mt-4 p-4 bg-gray-100 rounded">
-        <h3>Estado de carga:</h3>
-        <ul className="list-disc list-inside mt-2">
-          <li>Clientes cargados: {clients.length}</li>
-          <li>Categorías cargadas: {categories.length}</li>
-          <li>Vendedores cargados: {salespeople.length}</li>
-          <li>Usuario actual: {user?.fullName}</li>
-          <li>Es vendedor: {isCurrentUserSalesperson ? 'Sí' : 'No'}</li>
-          <li>Modo edición: {isEditMode ? 'Sí' : 'No'}</li>
-        </ul>
-      </div>
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-in fade-in duration-500">
+        <div>
+          <h1 className="text-3xl font-bold">
+            {isEditMode ? 'Editar Pedido' : 'Nuevo Pedido'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isEditMode ? 'Actualiza la información del pedido' : 'Crea un nuevo pedido para un cliente'}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          icon={<ArrowLeft size={18} />}
+          onClick={() => navigate('/orders')}
+        >
+          Volver
+        </Button>
+      </header>
+
       {formError && (
-        <Alert variant="destructive" className="mt-4">
+        <Alert variant="destructive" className="mb-6 animate-in fade-in duration-300">
           {formError}
         </Alert>
       )}
+
+      <div className="space-y-6">
+        {/* Client and Salesperson Selection */}
+        <div className="card animate-in fade-in duration-500">
+          <div className="card-header">
+            <h2 className="card-title text-xl">Información Básica</h2>
+            <p className="card-description">
+              Selecciona el cliente y vendedor para este pedido
+            </p>
+          </div>
+          <div className="card-content">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Cliente *
+                </label>
+                <select
+                  className="select"
+                  value={selectedClient?.id || ''}
+                  onChange={(e) => {
+                    const client = clients.find(c => c.id === e.target.value);
+                    setSelectedClient(client || null);
+                  }}
+                >
+                  <option value="">Seleccionar cliente</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.commercialName} - {client.ruc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Vendedor *
+                </label>
+                {isCurrentUserSalesperson ? (
+                  <input
+                    type="text"
+                    className="input bg-gray-50"
+                    value={user?.fullName || ''}
+                    disabled
+                    readOnly
+                  />
+                ) : (
+                  <select
+                    className="select"
+                    value={selectedSalesperson}
+                    onChange={(e) => setSelectedSalesperson(e.target.value)}
+                  >
+                    <option value="">Seleccionar vendedor</option>
+                    {salespeople.map((salesperson) => (
+                      <option key={salesperson.id} value={salesperson.id}>
+                        {salesperson.fullName}
+        {/* Products Section */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
+          <div className="card-header">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="card-title text-xl">Productos</h2>
+                <p className="card-description">
+                  Agrega productos a este pedido
+                </p>
+              </div>
+              <Button
+                icon={<Plus size={18} />}
+                onClick={() => setShowProductSearch(true)}
+              >
+                Agregar Producto
+              </Button>
+            </div>
+          </div>
+          <div className="card-content">
+            {/* Product Search Modal */}
+            {showProductSearch && (
+              <div className="fixed inset-0 z-50 overflow-y-auto">
+                <div className="flex min-h-screen items-center justify-center p-4">
+                  <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowProductSearch(false)} />
+                  <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl">
+                    <div className="flex items-center justify-between p-6 border-b">
+                      <h3 className="text-lg font-semibold">Buscar Productos</h3>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowProductSearch(false)}
+                      >
+                        <X size={20} />
+                      </Button>
+                    </div>
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div className="md:col-span-2">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="text"
+                              placeholder="Buscar por nombre o código..."
+                              value={productSearchTerm}
+                              onChange={(e) => handleProductSearch(e.target.value)}
+                              className="input pl-10"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <select
+                            className="select"
+                            value={productCategoryFilter}
+                            onChange={(e) => handleCategoryFilter(e.target.value)}
+                          >
+                            <option value="">Todas las categorías</option>
+                            {categories.map((category) => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="max-h-96 overflow-y-auto">
+                        {isSearching ? (
+                          <div className="flex justify-center py-8">
+                            <Loader />
+                          </div>
+                        ) : searchResults.length > 0 ? (
+                          <div className="space-y-2">
+                            {searchResults.map((product) => (
+                              <div
+                                key={product.id}
+                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                                onClick={() => addProductToOrder(product)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Package className="h-5 w-5 text-gray-400" />
+                                  <div>
+                                    <p className="font-medium">{product.name}</p>
+                                    <p className="text-sm text-gray-500">Código: {product.code}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium">{formatCurrency(product.wholesalePrice)}</p>
+                                  <p className="text-sm text-gray-500">Stock: {product.stock || 0}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            {productSearchTerm || productCategoryFilter ? 'No se encontraron productos' : 'Busca productos para agregar al pedido'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+                      </option>
+            {/* Order Items Table */}
+            {items.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Producto
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cantidad
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Precio Unit.
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Subtotal
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {items.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Package className="h-5 w-5 text-gray-400 mr-3" />
+                            <div>
+                              <div className="font-medium">{item.product?.name}</div>
+                              <div className="text-sm text-gray-500">Código: {item.product?.code}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => updateItemQuantity(item.productId, parseInt(e.target.value) || 0)}
+                            className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={item.unitPrice}
+                            onChange={(e) => updateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
+                            className="w-24 text-center border border-gray-300 rounded px-2 py-1"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                          {formatCurrency(item.subtotal)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Trash2 size={16} />}
+                            onClick={() => removeItem(item.productId)}
+                            className="text-red-600 hover:text-red-700"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                    ))}
+                {/* Totals */}
+                <div className="mt-6 flex justify-end">
+                  <div className="w-64 space-y-2 bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span className="font-medium">{formatCurrency(totals.subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>IGV (18%):</span>
+                      <span className="font-medium">{formatCurrency(totals.igv)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="font-bold">Total:</span>
+                      <span className="font-bold text-lg">{formatCurrency(totals.total)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No hay productos agregados al pedido
+              </div>
+            )}
+          </div>
+        </div>
+                  </select>
+        {/* Payment and Notes */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Términos de Pago y Observaciones</h2>
+          </div>
+          <div className="card-content">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Tipo de Pago
+                  </label>
+                  <select
+                    className="select"
+                    value={paymentType}
+                    onChange={(e) => {
+                      setPaymentType(e.target.value as 'contado' | 'credito');
+                      if (e.target.value === 'contado') {
+                        setInstallments([]);
+                      }
+                    }}
+                  >
+                    <option value="contado">Contado</option>
+                    <option value="credito">Crédito</option>
+                  </select>
+                </div>
+                )}
+                {paymentType === 'credito' && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">
+                        Tipo de Crédito
+                      </label>
+                      <select
+                        className="select"
+                        value={creditType}
+                        onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
+                      >
+                        <option value="factura">Factura</option>
+                        <option value="letras">Letras</option>
+                      </select>
+                    </div>
+              </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">
+                        Número de Cuotas
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={installmentCount}
+                        onChange={(e) => setInstallmentCount(parseInt(e.target.value) || 1)}
+                        className="input"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={generateInstallments}
+                        className="mt-2"
+                      >
+                        Generar Cuotas
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+              {/* Installments Table */}
+              {paymentType === 'credito' && installments.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium mb-4">Detalle de Cuotas</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Cuota
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Monto
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Fecha de Vencimiento
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Días
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {installments.map((installment, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                              {installment.installmentNumber}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={installment.amount}
+                                onChange={(e) => updateInstallment(index, 'amount', parseFloat(e.target.value) || 0)}
+                                className="w-24 text-center border border-gray-300 rounded px-2 py-1"
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <input
+                                type="date"
+                                value={installment.dueDate}
+                                onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
+                                className="border border-gray-300 rounded px-2 py-1"
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <input
+                                type="number"
+                                value={installment.daysDue}
+                                onChange={(e) => updateInstallment(index, 'daysDue', parseInt(e.target.value) || 0)}
+                                className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+          </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Observaciones
+                </label>
+                <textarea
+                  rows={4}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="input resize-none"
+                  placeholder="Observaciones adicionales del pedido..."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+        {/* Actions */}
+        <div className="flex justify-end space-x-4 animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/orders')}
+          >
+            Cancelar
+          </Button>
+          <Button
+            icon={<Save size={18} />}
+            onClick={handleSubmit}
+            loading={isLoading}
+          >
+            {isEditMode ? 'Actualizar Pedido' : 'Crear Pedido'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
