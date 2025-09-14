@@ -309,9 +309,16 @@ export default function OrderList() {
                             disabled={updatingStatus === order.id}
                             className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           >
-                            {Object.entries(statusLabels).map(([value, label]) => (
-                              <option key={value} value={value}>{label}</option>
-                            ))}
+                            {Object.entries(statusLabels)
+                              .filter(([value]) => {
+                                if (isAsesorVentas) {
+                                  return value === 'borrador' || value === 'tomado';
+                                }
+                                return true;
+                              })
+                              .map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                              ))}
                           </select>
                         ) : (
                           <Badge className={statusColors[order.status]}>
@@ -445,9 +452,16 @@ export default function OrderList() {
                           disabled={updatingStatus === order.id}
                           className="px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         >
-                          {Object.entries(statusLabels).map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
+                          {Object.entries(statusLabels)
+                            .filter(([value]) => {
+                              if (isAsesorVentas) {
+                                return value === 'borrador' || value === 'tomado';
+                              }
+                              return true;
+                            })
+                            .map(([value, label]) => (
+                              <option key={value} value={value}>{label}</option>
+                            ))}
                         </select>
                       ) : (
                         <Badge className={statusColors[order.status]}>
