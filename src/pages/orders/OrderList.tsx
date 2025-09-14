@@ -302,7 +302,7 @@ export default function OrderList() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-500">Estado:</span>
-                        {canManageOrders && user?.role ? (
+                        {canManageOrders && user?.role && (user.role !== 'asesor_ventas' || ['borrador', 'tomado'].includes(order.status)) ? (
                           <select
                             value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
@@ -445,7 +445,7 @@ export default function OrderList() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {canManageOrders && user?.role ? (
+                      {canManageOrders && user?.role && (user.role !== 'asesor_ventas' || ['borrador', 'tomado'].includes(order.status)) ? (
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
