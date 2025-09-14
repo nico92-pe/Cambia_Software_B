@@ -50,7 +50,7 @@ export function OrderForm() {
   
   // Basic state
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isFormLoading, setIsFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   
   // Form state
@@ -79,14 +79,14 @@ export function OrderForm() {
   // Use effect to load data
   useEffect(() => {
     // Prevent multiple loads
-    if (isDataLoaded || isLoading) {
+    if (isDataLoaded || isFormLoading) {
       return;
     }
     
     console.log('OrderForm: useEffect ejecutándose');
     
     const loadData = async () => {
-      setIsLoading(true);
+      setIsFormLoading(true);
       try {
         console.log('OrderForm: Iniciando carga de datos');
         
@@ -172,18 +172,18 @@ export function OrderForm() {
       } finally {
         console.log('OrderForm: Estableciendo isDataLoaded = true');
         setIsDataLoaded(true);
-        setIsLoading(false);
+        setIsFormLoading(false);
       }
     };
     
     loadData();
-  }, [isDataLoaded, isLoading]); // Dependencies to control loading
+  }, [isDataLoaded, isFormLoading]); // Dependencies to control loading
   
   // Reset loading flag when ID changes (for edit mode)
   useEffect(() => {
     if (id) {
       setIsDataLoaded(false);
-      setIsLoading(false);
+      setIsFormLoading(false);
     }
   }, [id]);
   
