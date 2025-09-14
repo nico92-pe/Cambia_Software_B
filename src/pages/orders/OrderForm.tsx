@@ -50,6 +50,7 @@ export function OrderForm() {
   
   // Basic state
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   
   // Form state
@@ -75,19 +76,17 @@ export function OrderForm() {
   // Order items
   const [items, setItems] = useState<OrderFormItem[]>([]);
   
-  // Use ref to prevent multiple loads
-  const hasLoadedData = useRef(false);
-  
   // Use effect to load data
   useEffect(() => {
     // Prevent multiple loads
-    if (hasLoadedData.current) {
+    if (isDataLoaded || isLoading) {
       return;
     }
     
     console.log('OrderForm: useEffect ejecutándose');
     
     const loadData = async () => {
+      setIsLoading(true);
       try {
         console.log('OrderForm: Iniciando carga de datos');
         
@@ -173,17 +172,18 @@ export function OrderForm() {
       } finally {
         console.log('OrderForm: Estableciendo isDataLoaded = true');
         setIsDataLoaded(true);
-        hasLoadedData.current = true;
+        setIsLoading(false);
       }
     };
     
     loadData();
-  }, []); // Empty dependency array since we're using useRef to control loading
+  }, [isDataLoaded, isLoading]); // Dependencies to control loading
   
   // Reset loading flag when ID changes (for edit mode)
   useEffect(() => {
     if (id) {
-      hasLoadedData.current = false;
+      setIsDataLoaded(false);
+      setIsLoading(false);
     }
   }, [id]);
   
