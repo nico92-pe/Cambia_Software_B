@@ -429,20 +429,27 @@ export function OrderForm() {
   // Update installment count when user changes it
   useEffect(() => {
     if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
-      // If we have fewer installments than requested, add new ones
-      if (installments.length < installmentCount) {
-        const startDate = new Date();
-        const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
-        const newInstallments = [...installments];
-        let accumulatedAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
+      const startDate = new Date();
+      const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
+      
+      if (installments.length !== installmentCount) {
+        const newInstallments: OrderInstallmentForm[] = [];
+        let accumulatedAmount = 0;
         
-        for (let i = installments.length + 1; i <= installmentCount; i++) {
-          const daysDue = creditType === 'factura' ? i * 30 : i * 30;
-          const dueDate = new Date(startDate);
-          dueDate.setDate(dueDate.getDate() + daysDue);
+        for (let i = 1; i <= installmentCount; i++) {
+          // Try to preserve existing installment data if it exists
+          const existingInstallment = installments.find(inst => inst.installmentNumber === i);
+          
+          const daysDue = existingInstallment?.daysDue || (creditType === 'factura' ? i * 30 : i * 30);
+          const dueDate = existingInstallment?.dueDate || (() => {
+            const date = new Date(startDate);
+            date.setDate(date.getDate() + daysDue);
+            return formatDateForInput(date);
+          })();
           
           let installmentAmount;
           if (i === installmentCount) {
+            // Last installment: total minus accumulated amount
             installmentAmount = finalDisplayTotals.total - accumulatedAmount;
           } else {
             installmentAmount = baseInstallmentAmount;
@@ -452,22 +459,12 @@ export function OrderForm() {
           newInstallments.push({
             installmentNumber: i,
             amount: Number(installmentAmount.toFixed(2)),
-            dueDate: formatDateForInput(dueDate),
+            dueDate,
             daysDue,
           });
         }
         
         setInstallments(newInstallments);
-      }
-      // If we have more installments than requested, remove excess ones
-      else if (installments.length > installmentCount) {
-        const trimmedInstallments = installments.slice(0, installmentCount);
-        // Recalculate the last installment to ensure total matches
-        if (trimmedInstallments.length > 0) {
-          const accumulatedAmount = trimmedInstallments.slice(0, -1).reduce((sum, inst) => sum + inst.amount, 0);
-          trimmedInstallments[trimmedInstallments.length - 1].amount = Number((finalDisplayTotals.total - accumulatedAmount).toFixed(2));
-        }
-        setInstallments(trimmedInstallments);
       }
     }
   }, [installmentCount, paymentType, creditType]);
