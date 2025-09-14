@@ -1096,7 +1096,7 @@ export function OrderForm() {
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             <input
                               type="number"
-                              value={installment.daysDue}
+                             value={installment.daysDue === 0 ? '' : installment.daysDue}
                               onChange={(e) => updateInstallment(index, 'daysDue', parseInt(e.target.value) || 0)}
                               className="w-20 text-center border border-gray-300 rounded px-2 py-1"
                             />
