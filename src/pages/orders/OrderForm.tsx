@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2, Search, X } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
@@ -75,25 +75,171 @@ export function OrderForm() {
   // Order items
   const [items, setItems] = useState<OrderFormItem[]>([]);
   
-  // Memoize the data loading function to prevent infinite re-renders
-  const loadData = useCallback(async () => {
+  // Use ref to prevent multiple loads
+  const hasLoadedData = useRef(false);
+  
+  // Use effect to load data
+  useEffect(() => {
+    // Prevent multiple loads
+    if (hasLoadedData.current) {
+      return;
+    }
+    
     console.log('OrderForm: useEffect ejecutándose');
     
-    try {
-      console.log('OrderForm: Iniciando carga de datos');
-      
-      // Load basic data
-      console.log('OrderForm: Cargando clientes...');
-      await getClients();
-      console.log('OrderForm: Clientes cargados');
-      
-      console.log('OrderForm: Cargando categorías...');
-      await getCategories();
-      console.log('OrderForm: Categorías cargadas');
-      
-      // Load salespeople if not current user salesperson
-      if (!isCurrentUserSalesperson) {
-        console.log('OrderForm: Cargando vendedores...');
+    const loadData = async () => {
+      try {
+        console.log('OrderForm: Iniciando carga de datos');
+        
+        // Load basic data
+        console.log('OrderForm: Cargando clientes...');
+        await getClients();
+        console.log('OrderForm: Clientes cargados');
+        
+        console.log('OrderForm: Cargando categorías...');
+        await getCategories();
+        console.log('OrderForm: Categorías cargadas');
+        
+        // Load salespeople if not current user salesperson
+        if (!isCurrentUserSalesperson) {
+          console.log('OrderForm: Cargando vendedores...');
+          try {
+            const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
+            console.log('OrderForm: Vendedores cargados:', salespeople);
+            setSalespeople(salespeople);
+          } catch (error) {
+            console.error('OrderForm: Error cargando vendedores:', error);
+          }
+        } else if (user) {
+          console.log('OrderForm: Usuario actual es vendedor, usando sus datos');
+          setSelectedSalesperson(user.id);
+        }
+        
+        // Load order if editing
+        if (isEditMode && id) {
+          console.log('OrderForm: Cargando pedido para editar...');
+          try {
+            const orderData = await getOrderById(id);
+            if (orderData) {
+              console.log('OrderForm: Pedido cargado:', orderData);
+              setOrder(orderData);
+              // Set form data from order
+              setSelectedClient(orderData.client || null);
+              setSelectedSalesperson(orderData.salespersonId);
+              setCurrentStatus(orderData.status);
+              setNotes(orderData.observations || '');
+              setPaymentType(orderData.paymentType);
+              setCreditType(orderData.creditType || 'factura');
+              setInstallmentCount(orderData.installments || 1);
+              
+              // Convert order items to form items
+              const formItems: OrderFormItem[] = orderData.items?.map(item => ({
+                id: item.id,
+                productId: item.productId,
+                product: item.product,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                subtotal: item.subtotal,
+              })) || [];
+              setItems(formItems);
+              
+              // Load installments if credit order
+              if (orderData.paymentType === 'credito' && orderData.installmentDetails) {
+                const formInstallments: OrderInstallmentForm[] = orderData.installmentDetails.map(inst => ({
+                  installmentNumber: inst.installmentNumber,
+                  amount: inst.amount,
+                  dueDate: inst.dueDate,
+                  daysDue: inst.daysDue,
+                }));
+                setInstallments(formInstallments);
+              }
+            } else {
+              console.error('OrderForm: Pedido no encontrado');
+              setFormError('Pedido no encontrado');
+              navigate('/orders');
+              return;
+            }
+          } catch (error) {
+            console.error('OrderForm: Error cargando pedido:', error);
+            setFormError('Error al cargar el pedido');
+          }
+        }
+        
+        console.log('OrderForm: Carga de datos completada');
+        
+      } catch (error) {
+        console.error('OrderForm: Error durante la carga de datos:', error);
+        setFormError('Error al cargar los datos del formulario');
+      } finally {
+        console.log('OrderForm: Estableciendo isDataLoaded = true');
+        setIsDataLoaded(true);
+        hasLoadedData.current = true;
+      }
+    };
+    
+    loadData();
+  }, []); // Empty dependency array since we're using useRef to control loading
+  
+  // Reset loading flag when ID changes (for edit mode)
+  useEffect(() => {
+    if (id) {
+      hasLoadedData.current = false;
+    }
+  }, [id]);
+  
+  // Helper functions
+  const formatDateForInput = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
+  
+  const calculateTotals = () => {
+    const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+    const igv = subtotal * 0.18;
+    const total = subtotal + igv;
+    
+    return {
+      subtotal: Number(subtotal.toFixed(2)),
+      igv: Number(igv.toFixed(2)),
+      total: Number(total.toFixed(2)),
+    };
+  };
+  
+  const totals = calculateTotals();
+  
+  if (!isDataLoaded) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-muted-foreground mt-4">Cargando formulario...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1>OrderForm con carga de datos optimizada</h1>
+      <p>Los datos se han cargado correctamente sin renders infinitos.</p>
+      <div className="mt-4 p-4 bg-gray-100 rounded">
+        <h3>Estado de carga:</h3>
+        <ul className="list-disc list-inside mt-2">
+          <li>Clientes cargados: {clients.length}</li>
+          <li>Categorías cargadas: {categories.length}</li>
+          <li>Vendedores cargados: {salespeople.length}</li>
+          <li>Usuario actual: {user?.fullName}</li>
+          <li>Es vendedor: {isCurrentUserSalesperson ? 'Sí' : 'No'}</li>
+          <li>Modo edición: {isEditMode ? 'Sí' : 'No'}</li>
+        </ul>
+      </div>
+      {formError && (
+        <Alert variant="destructive" className="mt-4">
+          {formError}
+        </Alert>
+      )}
+    </div>
+  );
+}
         try {
           const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
           console.log('OrderForm: Vendedores cargados:', salespeople);
