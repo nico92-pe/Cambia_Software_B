@@ -466,6 +466,15 @@ export function OrderForm() {
                     {salespeople.map((salesperson) => (
                       <option key={salesperson.id} value={salesperson.id}>
                         {salesperson.fullName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Products Section */}
         <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
           <div className="card-header">
@@ -569,7 +578,7 @@ export function OrderForm() {
                 </div>
               </div>
             )}
-                      </option>
+
             {/* Order Items Table */}
             {items.length > 0 ? (
               <div className="overflow-x-auto">
@@ -640,7 +649,7 @@ export function OrderForm() {
                     ))}
                   </tbody>
                 </table>
-                    ))}
+
                 {/* Totals */}
                 <div className="mt-6 flex justify-end">
                   <div className="w-64 space-y-2 bg-gray-50 p-4 rounded-lg">
@@ -666,7 +675,7 @@ export function OrderForm() {
             )}
           </div>
         </div>
-                  </select>
+
         {/* Payment and Notes */}
         <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
           <div className="card-header">
@@ -693,7 +702,7 @@ export function OrderForm() {
                     <option value="credito">Crédito</option>
                   </select>
                 </div>
-                )}
+
                 {paymentType === 'credito' && (
                   <>
                     <div className="space-y-2">
@@ -709,7 +718,7 @@ export function OrderForm() {
                         <option value="letras">Letras</option>
                       </select>
                     </div>
-              </div>
+
                     <div className="space-y-2">
                       <label className="block text-sm font-medium">
                         Número de Cuotas
@@ -734,7 +743,7 @@ export function OrderForm() {
                   </>
                 )}
               </div>
-            </div>
+
               {/* Installments Table */}
               {paymentType === 'credito' && installments.length > 0 && (
                 <div className="mt-6">
@@ -795,7 +804,7 @@ export function OrderForm() {
                   </div>
                 </div>
               )}
-          </div>
+
               <div className="space-y-2">
                 <label className="block text-sm font-medium">
                   Observaciones
@@ -811,7 +820,7 @@ export function OrderForm() {
             </div>
           </div>
         </div>
-        </div>
+
         {/* Actions */}
         <div className="flex justify-end space-x-4 animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
           <Button
