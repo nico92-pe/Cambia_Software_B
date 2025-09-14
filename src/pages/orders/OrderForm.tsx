@@ -428,10 +428,10 @@ export function OrderForm() {
   
   // Update installment count when user changes it
   useEffect(() => {
-    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0 && installments.length !== installmentCount) {
+    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
       console.log('Regenerating installments - Count changed from', installments.length, 'to', installmentCount);
       
-      const startDate = new Date();
+      const startDate = installmentStartDate || new Date();
       const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
       const newInstallments: OrderInstallmentForm[] = [];
       let accumulatedAmount = 0;
@@ -467,7 +467,7 @@ export function OrderForm() {
       console.log('Setting new installments:', newInstallments);
       setInstallments(newInstallments);
     }
-  }, [installmentCount, paymentType, creditType]);
+  }, [installmentCount, paymentType, creditType, finalDisplayTotals.total, installments.length, installmentStartDate]);
   
   // Update installment amounts when total changes but preserve custom dates/days
   useEffect(() => {
