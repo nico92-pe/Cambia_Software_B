@@ -376,127 +376,73 @@ export function OrderForm() {
     : totals;
 
   // Generate installments
-  const generateInstallments = () => {
+  const generateInstallments = useCallback((prevInstallments: OrderInstallmentForm[] = []) => {
     if (paymentType !== 'credito' || installmentCount <= 0) {
-      setInstallments([]);
-      return;
+      return [];
     }
     
-    // Use today's date as the base for calculating installments
-    const startDate = new Date();
-    if (!installmentStartDate) {
-      setInstallmentStartDate(startDate);
-    }
+    // Use installmentStartDate if available, otherwise use today's date
+    const startDate = installmentStartDate || new Date();
     
-    const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100; // Round down to 2 decimals
+    const total = finalDisplayTotals.total;
+    const baseInstallmentAmount = total > 0 ? Math.floor((total * 100) / installmentCount) / 100 : 0;
     const newInstallments: OrderInstallmentForm[] = [];
     let accumulatedAmount = 0;
     
     for (let i = 1; i <= installmentCount; i++) {
-      const daysDue = creditType === 'factura' ? i * 30 : i * 30; // 30 days between installments
-      const dueDate = new Date(startDate);
-      dueDate.setDate(dueDate.getDate() + daysDue);
+      // Try to preserve existing installment data if it exists
+      const existingInstallment = prevInstallments.find(inst => inst.installmentNumber === i);
+      
+      const daysDue = existingInstallment?.daysDue || (creditType === 'factura' ? i * 30 : i * 30);
+      const dueDate = existingInstallment?.dueDate || (() => {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + daysDue);
+        return formatDateForInput(date);
+      })();
       
       let installmentAmount;
-      if (i === installmentCount) {
-        // Last installment: total minus accumulated amount
-        installmentAmount = finalDisplayTotals.total - accumulatedAmount;
+      if (total > 0) {
+        if (i === installmentCount) {
+          // Last installment: total minus accumulated amount
+          installmentAmount = total - accumulatedAmount;
+        } else {
+          installmentAmount = baseInstallmentAmount;
+          accumulatedAmount += installmentAmount;
+        }
       } else {
-        installmentAmount = baseInstallmentAmount;
-        accumulatedAmount += installmentAmount;
+        installmentAmount = 0;
       }
       
       newInstallments.push({
         installmentNumber: i,
         amount: Number(installmentAmount.toFixed(2)),
-        dueDate: formatDateForInput(dueDate),
+        dueDate,
         daysDue,
       });
     }
     
-    setInstallments(newInstallments);
-  };
+    return newInstallments;
+  }, [paymentType, installmentCount, creditType, finalDisplayTotals.total, installmentStartDate]);
   
-  // Auto-generate installments when payment type, installment count, or totals change
+  // Main useEffect for installment generation
   useEffect(() => {
-    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0 && installments.length === 0) {
-      generateInstallments();
-    } else if (paymentType === 'contado') {
-      setInstallments([]);
-    }
-  }, [paymentType, installmentCount, creditType]);
-  
-  // Update installment count when user changes it
-  useEffect(() => {
-    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
-      console.log('Regenerating installments - Count changed from', installments.length, 'to', installmentCount);
-      
-      const startDate = installmentStartDate || new Date();
-      const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
-      const newInstallments: OrderInstallmentForm[] = [];
-      let accumulatedAmount = 0;
-      
-      for (let i = 1; i <= installmentCount; i++) {
-        // Try to preserve existing installment data if it exists
-        const existingInstallment = installments.find(inst => inst.installmentNumber === i);
-        
-        const daysDue = existingInstallment?.daysDue || (creditType === 'factura' ? i * 30 : i * 30);
-        const dueDate = existingInstallment?.dueDate || (() => {
-          const date = new Date(startDate);
-          date.setDate(date.getDate() + daysDue);
-          return formatDateForInput(date);
-        })();
-        
-        let installmentAmount;
-        if (i === installmentCount) {
-          // Last installment: total minus accumulated amount
-          installmentAmount = finalDisplayTotals.total - accumulatedAmount;
-        } else {
-          installmentAmount = baseInstallmentAmount;
-          accumulatedAmount += installmentAmount;
-        }
-        
-        newInstallments.push({
-          installmentNumber: i,
-          amount: Number(installmentAmount.toFixed(2)),
-          dueDate,
-          daysDue,
-        });
-      }
-      
-      console.log('Setting new installments:', newInstallments);
-      setInstallments(newInstallments);
-    }
-  }, [installmentCount, paymentType, creditType, finalDisplayTotals.total, installments.length, installmentStartDate]);
-  
-  // Update installment amounts when total changes but preserve custom dates/days
-  useEffect(() => {
-    if (paymentType !== 'credito' || installments.length === 0 || finalDisplayTotals.total <= 0) {
-      return;
-    }
-    
-    // Only update amounts, preserve existing dates and days
-    const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
-    let accumulatedAmount = 0;
-    
-    const updatedInstallments = installments.map((installment, index) => {
-      let installmentAmount;
-      if (index === installmentCount - 1) {
-        // Last installment: total minus accumulated amount
-        installmentAmount = finalDisplayTotals.total - accumulatedAmount;
-      } else {
-        installmentAmount = baseInstallmentAmount;
-        accumulatedAmount += installmentAmount;
-      }
-      
-      return {
-        ...installment, // Preserve existing dueDate and daysDue
-        amount: Number(installmentAmount.toFixed(2)),
-      };
+    console.log('Installment generation useEffect triggered:', {
+      paymentType,
+      installmentCount,
+      currentInstallmentsLength: installments.length
     });
     
-    setInstallments(updatedInstallments);
-  }, [finalDisplayTotals.total, installmentCount, paymentType]);
+    if (paymentType === 'credito' && installmentCount > 0) {
+      setInstallments(prevInstallments => {
+        const newInstallments = generateInstallments(prevInstallments);
+        console.log('Generated installments:', newInstallments);
+        return newInstallments;
+      });
+    } else {
+      console.log('Clearing installments - payment type is contado');
+      setInstallments([]);
+    }
+  }, [paymentType, installmentCount, generateInstallments]);
   
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
