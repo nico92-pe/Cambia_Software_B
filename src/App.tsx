@@ -63,7 +63,12 @@ function App() {
           
           {/* Order routes */}
           <Route path="/orders" element={<OrderList />} />
-          <Route path="/orders/new" element={<OrderForm />} />
+          <Route path="/orders/new" element={
+            <div>
+              <h1>DEBUG: Ruta /orders/new funcionando</h1>
+              <OrderForm />
+            </div>
+          } />
           <Route path="/orders/edit/:id" element={<OrderForm />} />
           <Route path="/orders/detail/:id" element={<OrderDetail />} />
         </Route>
