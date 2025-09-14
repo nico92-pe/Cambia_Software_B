@@ -177,11 +177,11 @@ export function OrderForm() {
     };
     
     loadData();
-  }, [isDataLoaded, isFormLoading]); // Dependencies to control loading
+  }, []); // Empty dependency array - we control loading with state flags
   
   // Reset loading flag when ID changes (for edit mode)
   useEffect(() => {
-    if (id) {
+    if (id && isDataLoaded) {
       setIsDataLoaded(false);
       setIsFormLoading(false);
     }
