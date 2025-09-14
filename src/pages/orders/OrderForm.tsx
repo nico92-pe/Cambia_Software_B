@@ -424,10 +424,10 @@ export function OrderForm() {
     // Parse the date string as local date to avoid timezone issues
     const [year, month, day] = dateString.split('-').map(Number);
     const date = new Date(year, month - 1, day); // month is 0-indexed
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(-2);
-    return `${day}/${month}/${year}`;
+    const formattedDay = String(date.getDate()).padStart(2, '0');
+    const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+    const formattedYear = String(date.getFullYear()).slice(-2);
+    return `${formattedDay}/${formattedMonth}/${formattedYear}`;
   };
   
   // Handle form submission
