@@ -428,44 +428,44 @@ export function OrderForm() {
   
   // Update installment count when user changes it
   useEffect(() => {
-    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
+    if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0 && installments.length !== installmentCount) {
+      console.log('Regenerating installments - Count changed from', installments.length, 'to', installmentCount);
+      
       const startDate = new Date();
       const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
+      const newInstallments: OrderInstallmentForm[] = [];
+      let accumulatedAmount = 0;
       
-      if (installments.length !== installmentCount) {
-        const newInstallments: OrderInstallmentForm[] = [];
-        let accumulatedAmount = 0;
+      for (let i = 1; i <= installmentCount; i++) {
+        // Try to preserve existing installment data if it exists
+        const existingInstallment = installments.find(inst => inst.installmentNumber === i);
         
-        for (let i = 1; i <= installmentCount; i++) {
-          // Try to preserve existing installment data if it exists
-          const existingInstallment = installments.find(inst => inst.installmentNumber === i);
-          
-          const daysDue = existingInstallment?.daysDue || (creditType === 'factura' ? i * 30 : i * 30);
-          const dueDate = existingInstallment?.dueDate || (() => {
-            const date = new Date(startDate);
-            date.setDate(date.getDate() + daysDue);
-            return formatDateForInput(date);
-          })();
-          
-          let installmentAmount;
-          if (i === installmentCount) {
-            // Last installment: total minus accumulated amount
-            installmentAmount = finalDisplayTotals.total - accumulatedAmount;
-          } else {
-            installmentAmount = baseInstallmentAmount;
-            accumulatedAmount += installmentAmount;
-          }
-          
-          newInstallments.push({
-            installmentNumber: i,
-            amount: Number(installmentAmount.toFixed(2)),
-            dueDate,
-            daysDue,
-          });
+        const daysDue = existingInstallment?.daysDue || (creditType === 'factura' ? i * 30 : i * 30);
+        const dueDate = existingInstallment?.dueDate || (() => {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + daysDue);
+          return formatDateForInput(date);
+        })();
+        
+        let installmentAmount;
+        if (i === installmentCount) {
+          // Last installment: total minus accumulated amount
+          installmentAmount = finalDisplayTotals.total - accumulatedAmount;
+        } else {
+          installmentAmount = baseInstallmentAmount;
+          accumulatedAmount += installmentAmount;
         }
         
-        setInstallments(newInstallments);
+        newInstallments.push({
+          installmentNumber: i,
+          amount: Number(installmentAmount.toFixed(2)),
+          dueDate,
+          daysDue,
+        });
       }
+      
+      console.log('Setting new installments:', newInstallments);
+      setInstallments(newInstallments);
     }
   }, [installmentCount, paymentType, creditType]);
   
@@ -1097,9 +1097,14 @@ export function OrderForm() {
             </div>
 
             {/* Installments Table */}
-            {paymentType === 'credito' && installments.length > 0 && (
+            {paymentType === 'credito' && installments.length > 0 && finalDisplayTotals.total > 0 && (
               <div className="mt-6">
+                <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium mb-4">Detalle de Cuotas</h3>
+                  <div className="text-sm text-gray-500">
+                    {installments.length} cuota{installments.length !== 1 ? 's' : ''} de {formatCurrency(finalDisplayTotals.total)}
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
