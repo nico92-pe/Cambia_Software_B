@@ -567,6 +567,28 @@ export function OrderForm() {
                     Este vendedor no tiene clientes asignados
                   </p>
                 )}
+                {selectedClient && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-800">Cliente seleccionado:</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearClientSelection}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="mt-2">
+                      <p className="font-medium text-blue-900">{selectedClient.commercialName}</p>
+                      <p className="text-sm text-blue-700">{selectedClient.businessName}</p>
+                      <p className="text-sm text-blue-600">RUC: {selectedClient.ruc}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -771,143 +793,145 @@ export function OrderForm() {
               </div>
             )}
           </div>
-                {selectedClient && (
-                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-800">Cliente seleccionado:</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={clearClientSelection}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                    <div className="mt-2">
-                      <p className="font-medium text-blue-900">{selectedClient.commercialName}</p>
-                      <p className="text-sm text-blue-700">{selectedClient.businessName}</p>
-                      <p className="text-sm text-blue-600">RUC: {selectedClient.ruc}</p>
-                    </div>
-                  </div>
-                </div>
+        </div>
 
-                {paymentType === 'credito' && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">
-                        Tipo de Crédito
-                      </label>
-                      <select
-                        className="select"
-                        value={creditType}
-                        onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
-                      >
-                        <option value="factura">Factura</option>
-                        <option value="letras">Letras</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">
-                        Número de Cuotas
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="12"
-                        value={installmentCount}
-                        onChange={(e) => setInstallmentCount(parseInt(e.target.value) || 1)}
-                        className="input"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={generateInstallments}
-                        className="mt-2"
-                      >
-                        Generar Cuotas
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Installments Table */}
-              {paymentType === 'credito' && installments.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-medium mb-4">Detalle de Cuotas</h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Cuota
-                          </th>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Monto
-                          </th>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Fecha de Vencimiento
-                          </th>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Días
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {installments.map((installment, index) => (
-                          <tr key={index}>
-                            <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
-                              {installment.installmentNumber}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={installment.amount}
-                                onChange={(e) => updateInstallment(index, 'amount', parseFloat(e.target.value) || 0)}
-                                className="w-24 text-center border border-gray-300 rounded px-2 py-1"
-                              />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <input
-                                type="date"
-                                value={installment.dueDate}
-                                onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
-                                className="border border-gray-300 rounded px-2 py-1"
-                              />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <input
-                                type="number"
-                                value={installment.daysDue}
-                                onChange={(e) => updateInstallment(index, 'daysDue', parseInt(e.target.value) || 0)}
-                                className="w-20 text-center border border-gray-300 rounded px-2 py-1"
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
+        {/* Payment and Credit Information */}
+        <div className="card animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
+          <div className="card-header">
+            <h2 className="card-title text-xl">Información de Pago</h2>
+            <p className="card-description">
+              Configura el tipo de pago y condiciones de crédito
+            </p>
+          </div>
+          <div className="card-content">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm font-medium">
-                  Observaciones
+                  Tipo de Pago
                 </label>
-                <textarea
-                  rows={4}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="input resize-none"
-                  placeholder="Observaciones adicionales del pedido..."
-                />
+                <select
+                  className="select"
+                  value={paymentType}
+                  onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                >
+                  <option value="contado">Contado</option>
+                  <option value="credito">Crédito</option>
+                </select>
               </div>
+
+              {paymentType === 'credito' && (
+                <>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Tipo de Crédito
+                    </label>
+                    <select
+                      className="select"
+                      value={creditType}
+                      onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
+                    >
+                      <option value="factura">Factura</option>
+                      <option value="letras">Letras</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Número de Cuotas
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={installmentCount}
+                      onChange={(e) => setInstallmentCount(parseInt(e.target.value) || 1)}
+                      className="input"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={generateInstallments}
+                      className="mt-2"
+                    >
+                      Generar Cuotas
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Installments Table */}
+            {paymentType === 'credito' && installments.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-medium mb-4">Detalle de Cuotas</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Cuota
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Monto
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fecha de Vencimiento
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Días
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {installments.map((installment, index) => (
+                        <tr key={index}>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                            {installment.installmentNumber}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={installment.amount}
+                              onChange={(e) => updateInstallment(index, 'amount', parseFloat(e.target.value) || 0)}
+                              className="w-24 text-center border border-gray-300 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <input
+                              type="date"
+                              value={installment.dueDate}
+                              onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
+                              className="border border-gray-300 rounded px-2 py-1"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <input
+                              type="number"
+                              value={installment.daysDue}
+                              onChange={(e) => updateInstallment(index, 'daysDue', parseInt(e.target.value) || 0)}
+                              className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">
+                Observaciones
+              </label>
+              <textarea
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="input resize-none"
+                placeholder="Observaciones adicionales del pedido..."
+              />
             </div>
           </div>
         </div>
