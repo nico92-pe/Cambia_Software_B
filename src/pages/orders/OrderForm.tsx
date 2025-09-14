@@ -170,7 +170,6 @@ export function OrderForm() {
     
     loadData();
   }, [id, isEditMode, isCurrentUserSalesperson, user, getClients, getCategories, getUsersByRole, getOrderById, navigate]);
-  }, [id, isEditMode, isCurrentUserSalesperson, user?.id]); // Simplified dependencies
   
   // Helper functions
   const formatDateForInput = (date: Date): string => {
