@@ -1003,18 +1003,19 @@ export function OrderForm() {
                 </div>
               </div>
             )}
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">
-                Observaciones
-              </label>
-              <textarea
-                rows={4}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="input resize-none"
-                placeholder="Observaciones adicionales del pedido..."
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> 
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Observaciones
+                </label>
+                <textarea
+                  rows={4}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="input resize-none"
+                  placeholder="Observaciones adicionales del pedido..."
+                />
+              </div>
             </div>
           </div>
         </div>
