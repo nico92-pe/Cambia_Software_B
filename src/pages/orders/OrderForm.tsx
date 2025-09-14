@@ -1125,7 +1125,7 @@ export function OrderForm() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {installments.map((installment, index) => (
-                        <tr key={index}>
+                        <tr key={installment.installmentNumber}>
                           <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
                             {installment.installmentNumber}
                           </td>
