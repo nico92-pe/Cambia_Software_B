@@ -289,11 +289,10 @@ export function PublicProductCatalog() {
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-4">
             <img 
-              src="https://images.pexels.com/photos/1117452/pexels-photo-1117452.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" 
-              alt="Griferías Cambia" 
-              className="h-8 w-8 rounded-full mr-2"
+              src="/Logo Cambia - SVG.svg" 
+              alt="Cambia" 
+              className="h-8 w-auto mr-2"
             />
-            <h3 className="text-xl font-bold">Griferías Cambia</h3>
           </div>
           <p className="text-gray-400 mb-4">
             Especialistas en griferías y accesorios de calidad premium para tu hogar.
