@@ -210,7 +210,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         phone: userData.phone,
         birthday: userData.birthday,
         cargo: userData.cargo,
-      });
+      }, userData.email);
       
       console.log('User updated in Supabase:', profile);
       

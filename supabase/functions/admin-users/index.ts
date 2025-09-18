@@ -158,9 +158,20 @@ Deno.serve(async (req) => {
           throw new Error('User ID is required');
         }
 
-        const { profile_data } = await req.json();
+        const { profile_data, email } = await req.json();
         if (!profile_data) {
           throw new Error('Profile data is required');
+        }
+
+        // Update email in auth if provided
+        if (email) {
+          const { error: emailError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+            email: email,
+          });
+          
+          if (emailError) {
+            throw new Error(`Failed to update email: ${emailError.message}`);
+          }
         }
 
         // Update profile in database
