@@ -67,11 +67,10 @@ export function LandingPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <img 
-                src="https://images.pexels.com/photos/1117452/pexels-photo-1117452.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" 
-                alt="Griferías Cambia" 
-                className="h-10 w-10 rounded-full mr-3"
+                src="/Logo Cambia - SVG.svg" 
+                alt="Cambia" 
+                className="h-12 w-auto"
               />
-              <h1 className="text-2xl font-bold text-primary">Griferías Cambia</h1>
             </div>
             
             <nav className="hidden md:flex items-center space-x-8">
