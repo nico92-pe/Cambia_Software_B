@@ -218,17 +218,6 @@ export function PublicProductCatalog() {
                         <span className="text-sm text-gray-500">
                           {product.unitsPerBox} unidades/caja
                         </span>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            // For now, just scroll to top or show more info
-                            // In a real implementation, this could open a modal with more details
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                        >
-                          Ver Detalles
-                        </Button>
                       </div>
                     </div>
                   </div>
@@ -293,29 +282,6 @@ export function PublicProductCatalog() {
               )}
             </>
           )}
-        </div>
-
-        {/* Call to Action */}
-        <div className="mt-16 bg-primary text-white rounded-lg p-8 text-center animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
-          <h2 className="text-2xl font-bold mb-4">¿Interesado en nuestros productos?</h2>
-          <p className="text-lg mb-6 opacity-90">
-            Contáctanos para obtener información sobre precios y disponibilidad
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/login">
-              <Button variant="secondary" size="lg" className="text-lg px-8 py-4">
-                Iniciar Sesión
-              </Button>
-            </Link>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-primary"
-              onClick={() => window.location.href = 'tel:+51943830608'}
-            >
-              Llamar: 943 830 608
-            </Button>
-          </div>
         </div>
       </main>
 

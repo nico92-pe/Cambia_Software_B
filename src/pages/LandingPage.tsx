@@ -1,4 +1,5 @@
 import React from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Phone, 
@@ -17,8 +18,47 @@ import {
   Twitter
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useProductStore } from '../store/product-store';
+import { Loader } from '../components/ui/Loader';
 
 export function LandingPage() {
+  const { categories, getCategories, isLoading } = useProductStore();
+
+  useEffect(() => {
+    getCategories();
+  }, [getCategories]);
+
+  // Imágenes referenciales para las categorías
+  const categoryImages = {
+    'Griferías de Cocina': 'https://images.pexels.com/photos/1358912/pexels-photo-1358912.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop',
+    'Griferías de Baño': 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop',
+    'Accesorios': 'https://images.pexels.com/photos/1571453/pexels-photo-1571453.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop',
+    'Repuestos': 'https://images.pexels.com/photos/1358914/pexels-photo-1358914.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop',
+    'Válvulas': 'https://images.pexels.com/photos/1571461/pexels-photo-1571461.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop',
+    'Duchas': 'https://images.pexels.com/photos/1358912/pexels-photo-1358912.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'
+  };
+
+  // Función para obtener imagen por categoría
+  const getCategoryImage = (categoryName: string) => {
+    // Buscar coincidencia exacta primero
+    if (categoryImages[categoryName as keyof typeof categoryImages]) {
+      return categoryImages[categoryName as keyof typeof categoryImages];
+    }
+    
+    // Buscar coincidencia parcial
+    const matchingKey = Object.keys(categoryImages).find(key => 
+      categoryName.toLowerCase().includes(key.toLowerCase()) || 
+      key.toLowerCase().includes(categoryName.toLowerCase())
+    );
+    
+    if (matchingKey) {
+      return categoryImages[matchingKey as keyof typeof categoryImages];
+    }
+    
+    // Imagen por defecto
+    return 'https://images.pexels.com/photos/1358912/pexels-photo-1358912.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop';
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -159,50 +199,40 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                image: "https://images.pexels.com/photos/1358912/pexels-photo-1358912.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
-                title: "Griferías de Cocina",
-                description: "Griferías modernas y funcionales para tu cocina"
-              },
-              {
-                image: "https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
-                title: "Griferías de Baño",
-                description: "Elegantes griferías para lavatorio y ducha"
-              },
-              {
-                image: "https://images.pexels.com/photos/1571453/pexels-photo-1571453.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop",
-                title: "Accesorios de Baño",
-                description: "Complementos perfectos para tu baño"
-              }
-            ].map((product, index) => (
-              <div 
-                key={index}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow animate-in fade-in duration-500"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <img 
-                  src={product.image} 
-                  alt={product.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                    {product.title}
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {product.description}
-                  </p>
-                  <Link to="/catalog">
-                    <Button variant="outline" className="w-full">
-                      Ver Más
-                    </Button>
-                  </Link>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader size="lg" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {categories.slice(0, 3).map((category, index) => (
+                <div 
+                  key={category.id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow animate-in fade-in duration-500"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <img 
+                    src={getCategoryImage(category.name)} 
+                    alt={category.name}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                      {category.name}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Descubre nuestra selección de {category.name.toLowerCase()} de alta calidad
+                    </p>
+                    <Link to="/catalog">
+                      <Button variant="outline" className="w-full">
+                        Ver Más
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
