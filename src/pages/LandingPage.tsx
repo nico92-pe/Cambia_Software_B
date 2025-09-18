@@ -68,10 +68,12 @@ export function LandingPage() {
                 Más de 15 años brindando soluciones de calidad para tu hogar y negocio.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="text-lg px-8 py-4">
-                  Ver Catálogo
-                  <ChevronRight className="ml-2 h-5 w-5" />
-                </Button>
+                <Link to="/catalog">
+                  <Button size="lg" className="text-lg px-8 py-4">
+                    Ver Catálogo
+                    <ChevronRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
                 <Button variant="outline" size="lg" className="text-lg px-8 py-4">
                   <Phone className="mr-2 h-5 w-5" />
                   Contactar Ahora
@@ -192,9 +194,11 @@ export function LandingPage() {
                   <p className="text-gray-600 mb-4">
                     {product.description}
                   </p>
-                  <Button variant="outline" className="w-full">
-                    Ver Más
-                  </Button>
+                  <Link to="/catalog">
+                    <Button variant="outline" className="w-full">
+                      Ver Más
+                    </Button>
+                  </Link>
                 </div>
               </div>
             ))}
@@ -279,6 +283,14 @@ export function LandingPage() {
                 en el sector, ofreciendo productos innovadores y un servicio excepcional 
                 a nuestros clientes en todo el Perú.
               </p>
+              <div className="mb-8">
+                <Link to="/catalog">
+                  <Button variant="secondary" size="lg" className="text-lg px-8 py-4">
+                    Explorar Catálogo
+                    <ChevronRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
               <div className="grid grid-cols-2 gap-6">
                 <div className="text-center">
                   <div className="text-3xl font-bold mb-2">15+</div>

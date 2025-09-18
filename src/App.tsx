@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthLayout } from './components/layout/AuthLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { LandingPage } from './pages/LandingPage';
+import { PublicProductCatalog } from './pages/PublicProductCatalog';
 import { Login } from './pages/Login';
 import { ResetPassword } from './pages/ResetPassword';
 import { Dashboard } from './pages/Dashboard';
@@ -34,6 +35,9 @@ function App() {
     <Routes>
       {/* Landing page */}
       <Route path="/" element={<LandingPage />} />
+      
+      {/* Public catalog */}
+      <Route path="/catalog" element={<PublicProductCatalog />} />
       
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
