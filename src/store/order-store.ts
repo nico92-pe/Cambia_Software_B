@@ -54,10 +54,38 @@ const mapOrderItemToDbFormat = (item: Partial<OrderItem>) => ({
   subtotal: item.subtotal,
 });
 
+// Sales dashboard data types
+export interface SalesStats {
+  totalSales: number;
+  totalOrders: number;
+  salesByStatus: Array<{
+    status: string;
+    statusLabel: string;
+    count: number;
+    total: number;
+  }>;
+  salesBySalesperson: Array<{
+    salespersonId: string;
+    salespersonName: string;
+    count: number;
+    total: number;
+  }>;
+  salesByMonth: Array<{
+    month: string;
+    monthLabel: string;
+    total: number;
+    count: number;
+    byStatus: Record<string, number>;
+    bySalesperson: Record<string, number>;
+  }>;
+}
+
 interface OrderState {
   orders: Order[];
   totalOrders: number;
   currentOrder: Order | null;
+  salesDashboardData: Order[];
+  salesStats: SalesStats | null;
   isLoading: boolean;
   error: string | null;
   
@@ -88,12 +116,17 @@ interface OrderState {
     dueDate: string;
     daysDue: number;
   }>) => Promise<void>;
+  
+  // Dashboard operations
+  getSalesDashboardData: (year: number, month?: number) => Promise<void>;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
   totalOrders: 0,
   currentOrder: null,
+  salesDashboardData: [],
+  salesStats: null,
   isLoading: false,
   error: null,
 
@@ -676,4 +709,234 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       throw error;
     }
   },
+  
+  getSalesDashboardData: async (year, month) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Get current user to apply role-based filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+      
+      // Get user profile to check role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (profileError) throw profileError;
+      
+      // Build date range for filtering
+      let startDate: Date;
+      let endDate: Date;
+      
+      if (month) {
+        // Filter by specific month
+        startDate = new Date(year, month - 1, 1);
+        endDate = new Date(year, month, 0, 23, 59, 59);
+      } else {
+        // Filter by entire year
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 11, 31, 23, 59, 59);
+      }
+      
+      // Build the query
+      let query = supabase
+        .from('orders')
+        .select(`
+          id,
+          status,
+          total,
+          created_at,
+          salesperson_id,
+          client:clients(
+            id,
+            business_name,
+            commercial_name
+          ),
+          salesperson:profiles!orders_salesperson_id_fkey(
+            id,
+            full_name
+          )
+        `)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .order('created_at', { ascending: true });
+      
+      // Apply role-based filtering
+      if (profile.role === 'asesor_ventas') {
+        query = query.eq('salesperson_id', user.id);
+      }
+      
+      const { data: ordersData, error: ordersError } = await query;
+      
+      if (ordersError) throw ordersError;
+      
+      // Map the data to Order objects
+      const orders: Order[] = (ordersData || []).map(row => {
+        const order = mapDbRowToOrder(row);
+        
+        // Map client data
+        if (row.client) {
+          order.client = {
+            id: row.client.id,
+            ruc: '',
+            businessName: row.client.business_name || '',
+            commercialName: row.client.commercial_name || '',
+            contactName: '',
+            contactPhone: '',
+            address: '',
+            district: '',
+            province: '',
+            salespersonId: '',
+            createdAt: '',
+            updatedAt: '',
+          };
+        }
+        
+        // Map salesperson
+        if (row.salesperson) {
+          order.salesperson = {
+            id: row.salesperson.id,
+            fullName: row.salesperson.full_name,
+            email: '',
+            phone: '',
+            birthday: '',
+            cargo: '',
+            role: 'asesor_ventas',
+          };
+        }
+        
+        return order;
+      });
+      
+      // Process data for dashboard statistics
+      const salesStats = processOrdersForDashboard(orders);
+      
+      set({ 
+        salesDashboardData: orders,
+        salesStats,
+        isLoading: false 
+      });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al cargar datos del dashboard'
+      });
+    }
+  },
 }));
+// Helper function to process orders data for dashboard
+function processOrdersForDashboard(orders: Order[]): SalesStats {
+  const statusLabels = {
+    borrador: 'Borrador',
+    tomado: 'Tomado',
+    confirmado: 'Confirmado',
+    en_preparacion: 'En Preparación',
+    despachado: 'Despachado',
+  };
+  
+  const monthLabels = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  
+  // Calculate total sales and orders
+  const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalOrders = orders.length;
+  
+  // Group by status
+  const statusGroups = orders.reduce((acc, order) => {
+    if (!acc[order.status]) {
+      acc[order.status] = { count: 0, total: 0 };
+    }
+    acc[order.status].count++;
+    acc[order.status].total += order.total;
+    return acc;
+  }, {} as Record<string, { count: number; total: number }>);
+  
+  const salesByStatus = Object.entries(statusGroups).map(([status, data]) => ({
+    status,
+    statusLabel: statusLabels[status as keyof typeof statusLabels] || status,
+    count: data.count,
+    total: data.total,
+  }));
+  
+  // Group by salesperson
+  const salespersonGroups = orders.reduce((acc, order) => {
+    const salespersonId = order.salespersonId;
+    const salespersonName = order.salesperson?.fullName || 'Sin vendedor';
+    
+    if (!acc[salespersonId]) {
+      acc[salespersonId] = { 
+        salespersonName,
+        count: 0, 
+        total: 0 
+      };
+    }
+    acc[salespersonId].count++;
+    acc[salespersonId].total += order.total;
+    return acc;
+  }, {} as Record<string, { salespersonName: string; count: number; total: number }>);
+  
+  const salesBySalesperson = Object.entries(salespersonGroups).map(([salespersonId, data]) => ({
+    salespersonId,
+    salespersonName: data.salespersonName,
+    count: data.count,
+    total: data.total,
+  }));
+  
+  // Group by month
+  const monthGroups = orders.reduce((acc, order) => {
+    const orderDate = new Date(order.createdAt);
+    const monthKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
+    const monthLabel = monthLabels[orderDate.getMonth()];
+    
+    if (!acc[monthKey]) {
+      acc[monthKey] = {
+        month: monthKey,
+        monthLabel,
+        total: 0,
+        count: 0,
+        byStatus: {},
+        bySalesperson: {},
+      };
+    }
+    
+    acc[monthKey].total += order.total;
+    acc[monthKey].count++;
+    
+    // Group by status within month
+    if (!acc[monthKey].byStatus[order.status]) {
+      acc[monthKey].byStatus[order.status] = 0;
+    }
+    acc[monthKey].byStatus[order.status] += order.total;
+    
+    // Group by salesperson within month
+    const salespersonName = order.salesperson?.fullName || 'Sin vendedor';
+    if (!acc[monthKey].bySalesperson[salespersonName]) {
+      acc[monthKey].bySalesperson[salespersonName] = 0;
+    }
+    acc[monthKey].bySalesperson[salespersonName] += order.total;
+    
+    return acc;
+  }, {} as Record<string, {
+    month: string;
+    monthLabel: string;
+    total: number;
+    count: number;
+    byStatus: Record<string, number>;
+    bySalesperson: Record<string, number>;
+  }>);
+  
+  const salesByMonth = Object.values(monthGroups).sort((a, b) => a.month.localeCompare(b.month));
+  
+  return {
+    totalSales,
+    totalOrders,
+    salesByStatus,
+    salesBySalesperson,
+    salesByMonth,
+  };
+}
