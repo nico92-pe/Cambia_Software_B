@@ -1125,15 +1125,15 @@ export function OrderForm() {
                               <input
                                 type="number"
                                 min="0"
-                               value={installment.daysDue === 0 ? '' : installment.daysDue}
-                               onChange={(e) => {
-                                 const value = e.target.value;
-                                 if (value === '') {
-                                   // Keep empty state, don't update until user enters a value
-                                   return;
-                                 }
-                                 updateInstallment(index, 'daysDue', value);
-                               }}
+                                value={installment.daysDue === 0 ? '' : installment.daysDue}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === '') {
+                                    updateInstallment(index, 'daysDue', 0);
+                                  } else {
+                                    updateInstallment(index, 'daysDue', parseInt(value) || 0);
+                                  }
+                                }}
                                 className="w-20 text-center border border-gray-300 rounded px-2 py-1"
                               />
                             )}
