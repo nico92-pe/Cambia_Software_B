@@ -632,7 +632,7 @@ export default function OrderList() {
                             variant="ghost"
                             size="sm"
                             icon={<Download size={16} />}
-                            onClick={() => handleDownloadOrder(order)}
+                            onClick={() => handleDownloadOrder(order.id)}
                             loading={downloadingOrder === order.id}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 hidden sm:inline-flex"
                             title="Descargar como imagen"
@@ -641,7 +641,7 @@ export default function OrderList() {
                             variant="ghost"
                             size="sm"
                             icon={<Share size={16} />}
-                            onClick={() => handleShareOrder(order)}
+                            onClick={() => handleShareOrder(order.id)}
                             loading={sharingOrder === order.id}
                             className="text-green-600 hover:text-green-700 hover:bg-green-50 hidden sm:inline-flex"
                             title="Compartir"
