@@ -442,15 +442,14 @@ export function OrderForm() {
   
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
-    if (!installmentStartDate) return;
-    
     const updatedInstallments = [...installments];
+    const baseDate = installmentStartDate || new Date();
     
     if (field === 'dueDate') {
       // When date changes, recalculate days
       const [year, month, day] = value.split('-').map(Number);
       const newDate = new Date(year, month - 1, day);
-      const startDate = new Date(installmentStartDate);
+      const startDate = new Date(baseDate);
       
       // Normalize both dates to midnight UTC for accurate day calculation
       const normalizedNewDate = new Date(newDate);
@@ -469,7 +468,7 @@ export function OrderForm() {
     } else if (field === 'daysDue') {
       // When days change, recalculate date
       const newDays = parseInt(value) || 0;
-      const newDate = new Date();
+      const newDate = new Date(baseDate);
       newDate.setDate(newDate.getDate() + newDays);
       
       updatedInstallments[index] = {
