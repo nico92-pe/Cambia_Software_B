@@ -121,7 +121,7 @@ export function Dashboard() {
           <div>
             <p className="text-sm font-medium text-gray-600">Ventas Totales</p>
             <p className="text-3xl font-bold text-green-600 mt-2">
-              {formatCurrency(salesStats?.totalSales || 0)}
+              S/ {(salesStats?.totalSales || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
@@ -139,7 +139,7 @@ export function Dashboard() {
           <div>
             <p className="text-sm font-medium text-gray-600">Promedio por Pedido</p>
             <p className="text-3xl font-bold text-purple-600 mt-2">
-              {formatCurrency(salesStats?.totalOrders ? (salesStats.totalSales / salesStats.totalOrders) : 0)}
+              S/ {salesStats?.totalOrders ? ((salesStats.totalSales / salesStats.totalOrders)).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
             </p>
           </div>
         </div>
