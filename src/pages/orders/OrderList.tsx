@@ -31,7 +31,7 @@ const statusLabels = {
 };
 
 export default function OrderList() {
-  const { orders, totalOrders, isLoading, error, getOrders, deleteOrder, updateOrderStatus } = useOrderStore();
+  const { orders, totalOrders, isLoading, error, getOrders, getOrderById, deleteOrder, updateOrderStatus } = useOrderStore();
   const { user } = useAuthStore();
   const { getUsersByRole } = useUserStore();
   const { downloadOrderAsImage, shareOrderAsImage } = useOrderImageDownload();
