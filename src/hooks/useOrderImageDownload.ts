@@ -5,12 +5,23 @@ import { Order } from '../lib/types';
 export function useOrderImageDownload() {
   const downloadOrderAsImage = useCallback(async (order: Order) => {
     try {
+      // Ensure the order has all necessary data loaded
+      console.log('Order data for download:', {
+        id: order.id,
+        itemsCount: order.items?.length || 0,
+        installmentsCount: order.installmentDetails?.length || 0,
+        paymentType: order.paymentType
+      });
+      
       // Get the order template element
       const element = document.getElementById(`order-template-${order.id}`);
       
       if (!element) {
         throw new Error('Order template not found');
       }
+
+      // Wait a bit for the DOM to be fully rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Configure html2canvas options for better quality
       const canvas = await html2canvas(element, {
@@ -19,9 +30,18 @@ export function useOrderImageDownload() {
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: 800,
-        height: element.scrollHeight,
+        height: Math.max(600, element.scrollHeight),
         scrollX: 0,
         scrollY: 0,
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Ensure all styles are applied in the cloned document
+          const clonedElement = clonedDoc.getElementById(`order-template-${order.id}`);
+          if (clonedElement) {
+            clonedElement.style.display = 'block';
+            clonedElement.style.visibility = 'visible';
+          }
+        }
       });
 
       // Create download link
@@ -43,11 +63,21 @@ export function useOrderImageDownload() {
 
   const shareOrderAsImage = useCallback(async (order: Order) => {
     try {
+      console.log('Order data for sharing:', {
+        id: order.id,
+        itemsCount: order.items?.length || 0,
+        installmentsCount: order.installmentDetails?.length || 0,
+        paymentType: order.paymentType
+      });
+      
       const element = document.getElementById(`order-template-${order.id}`);
       
       if (!element) {
         throw new Error('Order template not found');
       }
+
+      // Wait a bit for the DOM to be fully rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -55,9 +85,18 @@ export function useOrderImageDownload() {
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: 800,
-        height: element.scrollHeight,
+        height: Math.max(600, element.scrollHeight),
         scrollX: 0,
         scrollY: 0,
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Ensure all styles are applied in the cloned document
+          const clonedElement = clonedDoc.getElementById(`order-template-${order.id}`);
+          if (clonedElement) {
+            clonedElement.style.display = 'block';
+            clonedElement.style.visibility = 'visible';
+          }
+        }
       });
 
       // Convert canvas to blob

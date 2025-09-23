@@ -103,28 +103,34 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
         <h3 className="text-lg font-bold text-gray-800 mb-3 border-b border-gray-300 pb-1">
           PRODUCTOS
         </h3>
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Código</th>
-              <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Producto</th>
-              <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Cant.</th>
-              <th className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">P. Unit.</th>
-              <th className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items?.map((item, index) => (
-              <tr key={index}>
-                <td className="border border-gray-300 px-3 py-2 text-sm">{item.product?.code || 'N/A'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-sm">{item.product?.name || 'Producto no disponible'}</td>
-                <td className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">{item.quantity}</td>
-                <td className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">{formatCurrency(item.unitPrice)}</td>
-                <td className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">{formatCurrency(item.subtotal)}</td>
+        {order.items && order.items.length > 0 ? (
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Código</th>
+                <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Producto</th>
+                <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Cant.</th>
+                <th className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">P. Unit.</th>
+                <th className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">Subtotal</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {order.items.map((item, index) => (
+                <tr key={index}>
+                  <td className="border border-gray-300 px-3 py-2 text-sm">{item.product?.code || 'N/A'}</td>
+                  <td className="border border-gray-300 px-3 py-2 text-sm">{item.product?.name || 'Producto no disponible'}</td>
+                  <td className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">{item.quantity}</td>
+                  <td className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">{formatCurrency(item.unitPrice)}</td>
+                  <td className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">{formatCurrency(item.subtotal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="border border-gray-300 p-4 text-center text-gray-500">
+            No hay productos en este pedido
+          </div>
+        )}
       </div>
 
       {/* Totals */}
@@ -174,10 +180,6 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
 
       {/* Installments Details - Only for credit orders */}
       
-{console.log('Order Payment Type:', order.paymentType)}
-{console.log('Order Installment Details:', order.installmentDetails)}
-{console.log('Order Installment Details Length:', order.installmentDetails?.length)}
-
       {order.paymentType === 'credito' && order.installmentDetails && order.installmentDetails.length > 0 && (
         <div className="mb-6">
           <h3 className="text-lg font-bold text-gray-800 mb-3 border-b border-gray-300 pb-1">
