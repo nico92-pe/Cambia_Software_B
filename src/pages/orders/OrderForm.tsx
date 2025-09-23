@@ -477,25 +477,16 @@ export function OrderForm() {
     const updatedInstallments = [...installments];
     const baseDate = installmentStartDate!; // We ensure this is always set
     
-    if (field === 'dueDate') {
-      // When date changes, recalculate days
-      const [year, month, day] = value.split('-').map(Number);
-      const newDate = new Date(year, month - 1, day);
-      const startDate = new Date(baseDate);
-      
-      // Normalize both dates to midnight UTC for accurate day calculation
-      const normalizedNewDate = new Date(newDate);
-      normalizedNewDate.setUTCHours(0, 0, 0, 0);
-      const normalizedStartDate = new Date(startDate);
-      normalizedStartDate.setUTCHours(0, 0, 0, 0);
-      
-      const timeDiff = normalizedNewDate.getTime() - normalizedStartDate.getTime();
-      const daysDiff = Math.round(timeDiff / (1000 * 3600 * 24));
+    if (field === 'daysDue') {
+      // When days change, recalculate date
+      const days = Math.max(0, parseInt(value) || 0);
+      const newDate = new Date(baseDate);
+      newDate.setDate(newDate.getDate() + days);
       
       updatedInstallments[index] = {
         ...updatedInstallments[index],
-        dueDate: value,
-        daysDue: Math.max(0, daysDiff), // Ensure non-negative days
+        daysDue: days,
+        dueDate: formatDateForInput(newDate),
       };
     }
     
@@ -1107,7 +1098,7 @@ export function OrderForm() {
                           Fecha de Vencimiento
                         </th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Días (calculado)
+                          Días
                         </th>
                       </tr>
                     </thead>
@@ -1123,26 +1114,21 @@ export function OrderForm() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            {isReadOnly ? (
-                              <span className="font-medium text-gray-900">
-                                {formatDateForDisplay(installment.dueDate)}
-                              </span>
-                            ) : (
-                              <input
-                                type="date"
-                                value={installment.dueDate}
-                                onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
-                                className="text-center border border-gray-300 rounded px-2 py-1"
-                              />
-                            )}
+                            <span className="font-medium text-gray-900">
+                              {formatDateForDisplay(installment.dueDate)}
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             {isReadOnly ? (
                               <span className="font-medium text-gray-600">{installment.daysDue} días</span>
                             ) : (
-                              <span className="font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded">
-                                {installment.daysDue} días
-                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={installment.daysDue}
+                                onChange={(e) => updateInstallment(index, 'daysDue', e.target.value)}
+                                className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                              />
                             )}
                           </td>
                         </tr>
