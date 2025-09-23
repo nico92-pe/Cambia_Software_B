@@ -80,6 +80,23 @@ export function OrderForm() {
   // Order items
   const [items, setItems] = useState<OrderFormItem[]>([]);
   
+  // Determine if the order is read-only
+  const isReadOnly = useMemo(() => {
+    if (!isEditMode || !order || !user?.role) return false;
+    
+    // For admin and super_admin, only allow editing if status is borrador or tomado
+    if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
+      return !['borrador', 'tomado'].includes(order.status);
+    }
+    
+    // For asesor_ventas, only allow editing if status is borrador or tomado
+    if (user.role === UserRole.ASESOR_VENTAS) {
+      return !['borrador', 'tomado'].includes(order.status);
+    }
+    
+    return false;
+  }, [isEditMode, order, user?.role]);
+  
   // Use effect to load data
   useEffect(() => {
     // Prevent multiple loads
@@ -617,6 +634,13 @@ export function OrderForm() {
           <p className="text-muted-foreground mt-1">
             {isEditMode ? 'Actualiza la información del pedido' : 'Crea un nuevo pedido para un cliente'}
           </p>
+          {isReadOnly && (
+            <div className="mt-2">
+              <Badge variant="warning" className="text-sm">
+                Solo lectura - Este pedido no puede ser modificado en su estado actual
+              </Badge>
+            </div>
+          )}
         </div>
         <Button
           variant="outline"
@@ -661,6 +685,7 @@ export function OrderForm() {
                     className="select"
                     value={selectedSalesperson}
                     onChange={(e) => setSelectedSalesperson(e.target.value)}
+                    disabled={isReadOnly}
                   >
                     <option value="">Seleccionar vendedor</option>
                     {salespeople.map((salesperson) => (
@@ -688,12 +713,13 @@ export function OrderForm() {
                       value={clientSearchTerm}
                       onChange={(e) => handleClientSearchChange(e.target.value)}
                       onFocus={() => setShowClientSearchResults(true)}
-                      disabled={!selectedSalesperson}
+                      disabled={!selectedSalesperson || isReadOnly}
                     />
                     {selectedClient && (
                       <button
                         type="button"
                         onClick={clearClientSelection}
+                        disabled={isReadOnly}
                         className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                       >
                         <X size={18} />
@@ -744,13 +770,15 @@ export function OrderForm() {
                         <User className="h-4 w-4 text-blue-600" />
                         <span className="text-sm font-medium text-blue-800">Cliente seleccionado:</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={clearClientSelection}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <X size={16} />
-                      </button>
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          onClick={clearClientSelection}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
                     </div>
                     <div className="mt-2">
                       <p className="font-medium text-blue-900">{selectedClient.commercialName}</p>
@@ -774,12 +802,14 @@ export function OrderForm() {
                   Agrega productos a este pedido
                 </p>
               </div>
-              <Button
-                icon={<Plus size={18} />}
-                onClick={() => setShowProductSearch(true)}
-              >
-                Agregar Producto
-              </Button>
+              {!isReadOnly && (
+                <Button
+                  icon={<Plus size={18} />}
+                  onClick={() => setShowProductSearch(true)}
+                >
+                  Agregar Producto
+                </Button>
+              )}
             </div>
           </div>
           <div className="card-content">
@@ -886,9 +916,11 @@ export function OrderForm() {
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Subtotal
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Acciones
-                      </th>
+                      {!isReadOnly && (
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -904,50 +936,60 @@ export function OrderForm() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <input
-                            type="number"
-                            min="0"
-                            value={item.quantity === 0 ? '' : item.quantity}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '') {
-                                updateItemQuantity(item.productId, 0);
-                              } else {
-                                updateItemQuantity(item.productId, parseInt(value) || 0);
-                              }
-                            }}
-                            className="w-20 text-center border border-gray-300 rounded px-2 py-1"
-                          />
+                          {isReadOnly ? (
+                            <span className="font-medium">{item.quantity}</span>
+                          ) : (
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.quantity === 0 ? '' : item.quantity}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '') {
+                                  updateItemQuantity(item.productId, 0);
+                                } else {
+                                  updateItemQuantity(item.productId, parseInt(value) || 0);
+                                }
+                              }}
+                              className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                            />
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={item.unitPrice === 0 ? '' : item.unitPrice}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '') {
-                                updateItemPrice(item.productId, 0);
-                              } else {
-                                updateItemPrice(item.productId, parseFloat(value) || 0);
-                              }
-                            }}
-                            className="w-24 text-center border border-gray-300 rounded px-2 py-1"
-                          />
+                          {isReadOnly ? (
+                            <span className="font-medium">{formatCurrency(item.unitPrice)}</span>
+                          ) : (
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.unitPrice === 0 ? '' : item.unitPrice}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '') {
+                                  updateItemPrice(item.productId, 0);
+                                } else {
+                                  updateItemPrice(item.productId, parseFloat(value) || 0);
+                                }
+                              }}
+                              className="w-24 text-center border border-gray-300 rounded px-2 py-1"
+                            />
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
                           {formatCurrency(item.subtotal)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={<Trash2 size={16} />}
-                            onClick={() => removeItem(item.productId)}
-                            className="text-red-600 hover:text-red-700"
-                          />
-                        </td>
+                        {!isReadOnly && (
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Trash2 size={16} />}
+                              onClick={() => removeItem(item.productId)}
+                              className="text-red-600 hover:text-red-700"
+                            />
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -997,6 +1039,7 @@ export function OrderForm() {
                   className="select"
                   value={paymentType}
                   onChange={(e) => setPaymentType(e.target.value as 'contado' | 'credito')}
+                  disabled={isReadOnly}
                 >
                   <option value="contado">Contado</option>
                   <option value="credito">Crédito</option>
@@ -1013,6 +1056,7 @@ export function OrderForm() {
                       className="select"
                       value={creditType}
                       onChange={(e) => setCreditType(e.target.value as 'factura' | 'letras')}
+                      disabled={isReadOnly}
                     >
                       <option value="factura">Factura</option>
                       <option value="letras">Letras</option>
@@ -1030,22 +1074,26 @@ export function OrderForm() {
                         readOnly
                         className="input text-center w-16 bg-gray-50"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setInstallmentCount(Math.max(1, installmentCount - 1))}
-                        disabled={installmentCount <= 1}
-                        className="flex items-center justify-center w-8 h-8 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        -1
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setInstallmentCount(Math.min(12, installmentCount + 1))}
-                        disabled={installmentCount >= 12}
-                        className="flex items-center justify-center w-8 h-8 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        +1
-                      </button>
+                      {!isReadOnly && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setInstallmentCount(Math.max(1, installmentCount - 1))}
+                            disabled={installmentCount <= 1}
+                            className="flex items-center justify-center w-8 h-8 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            -1
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setInstallmentCount(Math.min(12, installmentCount + 1))}
+                            disabled={installmentCount >= 12}
+                            className="flex items-center justify-center w-8 h-8 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            +1
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </>
@@ -1093,12 +1141,16 @@ export function OrderForm() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <input
-                              type="number"
-                             value={installment.daysDue === 0 ? '' : installment.daysDue}
-                              onChange={(e) => updateInstallment(index, 'daysDue', parseInt(e.target.value) || 0)}
-                              className="w-20 text-center border border-gray-300 rounded px-2 py-1"
-                            />
+                            {isReadOnly ? (
+                              <span className="font-medium">{installment.daysDue} días</span>
+                            ) : (
+                              <input
+                                type="number"
+                               value={installment.daysDue === 0 ? '' : installment.daysDue}
+                                onChange={(e) => updateInstallment(index, 'daysDue', parseInt(e.target.value) || 0)}
+                                className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                              />
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -1117,6 +1169,7 @@ export function OrderForm() {
                   onChange={(e) => setNotes(e.target.value)}
                   className="input resize-none"
                   placeholder="Observaciones adicionales del pedido..."
+                  disabled={isReadOnly}
                 />
               </div>
           </div>
@@ -1130,13 +1183,15 @@ export function OrderForm() {
           >
             Cancelar
           </Button>
-          <Button
-            icon={<Save size={18} />}
-            onClick={handleSubmit}
-            loading={isLoading}
-          >
-            {isEditMode ? 'Actualizar Pedido' : 'Crear Pedido'}
-          </Button>
+          {!isReadOnly && (
+            <Button
+              icon={<Save size={18} />}
+              onClick={handleSubmit}
+              loading={isLoading}
+            >
+              {isEditMode ? 'Actualizar Pedido' : 'Crear Pedido'}
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -163,6 +163,23 @@ export default function OrderList() {
 
   const isAsesorVentas = useMemo(() => user?.role === 'asesor_ventas', [user?.role]);
 
+  // Helper function to determine if an order can be edited
+  const canEditOrder = (order: any) => {
+    if (!user?.role) return false;
+    
+    // Asesor de ventas can only edit borrador and tomado
+    if (user.role === UserRole.ASESOR_VENTAS) {
+      return ['borrador', 'tomado'].includes(order.status);
+    }
+    
+    // Admin and super_admin can only edit borrador and tomado
+    if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
+      return ['borrador', 'tomado'].includes(order.status);
+    }
+    
+    return false;
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -364,12 +381,11 @@ export default function OrderList() {
                       </div>
                     </div>
                     <div className="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-100">
-                      {canCreateOrder && (!isAsesorVentas || ['borrador', 'tomado'].includes(order.status)) && (
+                      {canEditOrder(order) ? (
                         <Link to={`/orders/edit/${order.id}`}>
                           <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
                         </Link>
-                      )}
-                      {(!canCreateOrder || (isAsesorVentas && !['borrador', 'tomado'].includes(order.status))) && (
+                      ) : (
                         <Link to={`/orders/detail/${order.id}`}>
                           <Button variant="ghost" size="sm" icon={<Eye size={16} />} />
                         </Link>
@@ -509,7 +525,7 @@ export default function OrderList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        {canCreateOrder && (!isAsesorVentas || ['borrador', 'tomado'].includes(order.status)) ? (
+                        {canEditOrder(order) ? (
                           <>
                             <Link to={`/orders/edit/${order.id}`}>
                               <Button variant="ghost" size="sm" icon={<Edit size={16} />} />
