@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Filter, AlertTriangle, Download, Share } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Filter, AlertTriangle, Download, Share, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useAuthStore } from '../../store/auth-store';
 import { OrderImageTemplate } from '../../components/orders/OrderImageTemplate';
@@ -30,13 +30,21 @@ const statusLabels = {
 };
 
 export default function OrderList() {
-  const { orders, isLoading, error, getOrders, deleteOrder, updateOrderStatus } = useOrderStore();
+  const { orders, totalOrders, isLoading, error, getOrders, deleteOrder, updateOrderStatus } = useOrderStore();
   const { user } = useAuthStore();
   const { downloadOrderAsImage, shareOrderAsImage } = useOrderImageDownload();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [monthFilter, setMonthFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const ORDERS_PER_PAGE = 10;
+  
+  // Calculate pagination values
+  const totalPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ORDERS_PER_PAGE + 1;
+  const endIndex = Math.min(currentPage * ORDERS_PER_PAGE, totalOrders);
   
   // Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -51,9 +59,10 @@ export default function OrderList() {
   const [sharingOrder, setSharingOrder] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
+  // Load orders when filters or page change
   useEffect(() => {
-    getOrders();
-  }, [getOrders]);
+    getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter);
+  }, [getOrders, currentPage, searchTerm, statusFilter, monthFilter, yearFilter]);
 
   // Set current month/year as default filters
   useEffect(() => {
@@ -63,6 +72,29 @@ export default function OrderList() {
     setMonthFilter(currentMonth);
     setYearFilter(currentYear);
   }, []);
+  
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, monthFilter, yearFilter]);
+  
+  // Pagination functions
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
+  
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
 
   const handleDeleteClick = (orderId: string) => {
     setOrderToDelete(orderId);
@@ -75,6 +107,8 @@ export default function OrderList() {
     try {
       setDeleteLoading(true);
       await deleteOrder(orderToDelete);
+      // Reload current page after deletion
+      await getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter);
       setShowDeleteModal(false);
       setOrderToDelete(null);
     } catch (error) {
@@ -88,6 +122,8 @@ export default function OrderList() {
     try {
       setUpdatingStatus(orderId);
       await updateOrderStatus(orderId, newStatus);
+      // Reload current page after status update
+      await getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter);
     } catch (error) {
       // Error handled by store
     } finally {
@@ -119,25 +155,8 @@ export default function OrderList() {
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.client?.commercialName?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    
-    const matchesDate = (monthFilter === 'all' && yearFilter === '') || (() => {
-      const orderDate = new Date(order.createdAt);
-      const orderMonth = String(orderDate.getMonth() + 1);
-      const orderYear = String(orderDate.getFullYear());
-      
-      const matchesMonth = monthFilter === 'all' || orderMonth === monthFilter;
-      const matchesYear = yearFilter === '' || orderYear === yearFilter;
-      
-      return matchesMonth && matchesYear;
-    })();
-    
-    return matchesSearch && matchesStatus && matchesDate;
-  }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); // Oldest to newest
+  // Orders are now pre-filtered and paginated from the server
+  const displayOrders = orders;
 
   const canCreateOrder = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
   const canManageOrders = user?.role && ['super_admin', 'admin', 'asesor_ventas'].includes(user.role);
@@ -256,11 +275,20 @@ export default function OrderList() {
 
       {/* Orders Table */}
       <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
+        {/* Results Info */}
+        {totalOrders > 0 && (
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <p className="text-sm text-gray-600">
+              Mostrando {startIndex} a {endIndex} de {totalOrders} pedidos
+            </p>
+          </div>
+        )}
+        
         <div className="overflow-x-auto -mx-4 sm:mx-0">
           {/* Mobile Card View */}
           <div className="block sm:hidden">
             <div className="space-y-4 p-4">
-              {filteredOrders.length === 0 ? (
+              {displayOrders.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="mx-auto h-12 w-12 text-muted-foreground opacity-30">📋</div>
                   <h3 className="mt-4 text-lg font-medium">No se encontraron pedidos</h3>
@@ -276,11 +304,11 @@ export default function OrderList() {
                   )}
                 </div>
               ) : (
-                filteredOrders.map((order, index) => (
+                displayOrders.map((order, index) => (
                   <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                     <div className="mb-3">
                       <h3 className="font-medium text-gray-900">
-                        Pedido #{index + 1}
+                        Pedido #{startIndex + index}
                       </h3>
                     </div>
                     <div className="space-y-2 text-sm">
@@ -411,7 +439,7 @@ export default function OrderList() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
-              {filteredOrders.length === 0 ? (
+              {displayOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                     {searchTerm || statusFilter !== 'all' || monthFilter !== 'all' || yearFilter !== ''
@@ -421,11 +449,11 @@ export default function OrderList() {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order, index) => (
+                displayOrders.map((order, index) => (
                   <tr key={order.id} className="hover:bg-muted/30">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {index + 1}
+                        {startIndex + index}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -531,6 +559,63 @@ export default function OrderList() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {totalOrders > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <div className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                icon={<ChevronLeft size={16} />}
+              >
+                Anterior
+              </Button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNumber)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                icon={<ChevronRight size={16} />}
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -571,7 +656,7 @@ export default function OrderList() {
 
       {/* Hidden Order Templates for Image Generation */}
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        {filteredOrders.map((order) => (
+        {displayOrders.map((order) => (
           <OrderImageTemplate key={order.id} order={order} />
         ))}
       </div>

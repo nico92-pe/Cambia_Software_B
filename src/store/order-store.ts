@@ -56,12 +56,13 @@ const mapOrderItemToDbFormat = (item: Partial<OrderItem>) => ({
 
 interface OrderState {
   orders: Order[];
+  totalOrders: number;
   currentOrder: Order | null;
   isLoading: boolean;
   error: string | null;
   
   // Order operations
-  getOrders: () => Promise<void>;
+  getOrders: (page?: number, pageSize?: number, searchTerm?: string, statusFilter?: string, monthFilter?: string, yearFilter?: string) => Promise<void>;
   getOrderById: (id: string) => Promise<Order | undefined>;
   createOrder: (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'subtotal' | 'igv' | 'total' | 'items'>) => Promise<Order>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<Order>;
@@ -91,143 +92,128 @@ interface OrderState {
 
 export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
+  totalOrders: 0,
   currentOrder: null,
   isLoading: false,
   error: null,
 
-  getOrders: async () => {
+  getOrders: async (page = 1, pageSize = 10, searchTerm = '', statusFilter = '', monthFilter = '', yearFilter = '') => {
     set({ isLoading: true, error: null });
     
     try {
-      // Get orders with basic data first
-      const { data: ordersData, error: ordersError } = await supabase
+      // Build the query with filters
+      let query = supabase
         .from('orders')
         .select(`
-          *,
+          id,
+          client_id,
+          salesperson_id,
+          status,
+          subtotal,
+          igv,
+          total,
+          payment_type,
+          credit_type,
+          installments,
+          observations,
+          created_by,
+          created_at,
+          updated_at,
           client:clients(
-            *,
-            salesperson:profiles!clients_salesperson_id_fkey(id, full_name, phone, cargo, role, birthday)
+            id,
+            business_name,
+            commercial_name,
+            ruc
           ),
-          createdByUser:profiles!orders_created_by_fkey(id, full_name, phone, cargo, role, birthday),
-          order_items(
-            *,
-            product:products(*)
-          ),
-          order_installments(
-            *
-          )
-        `)
-        .order('created_at', { ascending: false });
+          salesperson:profiles!orders_salesperson_id_fkey(id, full_name)
+        `, { count: 'exact' });
+      
+      // Apply search filter
+      if (searchTerm) {
+        query = query.or(`client.business_name.ilike.%${searchTerm}%,client.commercial_name.ilike.%${searchTerm}%`);
+      }
+      
+      // Apply status filter
+      if (statusFilter && statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+      
+      // Apply date filters
+      if (monthFilter && monthFilter !== 'all' && yearFilter) {
+        const year = parseInt(yearFilter);
+        const month = parseInt(monthFilter);
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59);
+        
+        query = query
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString());
+      } else if (yearFilter && (!monthFilter || monthFilter === 'all')) {
+        const year = parseInt(yearFilter);
+        const startDate = new Date(year, 0, 1);
+        const endDate = new Date(year, 11, 31, 23, 59, 59);
+        
+        query = query
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString());
+      }
+      
+      // Apply pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      const { data: ordersData, error: ordersError, count } = await query
+        .range(from, to)
+        .order('created_at', { ascending: true });
 
       if (ordersError) throw ordersError;
 
-      // Get all unique salesperson IDs
-      const salespersonIds = new Set();
-      ordersData.forEach(order => {
-        if (order.salesperson_id) salespersonIds.add(order.salesperson_id);
-        if (order.client?.salesperson_id) salespersonIds.add(order.client.salesperson_id);
-      });
-
-      // Get all salespeople data
-      const { data: salespeople, error: salespeopleError } = await supabase
-        .from('profiles')
-        .select('id, full_name, phone, cargo, role, birthday')
-        .in('id', Array.from(salespersonIds));
-
-      if (salespeopleError) throw salespeopleError;
-      
-      // Create a map for quick lookup
-      const salespeopleMap = new Map();
-      (salespeople || []).forEach(person => {
-        salespeopleMap.set(person.id, {
-          id: person.id,
-          fullName: person.full_name,
-          email: '',
-          phone: person.phone,
-          birthday: person.birthday || '',
-          cargo: person.cargo,
-          role: person.role,
-        });
-      });
-      
-      const orders = ordersData.map(row => {
+      const orders = (ordersData || []).map(row => {
         const order = mapDbRowToOrder(row);
         
         // Map client data
         if (row.client) {
           order.client = {
             id: row.client.id,
-            ruc: row.client.ruc,
-            businessName: row.client.business_name,
+            ruc: row.client.ruc || '',
+            businessName: row.client.business_name || '',
             commercialName: row.client.commercial_name,
-            contactName: row.client.contact_name,
-            contactPhone: row.client.contact_phone,
-            address: row.client.address,
-            district: row.client.district,
-            province: row.client.province,
-            salespersonId: row.client.salesperson_id,
-            salesperson: row.client.salesperson ? {
-              id: row.client.salesperson.id,
-              fullName: row.client.salesperson.full_name,
-              email: '',
-              phone: row.client.salesperson.phone,
-              birthday: row.client.salesperson.birthday || '',
-              cargo: row.client.salesperson.cargo,
-              role: row.client.salesperson.role,
-            } : undefined,
-            transport: row.client.transport,
-            transportAddress: row.client.transport_address,
-            transportDistrict: row.client.transport_district,
-            createdAt: row.client.created_at,
-            updatedAt: row.client.updated_at,
+            contactName: '',
+            contactPhone: '',
+            address: '',
+            district: '',
+            province: '',
+            salespersonId: '',
+            createdAt: '',
+            updatedAt: '',
           };
         }
 
-        // Map salesperson from the order itself
-        if (row.salesperson_id) {
-          order.salesperson = salespeopleMap.get(row.salesperson_id);
-        }
-
-        // Map createdByUser
-        if (row.createdByUser) {
-          order.createdByUser = {
-            id: row.createdByUser.id,
-            fullName: row.createdByUser.full_name,
+        // Map salesperson
+        if (row.salesperson) {
+          order.salesperson = {
+            id: row.salesperson.id,
+            fullName: row.salesperson.full_name,
             email: '',
-            phone: row.createdByUser.phone,
-            birthday: row.createdByUser.birthday || '',
-            cargo: row.createdByUser.cargo,
-            role: row.createdByUser.role,
+            phone: '',
+            birthday: '',
+            cargo: '',
+            role: 'asesor_ventas',
           };
         }
 
-        // Map installment details
-        if (row.order_installments) {
-          order.installmentDetails = row.order_installments.map((inst: any) => ({
-            id: inst.id,
-            orderId: inst.order_id,
-            installmentNumber: inst.installment_number,
-            amount: parseFloat(inst.amount),
-            dueDate: inst.due_date,
-            daysDue: inst.days_due,
-            createdAt: inst.created_at,
-          }));
-        }
+        // Initialize empty arrays for items and installments (loaded separately when needed)
+        order.items = [];
+        order.installmentDetails = [];
 
         return order;
       });
 
-      // Map order items
-      for (const order of orders) {
-        const orderRow = ordersData.find(row => row.id === order.id);
-        order.items = (orderRow?.order_items || []).map(item => {
-          const orderItem = mapDbRowToOrderItem(item);
-          orderItem.product = item.product || null;
-          return orderItem;
-        });
-      }
-
-      set({ orders, isLoading: false });
+      set({ 
+        orders, 
+        totalOrders: count || 0,
+        isLoading: false 
+      });
     } catch (error) {
       set({
         isLoading: false,
