@@ -119,7 +119,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
           <div>
-            <p className="text-sm font-medium text-gray-600">Ventas Totales con IGV</p>
+            <p className="text-xs font-medium text-gray-600">Ventas Totales con IGV</p>
             <p className="text-2xl font-bold text-green-600 mt-2">
               S/ {(salesStats?.totalSales || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
@@ -128,8 +128,8 @@ export function Dashboard() {
         
         <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '250ms' }}>
           <div>
-            <p className="text-sm font-medium text-gray-600">Total Pedidos</p>
-            <p className="text-3xl font-bold text-blue-600 mt-2">
+            <p className="text-xs font-medium text-gray-600">Total Pedidos</p>
+            <p className="text-2xl font-bold text-blue-600 mt-2">
               {salesStats?.totalOrders || 0}
             </p>
           </div>
@@ -137,8 +137,8 @@ export function Dashboard() {
         
         <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
           <div>
-            <p className="text-sm font-medium text-gray-600">Promedio por Pedido</p>
-            <p className="text-3xl font-bold text-purple-600 mt-2">
+            <p className="text-xs font-medium text-gray-600">Promedio por Pedido</p>
+            <p className="text-2xl font-bold text-purple-600 mt-2">
               S/ {salesStats?.totalOrders ? ((salesStats.totalSales / salesStats.totalOrders)).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
             </p>
           </div>
@@ -147,8 +147,8 @@ export function Dashboard() {
         {!isAsesorVentas && (
           <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '350ms' }}>
             <div>
-              <p className="text-sm font-medium text-gray-600">Vendedores Activos</p>
-              <p className="text-3xl font-bold text-orange-600 mt-2">
+              <p className="text-xs font-medium text-gray-600">Vendedores Activos</p>
+              <p className="text-2xl font-bold text-orange-600 mt-2">
                 {salesStats?.salesBySalesperson.length || 0}
               </p>
             </div>
