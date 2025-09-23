@@ -149,7 +149,7 @@ export function OrderForm() {
               })) || [];
               setItems(formItems);
               
-              // Set installment start date from order creation date
+              // Set fixed installment start date from order creation date
               setInstallmentStartDate(new Date(orderData.createdAt));
               
               // Load installments if credit order
@@ -170,6 +170,9 @@ export function OrderForm() {
           } catch (error) {
             setFormError('Error al cargar el pedido');
           }
+        } else {
+          // For new orders, set a fixed start date
+          setInstallmentStartDate(new Date());
         }
         
       } catch (error) {
@@ -394,8 +397,8 @@ export function OrderForm() {
       return [];
     }
     
-    // Use installmentStartDate if available, otherwise use today's date
-    const startDate = installmentStartDate || new Date();
+    // Use fixed installment start date
+    const startDate = installmentStartDate!; // We ensure this is always set
     
     const total = finalDisplayTotals.total;
     const baseInstallmentAmount = total > 0 ? Math.floor((total * 100) / installmentCount) / 100 : 0;
@@ -406,12 +409,24 @@ export function OrderForm() {
       // Try to preserve existing installment data if it exists
       const existingInstallment = prevInstallments.find(inst => inst.installmentNumber === i);
       
-      const daysDue = existingInstallment?.daysDue || (creditType === 'factura' ? i * 30 : i * 30);
-      const dueDate = existingInstallment?.dueDate || (() => {
+      let dueDate: string;
+      let daysDue: number;
+      
+      if (existingInstallment?.dueDate) {
+        // Preserve existing due date (fixed)
+        dueDate = existingInstallment.dueDate;
+        // Recalculate days based on fixed due date and start date
+        const dueDateObj = new Date(existingInstallment.dueDate);
+        const timeDiff = dueDateObj.getTime() - startDate.getTime();
+        daysDue = Math.max(0, Math.round(timeDiff / (1000 * 3600 * 24)));
+      } else {
+        // Generate new due date for new installments
+        const defaultDays = creditType === 'factura' ? i * 30 : i * 30;
         const date = new Date(startDate);
-        date.setDate(date.getDate() + daysDue);
-        return formatDateForInput(date);
-      })();
+        date.setDate(date.getDate() + defaultDays);
+        dueDate = formatDateForInput(date);
+        daysDue = defaultDays;
+      }
       
       let installmentAmount;
       if (total > 0) {
@@ -460,7 +475,7 @@ export function OrderForm() {
   // Update installment
   const updateInstallment = (index: number, field: keyof OrderInstallmentForm, value: any) => {
     const updatedInstallments = [...installments];
-    const baseDate = installmentStartDate || new Date();
+    const baseDate = installmentStartDate!; // We ensure this is always set
     
     if (field === 'dueDate') {
       // When date changes, recalculate days
@@ -481,17 +496,6 @@ export function OrderForm() {
         ...updatedInstallments[index],
         dueDate: value,
         daysDue: Math.max(0, daysDiff), // Ensure non-negative days
-      };
-    } else if (field === 'daysDue') {
-      // When days change, recalculate date
-      const newDays = parseInt(value) || 0;
-      const newDate = new Date(baseDate);
-      newDate.setDate(newDate.getDate() + newDays);
-      
-      updatedInstallments[index] = {
-        ...updatedInstallments[index],
-        daysDue: newDays,
-        dueDate: formatDateForInput(newDate),
       };
     }
     
@@ -532,30 +536,13 @@ export function OrderForm() {
       // Recalculate installments if credit payment to ensure latest values
       let installmentsToSave: OrderInstallmentForm[] = [];
       if (paymentType === 'credito' && installmentCount > 0 && finalDisplayTotals.total > 0) {
-        const startDate = new Date();
-        const baseInstallmentAmount = Math.floor((finalDisplayTotals.total * 100) / installmentCount) / 100;
-        let accumulatedAmount = 0;
-        
-        for (let i = 1; i <= installmentCount; i++) {
-          const daysDue = creditType === 'factura' ? i * 30 : i * 30;
-          const dueDate = new Date(startDate);
-          dueDate.setDate(dueDate.getDate() + daysDue);
-          
-          let installmentAmount;
-          if (i === installmentCount) {
-            installmentAmount = finalDisplayTotals.total - accumulatedAmount;
-          } else {
-            installmentAmount = baseInstallmentAmount;
-            accumulatedAmount += installmentAmount;
-          }
-          
-          installmentsToSave.push({
-            installmentNumber: i,
-            amount: Number(installmentAmount.toFixed(2)),
-            dueDate: formatDateForInput(dueDate),
-            daysDue,
-          });
-        }
+        // Use current installments state to preserve user-edited dates
+        installmentsToSave = installments.map(installment => ({
+          installmentNumber: installment.installmentNumber,
+          amount: installment.amount,
+          dueDate: installment.dueDate, // Preserve fixed due date
+          daysDue: installment.daysDue,
+        }));
       }
       
       const orderData = {
@@ -1120,7 +1107,7 @@ export function OrderForm() {
                           Fecha de Vencimiento
                         </th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Días
+                          Días (calculado)
                         </th>
                       </tr>
                     </thead>
@@ -1136,20 +1123,26 @@ export function OrderForm() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="font-medium text-gray-900">
-                              {formatDateForDisplay(installment.dueDate)}
-                            </span>
+                            {isReadOnly ? (
+                              <span className="font-medium text-gray-900">
+                                {formatDateForDisplay(installment.dueDate)}
+                              </span>
+                            ) : (
+                              <input
+                                type="date"
+                                value={installment.dueDate}
+                                onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
+                                className="text-center border border-gray-300 rounded px-2 py-1"
+                              />
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             {isReadOnly ? (
-                              <span className="font-medium">{installment.daysDue} días</span>
+                              <span className="font-medium text-gray-600">{installment.daysDue} días</span>
                             ) : (
-                              <input
-                                type="number"
-                               value={installment.daysDue === 0 ? '' : installment.daysDue}
-                                onChange={(e) => updateInstallment(index, 'daysDue', parseInt(e.target.value) || 0)}
-                                className="w-20 text-center border border-gray-300 rounded px-2 py-1"
-                              />
+                              <span className="font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                                {installment.daysDue} días
+                              </span>
                             )}
                           </td>
                         </tr>
