@@ -63,6 +63,9 @@ export default function OrderList() {
   const [sharingOrder, setSharingOrder] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   
+  // Full order data for image generation
+  const [fullOrderForImage, setFullOrderForImage] = useState<Order | null>(null);
+  
   // Check if current user can see salesperson filter
   const canFilterBySalesperson = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
@@ -154,11 +157,28 @@ export default function OrderList() {
     }
   };
 
-  const handleDownloadOrder = async (order: any) => {
+  const handleDownloadOrder = async (orderId: string) => {
     try {
-      setDownloadingOrder(order.id);
+      setDownloadingOrder(orderId);
       setDownloadError(null);
-      await downloadOrderAsImage(order);
+      
+      // Load full order details
+      const fullOrder = await getOrderById(orderId);
+      if (!fullOrder) {
+        throw new Error('No se pudo cargar el pedido completo');
+      }
+      
+      // Set the full order for image generation
+      setFullOrderForImage(fullOrder);
+      
+      // Wait for DOM to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Generate and download image
+      await downloadOrderAsImage(fullOrder);
+      
+      // Clear the full order data
+      setFullOrderForImage(null);
     } catch (error) {
       setDownloadError(error instanceof Error ? error.message : 'Error al descargar el pedido');
     } finally {
@@ -166,11 +186,28 @@ export default function OrderList() {
     }
   };
 
-  const handleShareOrder = async (order: any) => {
+  const handleShareOrder = async (orderId: string) => {
     try {
-      setSharingOrder(order.id);
+      setSharingOrder(orderId);
       setDownloadError(null);
-      await shareOrderAsImage(order);
+      
+      // Load full order details
+      const fullOrder = await getOrderById(orderId);
+      if (!fullOrder) {
+        throw new Error('No se pudo cargar el pedido completo');
+      }
+      
+      // Set the full order for image generation
+      setFullOrderForImage(fullOrder);
+      
+      // Wait for DOM to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Generate and share image
+      await shareOrderAsImage(fullOrder);
+      
+      // Clear the full order data
+      setFullOrderForImage(null);
     } catch (error) {
       setDownloadError(error instanceof Error ? error.message : 'Error al compartir el pedido');
     } finally {
@@ -446,7 +483,7 @@ export default function OrderList() {
                             variant="ghost"
                             size="sm"
                             icon={<Download size={16} />}
-                            onClick={() => handleDownloadOrder(order)}
+                            onClick={() => handleDownloadOrder(order.id)}
                             
                             loading={downloadingOrder === order.id}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
@@ -456,7 +493,7 @@ export default function OrderList() {
                             variant="ghost"
                             size="sm"
                             icon={<Share size={16} />}
-                            onClick={() => handleShareOrder(order)}
+                            onClick={() => handleShareOrder(order.id)}
                             loading={sharingOrder === order.id}
                             className="text-green-600 hover:text-green-700 hover:bg-green-50"
                             title="Compartir"
@@ -714,11 +751,11 @@ export default function OrderList() {
       </Modal>
 
       {/* Hidden Order Templates for Image Generation */}
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px' }}>
-        {displayOrders.map((order) => (
-          <OrderImageTemplate key={order.id} order={order} />
-        ))}
-      </div>
+      {fullOrderForImage && (
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px' }}>
+          <OrderImageTemplate order={fullOrderForImage} />
+        </div>
+      )}
     </div>
   );
 }
