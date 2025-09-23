@@ -118,59 +118,39 @@ export function Dashboard() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Ventas Totales</p>
-              <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(salesStats?.totalSales || 0)}
-              </p>
-            </div>
-            <div className="p-3 rounded-full bg-green-100">
-              <TrendingUp className="h-6 w-6 text-green-600" />
-            </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Ventas Totales</p>
+            <p className="text-3xl font-bold text-green-600 mt-2">
+              {formatCurrency(salesStats?.totalSales || 0)}
+            </p>
           </div>
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '250ms' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Pedidos</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {salesStats?.totalOrders || 0}
-              </p>
-            </div>
-            <div className="p-3 rounded-full bg-blue-100">
-              <Package className="h-6 w-6 text-blue-600" />
-            </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Total Pedidos</p>
+            <p className="text-3xl font-bold text-blue-600 mt-2">
+              {salesStats?.totalOrders || 0}
+            </p>
           </div>
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '300ms' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Promedio por Pedido</p>
-              <p className="text-2xl font-bold text-purple-600">
-                {formatCurrency(salesStats?.totalOrders ? (salesStats.totalSales / salesStats.totalOrders) : 0)}
-              </p>
-            </div>
-            <div className="p-3 rounded-full bg-purple-100">
-              <TrendingUp className="h-6 w-6 text-purple-600" />
-            </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">Promedio por Pedido</p>
+            <p className="text-3xl font-bold text-purple-600 mt-2">
+              {formatCurrency(salesStats?.totalOrders ? (salesStats.totalSales / salesStats.totalOrders) : 0)}
+            </p>
           </div>
         </div>
         
         {!isAsesorVentas && (
           <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '350ms' }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Vendedores Activos</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {salesStats?.salesBySalesperson.length || 0}
-                </p>
-              </div>
-              <div className="p-3 rounded-full bg-orange-100">
-                <Users className="h-6 w-6 text-orange-600" />
-              </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Vendedores Activos</p>
+              <p className="text-3xl font-bold text-orange-600 mt-2">
+                {salesStats?.salesBySalesperson.length || 0}
+              </p>
             </div>
           </div>
         )}
