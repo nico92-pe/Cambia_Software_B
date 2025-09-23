@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Search, Eye, Edit, Trash2, Filter, AlertTriangle, Download, Share, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useAuthStore } from '../../store/auth-store';
+import { useUserStore } from '../../store/user-store';
 import { OrderImageTemplate } from '../../components/orders/OrderImageTemplate';
 import { useOrderImageDownload } from '../../hooks/useOrderImageDownload';
 import { UserRole, OrderStatus } from '../../lib/types';
@@ -32,12 +33,15 @@ const statusLabels = {
 export default function OrderList() {
   const { orders, totalOrders, isLoading, error, getOrders, deleteOrder, updateOrderStatus } = useOrderStore();
   const { user } = useAuthStore();
+  const { getUsersByRole } = useUserStore();
   const { downloadOrderAsImage, shareOrderAsImage } = useOrderImageDownload();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [salespersonFilter, setSalespersonFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   
   const ORDERS_PER_PAGE = 10;
   
@@ -58,11 +62,14 @@ export default function OrderList() {
   const [downloadingOrder, setDownloadingOrder] = useState<string | null>(null);
   const [sharingOrder, setSharingOrder] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  
+  // Check if current user can see salesperson filter
+  const canFilterBySalesperson = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
   // Load orders when filters or page change
   useEffect(() => {
-    getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter);
-  }, [getOrders, currentPage, searchTerm, statusFilter, monthFilter, yearFilter]);
+    getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
+  }, [getOrders, currentPage, searchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
 
   // Set current month/year as default filters
   useEffect(() => {
@@ -73,10 +80,26 @@ export default function OrderList() {
     setYearFilter(currentYear);
   }, []);
   
+  // Load salespeople for filter (only for Admin/Super_Admin)
+  useEffect(() => {
+    const loadSalespeople = async () => {
+      if (canFilterBySalesperson) {
+        try {
+          const salespeople = await getUsersByRole(UserRole.ASESOR_VENTAS);
+          setSalespeople(salespeople);
+        } catch (error) {
+          console.error('Error loading salespeople for filter:', error);
+        }
+      }
+    };
+    
+    loadSalespeople();
+  }, [canFilterBySalesperson, getUsersByRole]);
+  
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, monthFilter, yearFilter]);
+  }, [searchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
   
   // Pagination functions
   const goToPage = (page: number) => {
@@ -108,7 +131,7 @@ export default function OrderList() {
       setDeleteLoading(true);
       await deleteOrder(orderToDelete);
       // Reload current page after deletion
-      await getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter);
+      await getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
       setShowDeleteModal(false);
       setOrderToDelete(null);
     } catch (error) {
@@ -123,7 +146,7 @@ export default function OrderList() {
       setUpdatingStatus(orderId);
       await updateOrderStatus(orderId, newStatus);
       // Reload current page after status update
-      await getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter);
+      await getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
     } catch (error) {
       // Error handled by store
     } finally {
@@ -218,7 +241,7 @@ export default function OrderList() {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border">
-        <div className="flex flex-wrap gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-start">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Buscar pedidos
@@ -234,6 +257,26 @@ export default function OrderList() {
               />
             </div>
           </div>
+          
+          {canFilterBySalesperson && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Vendedor
+              </label>
+              <select
+                value={salespersonFilter}
+                onChange={(e) => setSalespersonFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+              >
+                <option value="all">Todos los vendedores</option>
+                {salespeople.map((salesperson) => (
+                  <option key={salesperson.id} value={salesperson.id}>
+                    {salesperson.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -310,11 +353,11 @@ export default function OrderList() {
                   <div className="mx-auto h-12 w-12 text-muted-foreground opacity-30">📋</div>
                   <h3 className="mt-4 text-lg font-medium">No se encontraron pedidos</h3>
                   <p className="mt-1 text-muted-foreground">
-                    {searchTerm || statusFilter !== 'all' || monthFilter !== 'all' || yearFilter !== ''
+                    {searchTerm || statusFilter !== 'all' || salespersonFilter !== 'all' || monthFilter !== 'all' || yearFilter !== ''
                       ? 'No hay resultados para tu búsqueda'
                       : 'Comienza creando un nuevo pedido'}
                   </p>
-                  {!searchTerm && statusFilter === 'all' && monthFilter === 'all' && yearFilter === '' && canCreateOrder && (
+                  {!searchTerm && statusFilter === 'all' && salespersonFilter === 'all' && monthFilter === 'all' && yearFilter === '' && canCreateOrder && (
                     <Link to="/orders/new" className="mt-6 inline-block">
                       <Button icon={<Plus size={18} />}>Nuevo Pedido</Button>
                     </Link>
@@ -458,7 +501,7 @@ export default function OrderList() {
               {displayOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
-                    {searchTerm || statusFilter !== 'all' || monthFilter !== 'all' || yearFilter !== ''
+                    {searchTerm || statusFilter !== 'all' || salespersonFilter !== 'all' || monthFilter !== 'all' || yearFilter !== ''
                       ? 'No se encontraron pedidos con los filtros aplicados'
                       : 'No hay pedidos registrados'
                     }

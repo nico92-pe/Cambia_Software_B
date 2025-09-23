@@ -62,7 +62,7 @@ interface OrderState {
   error: string | null;
   
   // Order operations
-  getOrders: (page?: number, pageSize?: number, searchTerm?: string, statusFilter?: string, monthFilter?: string, yearFilter?: string) => Promise<void>;
+  getOrders: (page?: number, pageSize?: number, searchTerm?: string, statusFilter?: string, monthFilter?: string, yearFilter?: string, salespersonFilter?: string) => Promise<void>;
   getOrderById: (id: string) => Promise<Order | undefined>;
   createOrder: (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'subtotal' | 'igv' | 'total' | 'items'>) => Promise<Order>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<Order>;
@@ -97,7 +97,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  getOrders: async (page = 1, pageSize = 10, searchTerm = '', statusFilter = '', monthFilter = '', yearFilter = '') => {
+  getOrders: async (page = 1, pageSize = 10, searchTerm = '', statusFilter = '', monthFilter = '', yearFilter = '', salespersonFilter = '') => {
     set({ isLoading: true, error: null });
     
     try {
@@ -136,6 +136,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       // Apply status filter
       if (statusFilter && statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
+      }
+      
+      // Apply salesperson filter
+      if (salespersonFilter && salespersonFilter !== 'all') {
+        query = query.eq('salesperson_id', salespersonFilter);
       }
       
       // Apply date filters
