@@ -120,7 +120,7 @@ export function Dashboard() {
         <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '200ms' }}>
           <div>
             <p className="text-sm font-medium text-gray-600">Ventas Totales con IGV</p>
-            <p className="text-3xl font-bold text-green-600 mt-2">
+            <p className="text-2xl font-bold text-green-600 mt-2">
               S/ {(salesStats?.totalSales || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
