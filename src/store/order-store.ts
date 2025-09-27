@@ -163,7 +163,27 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       
       // Apply search filter
       if (searchTerm) {
-        query = query.or(`client.business_name.ilike.%${searchTerm}%,client.commercial_name.ilike.%${searchTerm}%,client.ruc.ilike.%${searchTerm}%`);
+        // For related table filtering, we need to use a different approach
+        // We'll filter by client_id after getting matching clients
+        const { data: matchingClients, error: clientError } = await supabase
+          .from('clients')
+          .select('id')
+          .or(`business_name.ilike.%${searchTerm}%,commercial_name.ilike.%${searchTerm}%,ruc.ilike.%${searchTerm}%`);
+          
+        if (clientError) throw clientError;
+        
+        if (matchingClients && matchingClients.length > 0) {
+          const clientIds = matchingClients.map(c => c.id);
+          query = query.in('client_id', clientIds);
+        } else {
+          // No matching clients found, return empty result
+          set({ 
+            orders: [], 
+            totalOrders: 0,
+            isLoading: false 
+          });
+          return;
+        }
       }
       
       // Apply status filter
