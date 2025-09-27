@@ -150,7 +150,8 @@ export function OrderForm() {
               setItems(formItems);
               
               // Set fixed installment start date from order creation date
-              setInstallmentStartDate(new Date(orderData.createdAt));
+              const createdDate = new Date(orderData.createdAt);
+              setInstallmentStartDate(new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate()));
               
               // Load installments if credit order
               if (orderData.paymentType === 'credito' && orderData.installmentDetails) {
@@ -172,7 +173,8 @@ export function OrderForm() {
           }
         } else {
           // For new orders, set a fixed start date
-          setInstallmentStartDate(new Date());
+          const today = new Date();
+          setInstallmentStartDate(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
         }
         
       } catch (error) {
@@ -413,12 +415,10 @@ export function OrderForm() {
       let daysDue: number;
       
       if (existingInstallment?.dueDate) {
-        // Preserve existing due date (fixed)
+        // Preserve existing due date and daysDue from database
         dueDate = existingInstallment.dueDate;
-        // Recalculate days based on fixed due date and start date
-        const dueDateObj = new Date(existingInstallment.dueDate);
-        const timeDiff = dueDateObj.getTime() - startDate.getTime();
-        daysDue = Math.max(0, Math.round(timeDiff / (1000 * 3600 * 24)));
+        // Use existing daysDue from database to avoid recalculation issues
+        daysDue = existingInstallment.daysDue;
       } else {
         // Generate new due date for new installments
         const defaultDays = creditType === 'factura' ? i * 30 : i * 30;
