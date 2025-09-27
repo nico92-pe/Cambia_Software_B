@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order } from '../../lib/types';
-import { formatCurrency, formatDate } from '../../lib/utils';
+import { formatCurrency, formatDate, parseYYYYMMDDToLocalDate } from '../../lib/utils';
 
 interface OrderImageTemplateProps {
   order: Order;
@@ -204,7 +204,7 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
                     {formatCurrency(installment.amount)}
                   </td>
                   <td className="border border-gray-300 px-3 py-2 text-center text-sm">
-                    {formatDate(new Date(installment.dueDate))}
+                    {formatDate(parseYYYYMMDDToLocalDate(installment.dueDate))}
                   </td>
                   <td className="border border-gray-300 px-3 py-2 text-center text-sm">
                     {installment.daysDue} días
