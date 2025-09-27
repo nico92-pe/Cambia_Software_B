@@ -72,7 +72,7 @@ export default function OrderList() {
   // Check if current user can see salesperson filter
   const canFilterBySalesperson = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
-  // Debounce search term
+  // Debounce search term - separate effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -81,9 +81,17 @@ export default function OrderList() {
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
-  // Load orders when filters or page change (using debounced search term)
+  // Load orders when filters or page change
   useEffect(() => {
-    getOrders(currentPage, ORDERS_PER_PAGE, debouncedSearchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
+    getOrders(
+      currentPage, 
+      ORDERS_PER_PAGE, 
+      debouncedSearchTerm, 
+      statusFilter === 'all' ? '' : statusFilter, 
+      monthFilter, 
+      yearFilter, 
+      salespersonFilter === 'all' ? '' : salespersonFilter
+    );
   }, [getOrders, currentPage, debouncedSearchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
 
   // Set current month/year as default filters
@@ -111,10 +119,17 @@ export default function OrderList() {
     loadSalespeople();
   }, [canFilterBySalesperson, getUsersByRole]);
   
-  // Reset to first page when filters change
+  // Reset to first page when filters change (but not for search term)
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
+  }, [statusFilter, salespersonFilter, monthFilter, yearFilter]);
+  
+  // Reset to first page when search term changes (debounced)
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchTerm) {
+      setCurrentPage(1);
+    }
+  }, [debouncedSearchTerm]);
   
   // Pagination functions
   const goToPage = (page: number) => {
