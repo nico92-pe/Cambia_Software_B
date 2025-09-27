@@ -69,30 +69,30 @@ export default function OrderList() {
   // Debounced search term
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   
+  // Manual filter application
+  const [appliedFilters, setAppliedFilters] = useState({
+    searchTerm: '',
+    statusFilter: 'all' as OrderStatus | 'all',
+    salespersonFilter: 'all',
+    monthFilter: 'all',
+    yearFilter: '',
+  });
+  
   // Check if current user can see salesperson filter
   const canFilterBySalesperson = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
-  // Debounce search term - separate effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
-
-  // Load orders when filters or page change
+  // Load orders when applied filters or page change
   useEffect(() => {
     getOrders(
       currentPage, 
       ORDERS_PER_PAGE, 
-      debouncedSearchTerm, 
-      statusFilter === 'all' ? '' : statusFilter, 
-      monthFilter, 
-      yearFilter, 
-      salespersonFilter === 'all' ? '' : salespersonFilter
+      appliedFilters.searchTerm, 
+      appliedFilters.statusFilter === 'all' ? '' : appliedFilters.statusFilter, 
+      appliedFilters.monthFilter, 
+      appliedFilters.yearFilter, 
+      appliedFilters.salespersonFilter === 'all' ? '' : appliedFilters.salespersonFilter
     );
-  }, [getOrders, currentPage, debouncedSearchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
+  }, [getOrders, currentPage, appliedFilters]);
 
   // Set current month/year as default filters
   useEffect(() => {
@@ -101,6 +101,11 @@ export default function OrderList() {
     const currentYear = String(currentDate.getFullYear());
     setMonthFilter(currentMonth);
     setYearFilter(currentYear);
+    setAppliedFilters(prev => ({
+      ...prev,
+      monthFilter: currentMonth,
+      yearFilter: currentYear,
+    }));
   }, []);
   
   // Load salespeople for filter (only for Admin/Super_Admin)
@@ -119,17 +124,25 @@ export default function OrderList() {
     loadSalespeople();
   }, [canFilterBySalesperson, getUsersByRole]);
   
-  // Reset to first page when filters change (but not for search term)
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, salespersonFilter, monthFilter, yearFilter]);
+  // Apply filters function
+  const applyFilters = () => {
+    setAppliedFilters({
+      searchTerm,
+      statusFilter,
+      salespersonFilter,
+      monthFilter,
+      yearFilter,
+    });
+    setCurrentPage(1); // Reset to first page when applying filters
+  };
   
-  // Reset to first page when search term changes (debounced)
-  useEffect(() => {
-    if (debouncedSearchTerm !== searchTerm) {
-      setCurrentPage(1);
-    }
-  }, [debouncedSearchTerm]);
+  // Check if there are unapplied filter changes
+  const hasUnappliedChanges = 
+    searchTerm !== appliedFilters.searchTerm ||
+    statusFilter !== appliedFilters.statusFilter ||
+    salespersonFilter !== appliedFilters.salespersonFilter ||
+    monthFilter !== appliedFilters.monthFilter ||
+    yearFilter !== appliedFilters.yearFilter;
   
   // Pagination functions
   const goToPage = (page: number) => {
@@ -305,7 +318,7 @@ export default function OrderList() {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 items-end">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Buscar pedidos
@@ -341,6 +354,17 @@ export default function OrderList() {
               </select>
             </div>
           )}
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={applyFilters}
+              icon={<Filter size={18} />}
+              disabled={!hasUnappliedChanges}
+              className={hasUnappliedChanges ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400'}
+            >
+              Aplicar Filtros
+            </Button>
+          </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -395,6 +419,15 @@ export default function OrderList() {
             </select>
           </div>
         </div>
+        
+        {hasUnappliedChanges && (
+          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 flex items-center gap-2">
+              <Filter size={16} />
+              Hay cambios en los filtros sin aplicar. Haz clic en "Aplicar Filtros" para ver los resultados.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Orders Table */}
