@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard as Edit, MapPin, Plus, Search, Trash, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, MapPin, Plus, Search, Trash, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useClientStore } from '../../store/client-store';
 import { useClientStore } from '../../store/client-store';
 import { useAuthStore } from '../../store/auth-store';
 import { useUserStore } from '../../store/user-store';
