@@ -41,6 +41,7 @@ export function OrderForm() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { clients, getClients } = useClientStore();
+  const { searchClientsForOrderForm } = useClientStore();
   const { categories, getCategories } = useProductStore();
   const { getUsersByRole } = useUserStore();
   const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, saveOrderInstallments, isLoading, error } = useOrderStore();
@@ -58,7 +59,7 @@ export function OrderForm() {
   const [order, setOrder] = useState<any>(null);
   const [selectedSalesperson, setSelectedSalesperson] = useState<string>('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
+  const [clientSearchResults, setClientSearchResults] = useState<Client[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [showClientSearchResults, setShowClientSearchResults] = useState(false);
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
@@ -198,30 +199,33 @@ export function OrderForm() {
     }
   }, [id]);
   
-  // Filter clients when salesperson changes
+  // Load clients when salesperson changes
   useEffect(() => {
-    if (selectedSalesperson) {
-      const clientsForSalesperson = clients.filter(client => client.salespersonId === selectedSalesperson);
-      setFilteredClients(clientsForSalesperson);
-      
-      // Reset selected client if it doesn't belong to the new salesperson
-      if (selectedClient && selectedClient.salespersonId !== selectedSalesperson) {
+    const loadClientsForSalesperson = async () => {
+      if (selectedSalesperson) {
+        try {
+          // Load all clients for the selected salesperson
+          const clients = await searchClientsForOrderForm('', selectedSalesperson);
+          setClientSearchResults(clients);
+          
+          // Reset selected client if it doesn't belong to the new salesperson
+          if (selectedClient && selectedClient.salespersonId !== selectedSalesperson) {
+            setSelectedClient(null);
+            setClientSearchTerm('');
+          }
+        } catch (error) {
+          console.error('Error loading clients for salesperson:', error);
+          setClientSearchResults([]);
+        }
+      } else {
+        setClientSearchResults([]);
         setSelectedClient(null);
         setClientSearchTerm('');
       }
-    } else {
-      setFilteredClients([]);
-      setSelectedClient(null);
-      setClientSearchTerm('');
-    }
-  }, [selectedSalesperson, clients, selectedClient]);
-  
-  // Filter clients based on search term
-  const displayClients = filteredClients.filter(client => 
-    client.commercialName.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
-    client.businessName.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
-    client.ruc.includes(clientSearchTerm)
-  );
+    };
+    
+    loadClientsForSalesperson();
+  }, [selectedSalesperson, selectedClient, searchClientsForOrderForm]);
   
   // Handle client selection
   const handleClientSelect = (client: Client) => {
@@ -231,10 +235,30 @@ export function OrderForm() {
   };
   
   // Handle client search input
-  const handleClientSearchChange = (value: string) => {
+  const handleClientSearchChange = async (value: string) => {
     setClientSearchTerm(value);
     if (!value.trim()) {
       setSelectedClient(null);
+      // Load all clients for the salesperson when search is cleared
+      if (selectedSalesperson) {
+        try {
+          const clients = await searchClientsForOrderForm('', selectedSalesperson);
+          setClientSearchResults(clients);
+        } catch (error) {
+          console.error('Error loading clients:', error);
+        }
+      }
+    } else {
+      // Search clients with the search term
+      if (selectedSalesperson) {
+        try {
+          const clients = await searchClientsForOrderForm(value, selectedSalesperson);
+          setClientSearchResults(clients);
+        } catch (error) {
+          console.error('Error searching clients:', error);
+          setClientSearchResults([]);
+        }
+      }
     }
     setShowClientSearchResults(true);
   };
@@ -708,8 +732,8 @@ export function OrderForm() {
                   {/* Search Results Dropdown */}
                   {showClientSearchResults && selectedSalesperson && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {displayClients.length > 0 ? (
-                        displayClients.map((client) => (
+                      {clientSearchResults.length > 0 ? (
+                        clientSearchResults.map((client) => (
                           <div
                             key={client.id}
                             className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
@@ -736,7 +760,7 @@ export function OrderForm() {
                     </div>
                   )}
                 </div>
-                {selectedSalesperson && filteredClients.length === 0 && (
+                {selectedSalesperson && clientSearchResults.length === 0 && !clientSearchTerm && (
                   <p className="text-sm text-muted-foreground mt-1">
                     Este vendedor no tiene clientes asignados
                   </p>

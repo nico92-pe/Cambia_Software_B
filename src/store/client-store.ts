@@ -10,6 +10,7 @@ interface ClientState {
   getClients: (page?: number, pageSize?: number, searchTerm?: string) => Promise<void>;
   getClientById: (id: string) => Promise<Client | undefined>;
   getClientsBySalesperson: (salespersonId: string) => Promise<Client[]>;
+  searchClientsForOrderForm: (searchTerm?: string, salespersonId?: string) => Promise<Client[]>;
   createClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Client>;
   updateClient: (id: string, clientData: Partial<Client>) => Promise<Client>;
   deleteClient: (id: string) => Promise<void>;
@@ -151,6 +152,37 @@ export const useClientStore = create<ClientState>((set, get) => ({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Error al buscar clientes'
       });
+      return [];
+    }
+  },
+  
+  searchClientsForOrderForm: async (searchTerm = '', salespersonId) => {
+    try {
+      // Build the query without pagination to search all clients
+      let query = supabase
+        .from('clients')
+        .select('*');
+      
+      // Apply salesperson filter if provided
+      if (salespersonId) {
+        query = query.eq('salesperson_id', salespersonId);
+      }
+      
+      // Apply search filter if provided
+      if (searchTerm.trim()) {
+        query = query.or(`business_name.ilike.%${searchTerm}%,commercial_name.ilike.%${searchTerm}%,ruc.ilike.%${searchTerm}%`);
+      }
+      
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(100); // Reasonable limit to prevent performance issues
+        
+      if (error) throw error;
+      
+      const clients = data.map(mapDbRowToClient);
+      return clients;
+    } catch (error) {
+      console.error('Error searching clients for order form:', error);
       return [];
     }
   },
