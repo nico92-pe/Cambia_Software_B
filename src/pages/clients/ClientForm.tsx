@@ -23,6 +23,8 @@ export function ClientForm() {
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isInitialDataLoading, setIsInitialDataLoading] = useState(true);
+  const [dataLoadingError, setDataLoadingError] = useState<string | null>(null);
+  
   const isEditMode = Boolean(id);
   const isCurrentUserSalesperson = currentUser?.role === UserRole.ASESOR_VENTAS;
 
@@ -38,57 +40,65 @@ export function ClientForm() {
   const isLima = province === 'Lima' || province === '';
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadAllData = async () => {
+      setIsInitialDataLoading(true);
+      setDataLoadingError(null);
+      
       try {
-        // Load all users first
+        console.log('Starting data load...');
+        
+        // Load users first and wait for completion
         await getUsers();
-      } catch (error) {
-        console.error('Error loading users:', error);
-      } finally {
-        if (!id) {
-          setIsInitialDataLoading(false);
-        }
-      }
-    };
-
-    const loadClient = async () => {
-      if (id) {
-        try {
-          setFormError(null);
-          const client = await getClientById(id);
-          if (client) {
-            reset(client);
-          } else {
-            setFormError('Cliente no encontrado');
-            navigate('/clients');
+        
+        // Get the updated users from the store after getUsers completes
+        const currentUsers = useUserStore.getState().users;
+        console.log('Users loaded:', currentUsers.length);
+        
+        // Filter salespeople from the loaded users
+        const filteredSalespeople = currentUsers
+          .filter(user => user.role === UserRole.ASESOR_VENTAS)
+          .map(s => ({ id: s.id, fullName: s.fullName }));
+        
+        console.log('Filtered salespeople:', filteredSalespeople);
+        setSalespeople(filteredSalespeople);
+        
+        // Load client data if in edit mode
+        if (isEditMode && id) {
+          console.log('Loading client data for edit mode...');
+          try {
+            const client = await getClientById(id);
+            if (client) {
+              reset(client);
+              console.log('Client data loaded and form reset');
+            } else {
+              setFormError('Cliente no encontrado');
+              navigate('/clients');
+              return;
+            }
+          } catch (error) {
+            console.error('Error loading client:', error);
+            setFormError('Error al cargar el cliente');
+            return;
           }
-        } catch (error) {
-          setFormError('Error al cargar el cliente');
-        } finally {
-          setIsInitialDataLoading(false);
+        } else if (isCurrentUserSalesperson && currentUser) {
+          // For new clients, pre-fill salesperson if current user is a salesperson
+          console.log('Pre-filling salesperson for new client');
+          reset({
+            salespersonId: currentUser.id,
+          } as ClientFormData);
         }
-      } else if (isCurrentUserSalesperson && currentUser) {
-        // For new clients, pre-fill salesperson if current user is a salesperson
-        reset({
-          salespersonId: currentUser.id,
-        } as ClientFormData);
+        
+        console.log('All data loaded successfully');
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setDataLoadingError('Error al cargar los datos del formulario');
+      } finally {
+        setIsInitialDataLoading(false);
       }
     };
-
-    loadData();
-    loadClient();
-  }, [id, getClientById, getUsers, reset, navigate, isCurrentUserSalesperson, currentUser]);
-
-  // Filter salespeople from loaded users
-  useEffect(() => {
-    const filteredSalespeople = users
-      .filter(user => user.role === UserRole.ASESOR_VENTAS)
-      .map(s => ({ id: s.id, fullName: s.fullName }));
     
-    console.log('All users:', users);
-    console.log('Filtered salespeople:', filteredSalespeople);
-    setSalespeople(filteredSalespeople);
-  }, [users]);
+    loadAllData();
+  }, [id, getClientById, getUsers, reset, navigate, isCurrentUserSalesperson, currentUser]);
 
   // Show loading screen during initial data load
   if (isInitialDataLoading) {
@@ -153,6 +163,12 @@ export function ClientForm() {
       {(error || formError) && (
         <Alert variant="destructive" className="mb-6 animate-in fade-in duration-300">
           {error || formError}
+        </Alert>
+      )}
+
+      {dataLoadingError && (
+        <Alert variant="destructive" className="mb-6 animate-in fade-in duration-300">
+          {dataLoadingError}
         </Alert>
       )}
 
