@@ -163,7 +163,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       
       // Apply search filter
       if (searchTerm) {
-        query = query.or(`client.business_name.ilike.%${searchTerm}%,client.commercial_name.ilike.%${searchTerm}%`);
+        query = query.or(`clients.business_name.ilike.%${searchTerm}%,clients.commercial_name.ilike.%${searchTerm}%,clients.ruc.ilike.%${searchTerm}%`);
       }
       
       // Apply status filter
