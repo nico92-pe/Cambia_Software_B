@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
 import { formatCurrency } from '../../lib/utils';
+import { toYYYYMMDD } from '../../lib/utils';
 import { UserRole, OrderStatus, Client, Product } from '../../lib/types';
 
 // Interfaces
@@ -335,11 +336,6 @@ export function OrderForm() {
     setItems(items.filter(item => item.productId !== productId));
   };
   
-  // Helper functions
-  const formatDateForInput = (date: Date): string => {
-    return date.toISOString().split('T')[0];
-  };
-  
   const calculateTotals = () => {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
     const subtotal = total / 1.18;
@@ -422,13 +418,13 @@ export function OrderForm() {
         // Recalculate dueDate based on preserved daysDue to ensure consistency
         const calculatedDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
         calculatedDate.setDate(calculatedDate.getDate() + daysDue);
-        dueDate = formatDateForInput(calculatedDate);
+        dueDate = toYYYYMMDD(calculatedDate);
       } else {
         // Generate new due date and daysDue ONLY for new installments
         const defaultDays = creditType === 'factura' ? i * 30 : i * 30;
         const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
         date.setDate(date.getDate() + defaultDays);
-        dueDate = formatDateForInput(date);
+        dueDate = toYYYYMMDD(date);
         daysDue = defaultDays;
       }
       
@@ -490,7 +486,7 @@ export function OrderForm() {
       updatedInstallments[index] = {
         ...updatedInstallments[index],
         daysDue: days,
-        dueDate: formatDateForInput(newDate),
+        dueDate: toYYYYMMDD(newDate),
       };
     }
     
