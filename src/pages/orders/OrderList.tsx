@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit, Trash2, Filter, AlertTriangle, Download, Share, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Eye, CreditCard as Edit, Trash2, Filter, AlertTriangle, Download, Share, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { useAuthStore } from '../../store/auth-store';
 import { useUserStore } from '../../store/user-store';
