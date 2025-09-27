@@ -408,21 +408,25 @@ export function OrderForm() {
     let accumulatedAmount = 0;
     
     for (let i = 1; i <= installmentCount; i++) {
-      // Try to preserve existing installment data if it exists
+      // Look for existing installment data to preserve
       const existingInstallment = prevInstallments.find(inst => inst.installmentNumber === i);
       
       let dueDate: string;
       let daysDue: number;
       
-      if (existingInstallment?.dueDate) {
-        // Preserve existing due date and daysDue from database
-        dueDate = existingInstallment.dueDate;
-        // Use existing daysDue from database to avoid recalculation issues
+      if (existingInstallment && typeof existingInstallment.daysDue === 'number') {
+        // PRESERVE existing daysDue - this is the key fix
+        // Only change if user explicitly edits the daysDue field
         daysDue = existingInstallment.daysDue;
+        
+        // Recalculate dueDate based on preserved daysDue to ensure consistency
+        const calculatedDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+        calculatedDate.setDate(calculatedDate.getDate() + daysDue);
+        dueDate = formatDateForInput(calculatedDate);
       } else {
-        // Generate new due date for new installments
+        // Generate new due date and daysDue ONLY for new installments
         const defaultDays = creditType === 'factura' ? i * 30 : i * 30;
-        const date = new Date(startDate);
+        const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
         date.setDate(date.getDate() + defaultDays);
         dueDate = formatDateForInput(date);
         daysDue = defaultDays;
