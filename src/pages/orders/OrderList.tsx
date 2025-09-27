@@ -318,7 +318,7 @@ export default function OrderList() {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-end">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Buscar pedidos
@@ -354,17 +354,6 @@ export default function OrderList() {
               </select>
             </div>
           )}
-          
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={applyFilters}
-              icon={<Filter size={18} />}
-              disabled={!hasUnappliedChanges}
-              className={hasUnappliedChanges ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400'}
-            >
-              Aplicar Filtros
-            </Button>
-          </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -417,6 +406,17 @@ export default function OrderList() {
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={applyFilters}
+              icon={<Filter size={18} />}
+              disabled={!hasUnappliedChanges}
+              className={hasUnappliedChanges ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400'}
+            >
+              Aplicar Filtros
+            </Button>
           </div>
         </div>
         
