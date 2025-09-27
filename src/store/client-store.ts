@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase';
 
 interface ClientState {
   clients: Client[];
+  totalClients: number;
   isLoading: boolean;
   error: string | null;
-  getClients: () => Promise<void>;
+  getClients: (page?: number, pageSize?: number, searchTerm?: string) => Promise<void>;
   getClientById: (id: string) => Promise<Client | undefined>;
   getClientsBySalesperson: (salespersonId: string) => Promise<Client[]>;
   createClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Client>;
@@ -57,22 +58,40 @@ const mapClientToDbFormat = (client: Partial<Client>) => ({
 
 export const useClientStore = create<ClientState>((set, get) => ({
   clients: [],
+  totalClients: 0,
   isLoading: false,
   error: null,
   
-  getClients: async () => {
+  getClients: async (page = 1, pageSize = 10, searchTerm = '') => {
     set({ isLoading: true, error: null });
     
     try {
-      const { data, error } = await supabase
+      // Build the query
+      let query = supabase
         .from('clients')
-        .select('*')
+        .select('*', { count: 'exact' });
+      
+      // Apply search filter
+      if (searchTerm) {
+        query = query.or(`business_name.ilike.%${searchTerm}%,commercial_name.ilike.%${searchTerm}%,ruc.ilike.%${searchTerm}%`);
+      }
+      
+      // Apply pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      const { data, error, count } = await query
+        .range(from, to)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
       
       const clients = data.map(mapDbRowToClient);
-      set({ clients, isLoading: false });
+      set({ 
+        clients, 
+        totalClients: count || 0,
+        isLoading: false 
+      });
     } catch (error) {
       set({
         isLoading: false,
