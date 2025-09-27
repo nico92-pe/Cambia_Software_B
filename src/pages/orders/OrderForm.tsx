@@ -706,7 +706,7 @@ export function OrderForm() {
                   </div>
                   
                   {/* Search Results Dropdown */}
-                  {showClientSearchResults && selectedSalesperson && clientSearchTerm && (
+                  {showClientSearchResults && selectedSalesperson && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                       {displayClients.length > 0 ? (
                         displayClients.map((client) => (
