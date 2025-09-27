@@ -12,7 +12,7 @@ import { Loader } from '../../components/ui/Loader';
 import { Badge } from '../../components/ui/Badge';
 
 export function ClientList() {
-  const { clients, getClients, deleteClient, isLoading, error } = useClientStore();
+  const { clients, totalClients, getClients, deleteClient, isLoading, error } = useClientStore();
   const { user } = useAuthStore();
   const { users } = useUserStore();
   const [searchTerm, setSearchTerm] = useState('');
