@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard as Edit, MapPin, Plus, Search, Trash, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, MapPin, Plus, Search, Trash, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useClientStore } from '../../store/client-store';
 import { useAuthStore } from '../../store/auth-store';
 import { useUserStore } from '../../store/user-store';
@@ -16,19 +16,46 @@ export function ClientList() {
   const { user } = useAuthStore();
   const { users } = useUserStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const CLIENTS_PER_PAGE = 10;
+  
+  // Calculate pagination values
+  const totalPages = Math.ceil(totalClients / CLIENTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * CLIENTS_PER_PAGE + 1;
+  const endIndex = Math.min(currentPage * CLIENTS_PER_PAGE, totalClients);
+  
+  // Pagination functions
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
+  
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
+
   const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
 
   useEffect(() => {
-    getClients();
-  }, [getClients]);
+    getClients(currentPage, CLIENTS_PER_PAGE, searchTerm);
+  }, [getClients, currentPage, searchTerm]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const handleDelete = async (id: string) => {
@@ -37,6 +64,8 @@ export function ClientList() {
         setDeleteLoading(id);
         setDeleteError(null);
         await deleteClient(id);
+        // Reload current page after deletion
+        await getClients(currentPage, CLIENTS_PER_PAGE, searchTerm);
       } catch (error) {
         if (error instanceof Error) {
           setDeleteError(error.message);
@@ -63,13 +92,6 @@ export function ClientList() {
     const salesperson = users.find(u => u.id === salespersonId);
     return salesperson ? salesperson.fullName : '';
   };
-
-  const filteredClients = clients.filter(
-    (client) =>
-      client.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.commercialName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.ruc.includes(searchTerm)
-  );
 
   return (
     <div>
@@ -99,6 +121,12 @@ export function ClientList() {
 
       <div className="card animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
         <div className="card-header border-b">
+          {/* Results Info */}
+          {totalClients > 0 && (
+            <div className="mb-4 text-sm text-gray-600">
+              Mostrando {startIndex} a {endIndex} de {totalClients} clientes
+            </div>
+          )}
           <div className="relative mb-4 sm:mb-0">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
               <Search size={18} />
@@ -113,7 +141,7 @@ export function ClientList() {
           </div>
         </div>
         <div className="overflow-x-auto -mx-4 sm:mx-0">
-          {filteredClients.length === 0 ? (
+          {clients.length === 0 ? (
             <div className="text-center py-8">
               <User className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
               <h3 className="mt-4 text-lg font-medium">No se encontraron clientes</h3>
@@ -133,7 +161,7 @@ export function ClientList() {
               <div className="block sm:hidden">
                 {/* Mobile Card View */}
                 <div className="space-y-4 p-4">
-                  {filteredClients.map((client) => (
+                  {clients.map((client) => (
                     <div key={client.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                       <div className="mb-3">
                         <h3 
@@ -210,7 +238,7 @@ export function ClientList() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200 hidden sm:table-row-group">
-                  {filteredClients.map((client) => (
+                  {clients.map((client) => (
                     <tr key={client.id} className="hover:bg-muted/30">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
@@ -267,6 +295,63 @@ export function ClientList() {
           )}
         </div>
         
+        {/* Pagination */}
+        {totalClients > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <div className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                icon={<ChevronLeft size={16} />}
+              >
+                Anterior
+              </Button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? "primary" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNumber)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                icon={<ChevronRight size={16} />}
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+        )}
+        
         {isLoading && (
           <div className="flex justify-center py-8">
             <div className="text-center">
@@ -275,7 +360,6 @@ export function ClientList() {
             </div>
           </div>
         )}
-        
         {/* Pagination */}
         {totalClients > 0 && totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
