@@ -66,13 +66,25 @@ export default function OrderList() {
   // Full order data for image generation
   const [fullOrderForImage, setFullOrderForImage] = useState<Order | null>(null);
   
+  // Debounced search term
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  
   // Check if current user can see salesperson filter
   const canFilterBySalesperson = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
-  // Load orders when filters or page change
+  // Debounce search term
   useEffect(() => {
-    getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
-  }, [getOrders, currentPage, searchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Load orders when filters or page change (using debounced search term)
+  useEffect(() => {
+    getOrders(currentPage, ORDERS_PER_PAGE, debouncedSearchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
+  }, [getOrders, currentPage, debouncedSearchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
 
   // Set current month/year as default filters
   useEffect(() => {
@@ -102,7 +114,7 @@ export default function OrderList() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
+  }, [debouncedSearchTerm, statusFilter, salespersonFilter, monthFilter, yearFilter]);
   
   // Pagination functions
   const goToPage = (page: number) => {
@@ -134,7 +146,7 @@ export default function OrderList() {
       setDeleteLoading(true);
       await deleteOrder(orderToDelete);
       // Reload current page after deletion
-      await getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
+      await getOrders(currentPage, ORDERS_PER_PAGE, debouncedSearchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
       setShowDeleteModal(false);
       setOrderToDelete(null);
     } catch (error) {
@@ -149,7 +161,7 @@ export default function OrderList() {
       setUpdatingStatus(orderId);
       await updateOrderStatus(orderId, newStatus);
       // Reload current page after status update
-      await getOrders(currentPage, ORDERS_PER_PAGE, searchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
+      await getOrders(currentPage, ORDERS_PER_PAGE, debouncedSearchTerm, statusFilter === 'all' ? '' : statusFilter, monthFilter, yearFilter, salespersonFilter === 'all' ? '' : salespersonFilter);
     } catch (error) {
       // Error handled by store
     } finally {
