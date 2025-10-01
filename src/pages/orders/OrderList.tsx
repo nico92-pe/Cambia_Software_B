@@ -35,11 +35,17 @@ export default function OrderList() {
   const { user } = useAuthStore();
   const { getUsersByRole } = useUserStore();
   const { downloadOrderAsImage, shareOrderAsImage } = useOrderImageDownload();
+  
+  // Get current month and year for default filters
+  const currentDate = new Date();
+  const currentMonth = String(currentDate.getMonth() + 1);
+  const currentYear = String(currentDate.getFullYear());
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [salespersonFilter, setSalespersonFilter] = useState('all');
-  const [monthFilter, setMonthFilter] = useState('all');
-  const [yearFilter, setYearFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState(currentMonth);
+  const [yearFilter, setYearFilter] = useState(currentYear);
   const [currentPage, setCurrentPage] = useState(1);
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   
@@ -74,8 +80,8 @@ export default function OrderList() {
     searchTerm: '',
     statusFilter: 'all' as OrderStatus | 'all',
     salespersonFilter: 'all',
-    monthFilter: 'all',
-    yearFilter: '',
+    monthFilter: currentMonth,
+    yearFilter: currentYear,
   });
   
   // Check if current user can see salesperson filter
@@ -94,20 +100,6 @@ export default function OrderList() {
     );
   }, [getOrders, currentPage, appliedFilters]);
 
-  // Set current month/year as default filters
-  useEffect(() => {
-    const currentDate = new Date();
-    const currentMonth = String(currentDate.getMonth() + 1);
-    const currentYear = String(currentDate.getFullYear());
-    setMonthFilter(currentMonth);
-    setYearFilter(currentYear);
-    setAppliedFilters(prev => ({
-      ...prev,
-      monthFilter: currentMonth,
-      yearFilter: currentYear,
-    }));
-  }, []);
-  
   // Load salespeople for filter (only for Admin/Super_Admin)
   useEffect(() => {
     const loadSalespeople = async () => {
