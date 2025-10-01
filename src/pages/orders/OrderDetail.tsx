@@ -10,6 +10,7 @@ import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
 import { Badge } from '../../components/ui/Badge';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import { parseYYYYMMDDToLocalDate } from '../../lib/utils';
 
 const statusLabels = {
   borrador: 'Borrador',
@@ -374,7 +375,7 @@ export function OrderDetail() {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-500">Fecha de Vencimiento:</span>
-                          <span className="font-medium">{formatDate(new Date(installment.dueDate))}</span>
+                          <span className="font-medium">{formatDate(parseYYYYMMDDToLocalDate(installment.dueDate))}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Días:</span>
@@ -416,7 +417,7 @@ export function OrderDetail() {
                             {formatCurrency(installment.amount)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            {formatDate(new Date(installment.dueDate))}
+                            {formatDate(parseYYYYMMDDToLocalDate(installment.dueDate))}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             {installment.daysDue} días
