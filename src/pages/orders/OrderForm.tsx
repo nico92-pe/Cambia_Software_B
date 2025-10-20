@@ -9,6 +9,7 @@ import { useAuthStore } from '../../store/auth-store';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
+import { Modal } from '../../components/ui/Modal';
 import { formatCurrency } from '../../lib/utils';
 import { toYYYYMMDD } from '../../lib/utils';
 import { UserRole, OrderStatus, Client, Product } from '../../lib/types';
@@ -78,7 +79,11 @@ export function OrderForm() {
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showProductSearch, setShowProductSearch] = useState(false);
-  
+
+  // Stock warning modal
+  const [showStockWarning, setShowStockWarning] = useState(false);
+  const [stockWarningProduct, setStockWarningProduct] = useState<Product | null>(null);
+
   // Order items
   const [items, setItems] = useState<OrderFormItem[]>([]);
   
@@ -309,8 +314,14 @@ export function OrderForm() {
   
   // Add product to order
   const addProductToOrder = (product: Product) => {
+    // Check if product has zero stock
+    if (product.stock === 0) {
+      setStockWarningProduct(product);
+      setShowStockWarning(true);
+    }
+
     const existingItem = items.find(item => item.productId === product.id);
-    
+
     if (existingItem) {
       // Update quantity if product already exists
       updateItemQuantity(existingItem.productId, existingItem.quantity + 1);
@@ -325,7 +336,7 @@ export function OrderForm() {
       };
       setItems([...items, newItem]);
     }
-    
+
     // Clear search
     setProductSearchTerm('');
     setSearchResults([]);
@@ -1204,6 +1215,38 @@ export function OrderForm() {
           )}
         </div>
       </div>
+
+      {/* Stock Warning Modal */}
+      <Modal
+        isOpen={showStockWarning}
+        onClose={() => setShowStockWarning(false)}
+        title="Advertencia de Stock"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <Package className="h-6 w-6 text-amber-500" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-gray-700">
+                El producto <span className="font-semibold">{stockWarningProduct?.name}</span> no cuenta con stock disponible.
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Podrá agregarlo a la cotización de todas formas, pero tenga en cuenta que no hay unidades disponibles en inventario.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              onClick={() => setShowStockWarning(false)}
+            >
+              Entendido
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
