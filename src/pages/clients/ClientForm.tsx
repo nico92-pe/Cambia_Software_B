@@ -18,13 +18,14 @@ export function ClientForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getClientById, createClient, updateClient, isLoading, error } = useClientStore();
-  const { users, getUsers } = useUserStore();
+  const { users, getUsers, isLoading: isLoadingUsers } = useUserStore();
   const { user: currentUser } = useAuthStore();
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isInitialDataLoading, setIsInitialDataLoading] = useState(true);
   const [dataLoadingError, setDataLoadingError] = useState<string | null>(null);
-  
+  const [usersLoaded, setUsersLoaded] = useState(false);
+
   const isEditMode = Boolean(id);
   const isCurrentUserSalesperson = currentUser?.role === UserRole.ASESOR_VENTAS;
 
@@ -40,65 +41,80 @@ export function ClientForm() {
   const isLima = province === 'Lima' || province === '';
 
   useEffect(() => {
-    const loadAllData = async () => {
+    const loadUsers = async () => {
+      console.log('[ClientForm] Starting users load...');
+      try {
+        await getUsers();
+        setUsersLoaded(true);
+        console.log('[ClientForm] Users load completed');
+      } catch (error) {
+        console.error('[ClientForm] Error loading users:', error);
+        setDataLoadingError('Error al cargar la lista de vendedores');
+      }
+    };
+
+    loadUsers();
+  }, [getUsers]);
+
+  useEffect(() => {
+    if (usersLoaded && users.length > 0) {
+      console.log('[ClientForm] Processing users:', users.length);
+
+      const filteredSalespeople = users
+        .filter(user => user.role === UserRole.ASESOR_VENTAS)
+        .map(s => ({ id: s.id, fullName: s.fullName }));
+
+      console.log('[ClientForm] Filtered salespeople:', filteredSalespeople.length);
+      setSalespeople(filteredSalespeople);
+    }
+  }, [users, usersLoaded]);
+
+  useEffect(() => {
+    const loadClientData = async () => {
+      if (!usersLoaded) {
+        console.log('[ClientForm] Waiting for users to load before loading client data...');
+        return;
+      }
+
       setIsInitialDataLoading(true);
       setDataLoadingError(null);
-      
+
       try {
-        console.log('Starting data load...');
-        
-        // Load users first and wait for completion
-        await getUsers();
-        
-        // Get the updated users from the store after getUsers completes
-        const currentUsers = useUserStore.getState().users;
-        console.log('Users loaded:', currentUsers.length);
-        
-        // Filter salespeople from the loaded users
-        const filteredSalespeople = currentUsers
-          .filter(user => user.role === UserRole.ASESOR_VENTAS)
-          .map(s => ({ id: s.id, fullName: s.fullName }));
-        
-        console.log('Filtered salespeople:', filteredSalespeople);
-        setSalespeople(filteredSalespeople);
-        
-        // Load client data if in edit mode
         if (isEditMode && id) {
-          console.log('Loading client data for edit mode...');
+          console.log('[ClientForm] Loading client data for edit mode...');
           try {
             const client = await getClientById(id);
             if (client) {
               reset(client);
-              console.log('Client data loaded and form reset');
+              console.log('[ClientForm] Client data loaded and form reset');
             } else {
               setFormError('Cliente no encontrado');
               navigate('/clients');
               return;
             }
           } catch (error) {
-            console.error('Error loading client:', error);
+            console.error('[ClientForm] Error loading client:', error);
             setFormError('Error al cargar el cliente');
             return;
           }
         } else if (isCurrentUserSalesperson && currentUser) {
-          // For new clients, pre-fill salesperson if current user is a salesperson
-          console.log('Pre-filling salesperson for new client');
+          console.log('[ClientForm] Pre-filling salesperson for new client');
           reset({
             salespersonId: currentUser.id,
           } as ClientFormData);
         }
-        
-        console.log('All data loaded successfully');
+
+        console.log('[ClientForm] Client data load completed');
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('[ClientForm] Error loading client data:', error);
         setDataLoadingError('Error al cargar los datos del formulario');
       } finally {
         setIsInitialDataLoading(false);
       }
     };
-    
-    loadAllData();
-  }, [id, getClientById, getUsers, reset, navigate, isCurrentUserSalesperson, currentUser]);
+
+    loadClientData();
+  }, [id, getClientById, reset, navigate, isCurrentUserSalesperson, currentUser, usersLoaded]);
 
   // Show loading screen during initial data load
   if (isInitialDataLoading) {
@@ -232,24 +248,43 @@ export function ClientForm() {
                     />
                   </div>
                 ) : (
-                  <select
-                    id="salespersonId"
-                    className={`select ${errors.salespersonId ? 'border-destructive' : ''}`}
-                    {...register('salespersonId', {
-                      required: 'El vendedor es requerido',
-                    })}
-                  >
-                    <option value="">Seleccionar vendedor</option>
-                    {salespeople.map((salesperson) => (
-                      <option key={salesperson.id} value={salesperson.id}>
-                        {salesperson.fullName}
+                  <div className="relative">
+                    <select
+                      id="salespersonId"
+                      className={`select ${errors.salespersonId ? 'border-destructive' : ''}`}
+                      disabled={isLoadingUsers || salespeople.length === 0}
+                      {...register('salespersonId', {
+                        required: 'El vendedor es requerido',
+                      })}
+                    >
+                      <option value="">
+                        {isLoadingUsers
+                          ? 'Cargando vendedores...'
+                          : salespeople.length === 0
+                          ? 'No hay vendedores disponibles'
+                          : 'Seleccionar vendedor'}
                       </option>
-                    ))}
-                  </select>
+                      {salespeople.map((salesperson) => (
+                        <option key={salesperson.id} value={salesperson.id}>
+                          {salesperson.fullName}
+                        </option>
+                      ))}
+                    </select>
+                    {isLoadingUsers && (
+                      <div className="absolute inset-y-0 right-10 flex items-center pointer-events-none">
+                        <Loader size="sm" />
+                      </div>
+                    )}
+                  </div>
                 )}
                 {errors.salespersonId && (
                   <p className="text-destructive text-sm mt-1">
                     {errors.salespersonId.message}
+                  </p>
+                )}
+                {!isLoadingUsers && salespeople.length === 0 && !isCurrentUserSalesperson && (
+                  <p className="text-amber-600 text-sm mt-1">
+                    No se encontraron vendedores. Por favor, contacte al administrador.
                   </p>
                 )}
               </div>
