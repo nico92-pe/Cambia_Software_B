@@ -33,8 +33,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         .single();
         
       if (profileError) throw profileError;
-      if (profile.role !== 'super_admin') {
-        throw new Error('Acceso no autorizado - Solo Super Admin puede acceder a esta función');
+      if (profile.role !== 'super_admin' && profile.role !== 'admin') {
+        throw new Error('Acceso no autorizado - Solo administradores pueden acceder a esta función');
       }
       
       // Get users through edge function

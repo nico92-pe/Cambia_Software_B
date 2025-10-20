@@ -50,8 +50,8 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch user profile');
     }
 
-    if (profile.role !== 'super_admin') {
-      throw new Error('Unauthorized - Only Super Admin can access this resource');
+    if (profile.role !== 'super_admin' && profile.role !== 'admin') {
+      throw new Error('Unauthorized - Only administrators can access this resource');
     }
 
     // Handle different HTTP methods
