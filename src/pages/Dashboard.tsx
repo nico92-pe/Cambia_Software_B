@@ -11,19 +11,37 @@ export function Dashboard() {
   const { user, isLoading: authLoading } = useAuthStore();
   const { salesDashboardData, salesStats, getSalesDashboardData, isLoading: ordersLoading } = useOrderStore();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth() + 1);
+
   const isLoading = authLoading || ordersLoading;
   const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
-  
+
   useEffect(() => {
     if (user) {
-      getSalesDashboardData(selectedYear);
+      getSalesDashboardData(selectedYear, selectedMonth);
     }
-  }, [user, selectedYear, getSalesDashboardData]);
-  
+  }, [user, selectedYear, selectedMonth, getSalesDashboardData]);
+
   // Generate year options (current year and 2 years back)
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 3 }, (_, i) => currentYear - i);
+
+  // Month options
+  const monthOptions = [
+    { value: null, label: 'Todos los meses' },
+    { value: 1, label: 'Enero' },
+    { value: 2, label: 'Febrero' },
+    { value: 3, label: 'Marzo' },
+    { value: 4, label: 'Abril' },
+    { value: 5, label: 'Mayo' },
+    { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' },
+    { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Septiembre' },
+    { value: 10, label: 'Octubre' },
+    { value: 11, label: 'Noviembre' },
+    { value: 12, label: 'Diciembre' },
+  ];
   
   // Prepare data for charts
   const chartData = salesStats?.salesByMonth.map(monthData => {
@@ -96,7 +114,7 @@ export function Dashboard() {
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-gray-400" />
             <label className="text-sm font-medium text-gray-700">Año:</label>
@@ -109,6 +127,21 @@ export function Dashboard() {
             {yearOptions.map((year) => (
               <option key={year} value={year}>
                 {year}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Mes:</label>
+          </div>
+          <select
+            value={selectedMonth || ''}
+            onChange={(e) => setSelectedMonth(e.target.value ? parseInt(e.target.value) : null)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          >
+            {monthOptions.map((month) => (
+              <option key={month.label} value={month.value || ''}>
+                {month.label}
               </option>
             ))}
           </select>
