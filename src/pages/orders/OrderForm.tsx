@@ -83,7 +83,6 @@ export function OrderForm() {
   // Stock warning modal
   const [showStockWarning, setShowStockWarning] = useState(false);
   const [stockWarningProduct, setStockWarningProduct] = useState<Product | null>(null);
-  const [stockWarningQuantity, setStockWarningQuantity] = useState(0);
 
   // Order items
   const [items, setItems] = useState<OrderFormItem[]>([]);
@@ -315,19 +314,17 @@ export function OrderForm() {
   
   // Add product to order
   const addProductToOrder = (product: Product) => {
-    const existingItem = items.find(item => item.productId === product.id);
-    const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
-
-    // Check if stock is insufficient (required quantity - available stock < 0)
-    if (newQuantity - product.stock > 0) {
+    // Check if stock is 100 units or less
+    if (product.stock <= 100) {
       setStockWarningProduct(product);
-      setStockWarningQuantity(newQuantity);
       setShowStockWarning(true);
     }
 
+    const existingItem = items.find(item => item.productId === product.id);
+
     if (existingItem) {
       // Update quantity if product already exists
-      updateItemQuantity(existingItem.productId, newQuantity);
+      updateItemQuantity(existingItem.productId, existingItem.quantity + 1);
     } else {
       // Add new item
       const newItem: OrderFormItem = {
@@ -349,14 +346,6 @@ export function OrderForm() {
   // Update item quantity
   const updateItemQuantity = (productId: string, quantity: number) => {
     const safeQuantity = Math.max(0, quantity);
-
-    // Check stock when quantity is updated
-    const item = items.find(i => i.productId === productId);
-    if (item && item.product && safeQuantity - item.product.stock > 0) {
-      setStockWarningProduct(item.product);
-      setStockWarningQuantity(safeQuantity);
-      setShowStockWarning(true);
-    }
 
     setItems(items.map(item => {
       if (item.productId === productId) {
@@ -1246,16 +1235,9 @@ export function OrderForm() {
                 <span className="font-semibold text-gray-900">{stockWarningProduct?.name}</span>
               </div>
               <div className="text-sm">
-                <span className="text-gray-600">Cantidad requerida:</span>{' '}
-                <span className="font-semibold text-gray-900">{stockWarningQuantity}</span>
-              </div>
-              <div className="text-sm">
                 <span className="text-gray-600">Stock disponible:</span>{' '}
                 <span className="font-semibold text-gray-900">{stockWarningProduct?.stock || 0}</span>
               </div>
-              <p className="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-200">
-                Podrá agregarlo a la cotización de todas formas, pero tenga en cuenta que no hay suficiente stock disponible en inventario.
-              </p>
             </div>
           </div>
           <div className="flex justify-end">
