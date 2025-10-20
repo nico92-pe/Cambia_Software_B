@@ -18,13 +18,14 @@ export function ClientForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getClientById, createClient, updateClient, isLoading, error } = useClientStore();
-  const { users, getUsers, isLoading: isLoadingUsers } = useUserStore();
+  const { getUsersByRole } = useUserStore();
   const { user: currentUser } = useAuthStore();
   const [salespeople, setSalespeople] = useState<{ id: string; fullName: string }[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isInitialDataLoading, setIsInitialDataLoading] = useState(true);
   const [dataLoadingError, setDataLoadingError] = useState<string | null>(null);
   const [usersLoaded, setUsersLoaded] = useState(false);
+  const [isLoadingSalespeople, setIsLoadingSalespeople] = useState(true);
 
   const isEditMode = Boolean(id);
   const isCurrentUserSalesperson = currentUser?.role === UserRole.ASESOR_VENTAS;
@@ -41,33 +42,32 @@ export function ClientForm() {
   const isLima = province === 'Lima' || province === '';
 
   useEffect(() => {
-    const loadUsers = async () => {
-      console.log('[ClientForm] Starting users load...');
+    const loadSalespeople = async () => {
+      console.log('[ClientForm] Starting salespeople load...');
+      setIsLoadingSalespeople(true);
       try {
-        await getUsers();
+        const salesUsers = await getUsersByRole(UserRole.ASESOR_VENTAS);
+        console.log('[ClientForm] Salespeople loaded:', salesUsers.length);
+
+        const formattedSalespeople = salesUsers.map(s => ({
+          id: s.id,
+          fullName: s.fullName
+        }));
+
+        setSalespeople(formattedSalespeople);
         setUsersLoaded(true);
-        console.log('[ClientForm] Users load completed');
+        setIsLoadingSalespeople(false);
+        console.log('[ClientForm] Salespeople load completed');
       } catch (error) {
-        console.error('[ClientForm] Error loading users:', error);
+        console.error('[ClientForm] Error loading salespeople:', error);
         setDataLoadingError('Error al cargar la lista de vendedores');
+        setUsersLoaded(true);
+        setIsLoadingSalespeople(false);
       }
     };
 
-    loadUsers();
-  }, [getUsers]);
-
-  useEffect(() => {
-    if (usersLoaded && users.length > 0) {
-      console.log('[ClientForm] Processing users:', users.length);
-
-      const filteredSalespeople = users
-        .filter(user => user.role === UserRole.ASESOR_VENTAS)
-        .map(s => ({ id: s.id, fullName: s.fullName }));
-
-      console.log('[ClientForm] Filtered salespeople:', filteredSalespeople.length);
-      setSalespeople(filteredSalespeople);
-    }
-  }, [users, usersLoaded]);
+    loadSalespeople();
+  }, [getUsersByRole]);
 
   useEffect(() => {
     const loadClientData = async () => {
@@ -252,13 +252,13 @@ export function ClientForm() {
                     <select
                       id="salespersonId"
                       className={`select ${errors.salespersonId ? 'border-destructive' : ''}`}
-                      disabled={isLoadingUsers || salespeople.length === 0}
+                      disabled={isLoadingSalespeople || salespeople.length === 0}
                       {...register('salespersonId', {
                         required: 'El vendedor es requerido',
                       })}
                     >
                       <option value="">
-                        {isLoadingUsers
+                        {isLoadingSalespeople
                           ? 'Cargando vendedores...'
                           : salespeople.length === 0
                           ? 'No hay vendedores disponibles'
@@ -270,7 +270,7 @@ export function ClientForm() {
                         </option>
                       ))}
                     </select>
-                    {isLoadingUsers && (
+                    {isLoadingSalespeople && (
                       <div className="absolute inset-y-0 right-10 flex items-center pointer-events-none">
                         <Loader size="sm" />
                       </div>
@@ -282,7 +282,7 @@ export function ClientForm() {
                     {errors.salespersonId.message}
                   </p>
                 )}
-                {!isLoadingUsers && salespeople.length === 0 && !isCurrentUserSalesperson && (
+                {!isLoadingSalespeople && salespeople.length === 0 && !isCurrentUserSalesperson && (
                   <p className="text-amber-600 text-sm mt-1">
                     No se encontraron vendedores. Por favor, contacte al administrador.
                   </p>
