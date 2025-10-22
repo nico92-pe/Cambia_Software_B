@@ -199,7 +199,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       let query = supabase
         .from('products')
-        .select('*', { count: 'exact' });
+        .select(`
+          *,
+          category:categories!inner(created_at)
+        `, { count: 'exact' });
 
       if (searchTerm) {
         query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
@@ -212,14 +215,25 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      const { data, error, count } = await query
-        .range(from, to)
-        .order('category_id', { ascending: true })
-        .order('created_at', { ascending: true });
+      const { data, error, count } = await query.range(from, to);
 
       if (error) throw error;
 
-      const products = data.map(mapDbRowToProduct);
+      const products = data
+        .map(mapDbRowToProduct)
+        .sort((a, b) => {
+          const rowA = data.find(d => d.id === a.id);
+          const rowB = data.find(d => d.id === b.id);
+
+          const categoryCreatedA = rowA?.category?.created_at || '';
+          const categoryCreatedB = rowB?.category?.created_at || '';
+
+          if (categoryCreatedA !== categoryCreatedB) {
+            return categoryCreatedA.localeCompare(categoryCreatedB);
+          }
+
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
 
       set({
         products,
