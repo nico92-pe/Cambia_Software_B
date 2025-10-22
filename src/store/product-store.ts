@@ -49,14 +49,15 @@ interface ProductState {
   categories: Category[];
   totalProducts: number;
   isLoading: boolean;
+  fetchLoading: boolean;
   error: string | null;
-  
+
   // Category operations
   getCategories: () => Promise<void>;
   createCategory: (name: string) => Promise<Category>;
   updateCategory: (id: string, name: string) => Promise<Category>;
   deleteCategory: (id: string) => Promise<void>;
-  
+
   // Product operations
   getProducts: (page?: number, pageSize?: number, searchTerm?: string, categoryFilter?: string) => Promise<void>;
   getAllProductsForCatalog: () => Promise<Array<Product & { categoryName: string }>>;
@@ -71,6 +72,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
   categories: [],
   totalProducts: 0,
   isLoading: false,
+  fetchLoading: false,
   error: null,
   
   // Category operations
@@ -186,70 +188,49 @@ export const useProductStore = create<ProductState>((set, get) => ({
   
   // Product operations
   getProducts: async (page = 1, pageSize = 10, searchTerm = '', categoryFilter = '') => {
-    set({ isLoading: true, error: null });
-    
+    const isInitialLoad = get().products.length === 0;
+
+    if (isInitialLoad) {
+      set({ isLoading: true, error: null });
+    } else {
+      set({ fetchLoading: true, error: null });
+    }
+
     try {
-      // Build the query
       let query = supabase
         .from('products')
-        .select(`
-          *,
-          category:categories(*)
-        `, { count: 'exact' });
-      
-      // Apply search filter
+        .select('*', { count: 'exact' });
+
       if (searchTerm) {
         query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
       }
-      
-      // Apply category filter
+
       if (categoryFilter) {
         query = query.eq('category_id', categoryFilter);
       }
-      
-      // Get categories to sort them by creation date for ordering
-      const categoriesData = get().categories;
-      
-      // Create a map of category order
-      const categoryOrder = new Map();
-      categoriesData.forEach((cat, index) => {
-        categoryOrder.set(cat.id, index);
-      });
-      
-      // Apply pagination and execute query
+
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
-      
+
       const { data, error, count } = await query
         .range(from, to)
+        .order('category_id', { ascending: true })
         .order('created_at', { ascending: true });
-      
+
       if (error) throw error;
-      
-      // Map products and sort them
-      const products = data
-        .map(mapDbRowToProduct)
-        .sort((a, b) => {
-          // Sort by category order (oldest categories first)
-          const categoryOrderA = categoryOrder.get(a.categoryId) ?? 999;
-          const categoryOrderB = categoryOrder.get(b.categoryId) ?? 999;
-          
-          if (categoryOrderA !== categoryOrderB) {
-            return categoryOrderA - categoryOrderB;
-          }
-          
-          // Then sort by product creation date within the same category
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
-        
-      set({ 
-        products, 
+
+      const products = data.map(mapDbRowToProduct);
+
+      set({
+        products,
         totalProducts: count || 0,
-        isLoading: false 
+        isLoading: false,
+        fetchLoading: false
       });
     } catch (error) {
       set({
         isLoading: false,
+        fetchLoading: false,
         error: error instanceof Error ? error.message : 'Error al cargar productos'
       });
     }

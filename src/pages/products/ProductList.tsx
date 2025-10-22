@@ -14,7 +14,7 @@ import { Badge } from '../../components/ui/Badge';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 export function ProductList() {
-  const { products, categories, totalProducts, getProducts, getCategories, getAllProductsForCatalog, deleteProduct, isLoading, error } = useProductStore();
+  const { products, categories, totalProducts, getProducts, getCategories, getAllProductsForCatalog, deleteProduct, isLoading, fetchLoading, error } = useProductStore();
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -26,6 +26,7 @@ export function ProductList() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   
   const PRODUCTS_PER_PAGE = 10;
   
@@ -59,12 +60,20 @@ export function ProductList() {
   }, [getCategories]);
 
   useEffect(() => {
-    getProducts(currentPage, PRODUCTS_PER_PAGE, searchTerm, categoryFilter);
-  }, [getProducts, currentPage, searchTerm, categoryFilter]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    getProducts(currentPage, PRODUCTS_PER_PAGE, debouncedSearchTerm, categoryFilter);
+  }, [getProducts, currentPage, debouncedSearchTerm, categoryFilter]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
   };
 
   const handleCategoryFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -218,6 +227,11 @@ export function ProductList() {
                 value={searchTerm}
                 onChange={handleSearch}
               />
+              {searchTerm !== debouncedSearchTerm && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <Loader size="sm" />
+                </div>
+              )}
             </div>
             <div>
               <select
@@ -235,7 +249,15 @@ export function ProductList() {
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto relative">
+          {fetchLoading && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
+              <div className="text-center">
+                <Loader size="lg" />
+                <p className="text-muted-foreground mt-4">Cargando productos...</p>
+              </div>
+            </div>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
