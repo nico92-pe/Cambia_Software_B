@@ -15,6 +15,7 @@ import { ClientForm } from './pages/clients/ClientForm';
 import { ProductList } from './pages/products/ProductList';
 import { ProductForm } from './pages/products/ProductForm';
 import { CategoryList } from './pages/products/CategoryList';
+import { BulkStockEdit } from './pages/products/BulkStockEdit';
 import OrderList from './pages/orders/OrderList';
 import { OrderForm } from './pages/orders/OrderForm';
 import { OrderDetail } from './pages/orders/OrderDetail';
@@ -64,6 +65,7 @@ function App() {
           <Route path="/products/new" element={<ProductForm />} />
           <Route path="/products/edit/:id" element={<ProductForm />} />
           <Route path="/products/categories" element={<CategoryList />} />
+          <Route path="/products/bulk-stock-edit" element={<BulkStockEdit />} />
           
           {/* Order routes */}
           <Route path="/orders" element={<OrderList />} />

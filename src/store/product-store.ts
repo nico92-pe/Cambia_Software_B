@@ -67,6 +67,7 @@ interface ProductState {
   createProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Product>;
   updateProduct: (id: string, productData: Partial<Product>) => Promise<Product>;
   deleteProduct: (id: string) => Promise<void>;
+  bulkUpdateProducts: (updates: Array<{ id: string; unitsPerBox: number; stock: number }>) => Promise<void>;
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
@@ -428,15 +429,15 @@ export const useProductStore = create<ProductState>((set, get) => ({
   
   deleteProduct: async (id) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', id);
-        
+
       if (error) throw error;
-      
+
       set(state => ({
         products: state.products.filter(product => product.id !== id),
         isLoading: false
@@ -445,6 +446,32 @@ export const useProductStore = create<ProductState>((set, get) => ({
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Error al eliminar producto'
+      });
+      throw error;
+    }
+  },
+
+  bulkUpdateProducts: async (updates) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('products')
+          .update({
+            units_per_box: update.unitsPerBox,
+            stock: update.stock,
+          })
+          .eq('id', update.id);
+
+        if (error) throw error;
+      }
+
+      set({ isLoading: false });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al actualizar productos'
       });
       throw error;
     }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Edit, Package, Plus, Search, Tag, Trash, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Box, Edit, Package, Plus, Search, Tag, Trash, ChevronLeft, ChevronRight, Download, PackageCheck } from 'lucide-react';
 import { useProductStore } from '../../store/product-store';
 import { useAuthStore } from '../../store/auth-store';
 import { ProductDetailModal } from '../../components/products/ProductDetailModal';
@@ -54,6 +54,7 @@ export function ProductList() {
   };
   
   const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
+  const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
   useEffect(() => {
     getCategories();
@@ -187,6 +188,13 @@ export function ProductList() {
               Categorías
             </Button>
           </Link>
+          {isAdmin && (
+            <Link to="/products/bulk-stock-edit">
+              <Button variant="outline" icon={<PackageCheck size={18} />}>
+                Editar Stock
+              </Button>
+            </Link>
+          )}
           {!isAsesorVentas && (
             <Link to="/products/new">
               <Button icon={<Plus size={18} />}>Nuevo Producto</Button>
