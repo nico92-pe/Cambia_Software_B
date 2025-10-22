@@ -47,6 +47,20 @@ export async function generateProductCatalogPDF(
 
   let yPosition = 58;
 
+  // Define category order (exact order from the dropdown)
+  const categoryOrder = [
+    'Válvulas de Ingreso',
+    'Válvulas de Descarga',
+    'Pernos y Balancín',
+    'Pulsadores',
+    'Flappers',
+    'Accesorios Completos de Inodoro',
+    'Kits de Inodoro',
+    'Trampas y Desague',
+    'Aireadores',
+    'En Liquidación'
+  ];
+
   // Group products by category
   const productsByCategory: { [key: string]: ProductWithCategory[] } = {};
   products.forEach(product => {
@@ -57,13 +71,25 @@ export async function generateProductCatalogPDF(
     productsByCategory[categoryName].push(product);
   });
 
+  // Sort categories according to the defined order
+  const sortedCategories = categoryOrder
+    .filter(cat => productsByCategory[cat])
+    .map(cat => [cat, productsByCategory[cat]] as [string, ProductWithCategory[]]);
+
+  // Add any categories not in the predefined order at the end
+  Object.entries(productsByCategory).forEach(([categoryName, products]) => {
+    if (!categoryOrder.includes(categoryName)) {
+      sortedCategories.push([categoryName, products]);
+    }
+  });
+
   // Define table headers
   const headers = withStock
     ? ['Producto', 'Código', 'Minorista', 'Mayorista', 'Distribuidor', 'Stock']
     : ['Producto', 'Código', 'Minorista', 'Mayorista', 'Distribuidor'];
 
   // Generate tables for each category
-  Object.entries(productsByCategory).forEach(([categoryName, categoryProducts], index) => {
+  sortedCategories.forEach(([categoryName, categoryProducts], index) => {
     // Add category title
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -131,7 +157,7 @@ export async function generateProductCatalogPDF(
     yPosition = (doc as any).lastAutoTable.finalY + 8;
 
     // Add new page if needed and not last category
-    if (yPosition > 250 && index < Object.keys(productsByCategory).length - 1) {
+    if (yPosition > 250 && index < sortedCategories.length - 1) {
       doc.addPage();
       yPosition = 20;
     }
