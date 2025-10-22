@@ -266,14 +266,7 @@ export function ProductList() {
               </div>
             </div>
           )}
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <Loader size="lg" />
-                <p className="text-muted-foreground mt-4">Cargando productos...</p>
-              </div>
-            </div>
-          ) : products.length === 0 ? (
+          {products.length === 0 && !fetchLoading ? (
             <div className="text-center py-8">
               <Box className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
               <h3 className="mt-4 text-lg font-medium">No se encontraron productos</h3>
