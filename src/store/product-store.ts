@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 const mapDbRowToCategory = (row: any): Category => ({
   id: row.id,
   name: row.name,
+  displayOrder: row.display_order,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -57,6 +58,7 @@ interface ProductState {
   createCategory: (name: string) => Promise<Category>;
   updateCategory: (id: string, name: string) => Promise<Category>;
   deleteCategory: (id: string) => Promise<void>;
+  reorderCategories: (categoryId: string, newOrder: number) => Promise<void>;
 
   // Product operations
   getProducts: (page?: number, pageSize?: number, searchTerm?: string, categoryFilter?: string) => Promise<void>;
@@ -78,15 +80,15 @@ export const useProductStore = create<ProductState>((set, get) => ({
   // Category operations
   getCategories: async () => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('created_at', { ascending: true });
-        
+        .order('display_order', { ascending: true });
+
       if (error) throw error;
-      
+
       const categories = data.map(mapDbRowToCategory);
       set({ categories, isLoading: false });
     } catch (error) {
@@ -99,25 +101,36 @@ export const useProductStore = create<ProductState>((set, get) => ({
   
   createCategory: async (name) => {
     set({ isLoading: true, error: null });
-    
+
     try {
-      const dbData = mapCategoryToDbFormat({ name });
-      
+      const { data: existingCategories } = await supabase
+        .from('categories')
+        .select('display_order')
+        .order('display_order', { ascending: false })
+        .limit(1);
+
+      const maxOrder = existingCategories && existingCategories.length > 0
+        ? existingCategories[0].display_order
+        : 0;
+
       const { data, error } = await supabase
         .from('categories')
-        .insert(dbData)
+        .insert({
+          name,
+          display_order: maxOrder + 1
+        })
         .select()
         .single();
-        
+
       if (error) throw error;
-      
+
       const newCategory = mapDbRowToCategory(data);
-      
+
       set(state => ({
-        categories: [newCategory, ...state.categories],
+        categories: [...state.categories, newCategory].sort((a, b) => a.displayOrder - b.displayOrder),
         isLoading: false
       }));
-      
+
       return newCategory;
     } catch (error) {
       set({
@@ -164,15 +177,15 @@ export const useProductStore = create<ProductState>((set, get) => ({
   
   deleteCategory: async (id) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const { error } = await supabase
         .from('categories')
         .delete()
         .eq('id', id);
-        
+
       if (error) throw error;
-      
+
       set(state => ({
         categories: state.categories.filter(category => category.id !== id),
         isLoading: false
@@ -181,6 +194,27 @@ export const useProductStore = create<ProductState>((set, get) => ({
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Error al eliminar categoría'
+      });
+      throw error;
+    }
+  },
+
+  reorderCategories: async (categoryId, newOrder) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update({ display_order: newOrder })
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      await get().getCategories();
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al reordenar categorías'
       });
       throw error;
     }
@@ -201,7 +235,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         .from('products')
         .select(`
           *,
-          category:categories!inner(created_at)
+          category:categories!inner(display_order)
         `, { count: 'exact' });
 
       if (searchTerm) {
@@ -212,26 +246,21 @@ export const useProductStore = create<ProductState>((set, get) => ({
         query = query.eq('category_id', categoryFilter);
       }
 
-      const { data: allData, error, count } = await query;
+      // Apply server-side ordering by category display_order, then by product created_at
+      query = query
+        .order('display_order', { foreignTable: 'category', ascending: true })
+        .order('created_at', { ascending: true });
+
+      // Apply server-side pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
-      const sortedData = (allData || []).sort((a, b) => {
-        const categoryCreatedA = a.category?.created_at || '';
-        const categoryCreatedB = b.category?.created_at || '';
-
-        if (categoryCreatedA !== categoryCreatedB) {
-          return categoryCreatedA.localeCompare(categoryCreatedB);
-        }
-
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      });
-
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize;
-      const paginatedData = sortedData.slice(from, to);
-
-      const products = paginatedData.map(mapDbRowToProduct);
+      const products = (data || []).map(mapDbRowToProduct);
 
       set({
         products,
@@ -288,10 +317,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
         .from('products')
         .select(`
           *,
-          category:categories(name)
+          category:categories(name, display_order)
         `)
-        .order('category_id', { ascending: true })
-        .order('name', { ascending: true });
+        .order('display_order', { foreignTable: 'category', ascending: true })
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
 

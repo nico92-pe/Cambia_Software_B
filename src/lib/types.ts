@@ -41,6 +41,7 @@ export type Client = {
 export type Category = {
   id: string;
   name: string;
+  displayOrder: number;
   createdAt: string;
   updatedAt: string;
 };

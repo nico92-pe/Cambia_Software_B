@@ -1,24 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Plus, Tag, Trash } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ArrowDown, Edit, Plus, Tag, Trash } from 'lucide-react';
 import { useProductStore } from '../../store/product-store';
 import { useAuthStore } from '../../store/auth-store';
 import { UserRole } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
 import { Loader } from '../../components/ui/Loader';
+import { supabase } from '../../lib/supabase';
 
 export function CategoryList() {
   const navigate = useNavigate();
-  const { categories, getCategories, createCategory, updateCategory, deleteCategory, isLoading, error } = useProductStore();
+  const { categories, getCategories, createCategory, updateCategory, deleteCategory, reorderCategories, isLoading, error } = useProductStore();
   const { user } = useAuthStore();
-  
+
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  
+
   const isAsesorVentas = user?.role === UserRole.ASESOR_VENTAS;
 
   useEffect(() => {
@@ -92,6 +93,52 @@ export function CategoryList() {
   const cancelEdit = () => {
     setEditCategoryId(null);
     setEditCategoryName('');
+  };
+
+  const handleMoveUp = async (categoryId: string, currentOrder: number) => {
+    if (currentOrder <= 1) return;
+
+    try {
+      setActionLoading(true);
+      setActionError(null);
+
+      const targetCategory = categories.find(c => c.displayOrder === currentOrder - 1);
+      if (!targetCategory) return;
+
+      await supabase.from('categories').update({ display_order: currentOrder }).eq('id', targetCategory.id);
+      await reorderCategories(categoryId, currentOrder - 1);
+    } catch (error) {
+      if (error instanceof Error) {
+        setActionError(error.message);
+      } else {
+        setActionError('Error al reordenar categorías');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleMoveDown = async (categoryId: string, currentOrder: number) => {
+    if (currentOrder >= categories.length) return;
+
+    try {
+      setActionLoading(true);
+      setActionError(null);
+
+      const targetCategory = categories.find(c => c.displayOrder === currentOrder + 1);
+      if (!targetCategory) return;
+
+      await supabase.from('categories').update({ display_order: currentOrder }).eq('id', targetCategory.id);
+      await reorderCategories(categoryId, currentOrder + 1);
+    } catch (error) {
+      if (error instanceof Error) {
+        setActionError(error.message);
+      } else {
+        setActionError('Error al reordenar categorías');
+      }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   return (
@@ -217,8 +264,25 @@ export function CategoryList() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              icon={<ArrowUp size={16} />}
+                              onClick={() => handleMoveUp(category.id, category.displayOrder)}
+                              disabled={category.displayOrder === 1 || actionLoading}
+                              title="Mover arriba"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<ArrowDown size={16} />}
+                              onClick={() => handleMoveDown(category.id, category.displayOrder)}
+                              disabled={category.displayOrder === categories.length || actionLoading}
+                              title="Mover abajo"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               icon={<Edit size={16} />}
                               onClick={() => startEdit(category)}
+                              title="Editar"
                             />
                             <Button
                               variant="ghost"
@@ -227,6 +291,7 @@ export function CategoryList() {
                               onClick={() => handleDeleteCategory(category.id)}
                               loading={actionLoading}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Eliminar"
                             />
                           </div>
                         )}
