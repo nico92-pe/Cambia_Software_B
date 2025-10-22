@@ -212,28 +212,26 @@ export const useProductStore = create<ProductState>((set, get) => ({
         query = query.eq('category_id', categoryFilter);
       }
 
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      const { data, error, count } = await query.range(from, to);
+      const { data: allData, error, count } = await query;
 
       if (error) throw error;
 
-      const products = data
-        .map(mapDbRowToProduct)
-        .sort((a, b) => {
-          const rowA = data.find(d => d.id === a.id);
-          const rowB = data.find(d => d.id === b.id);
+      const sortedData = (allData || []).sort((a, b) => {
+        const categoryCreatedA = a.category?.created_at || '';
+        const categoryCreatedB = b.category?.created_at || '';
 
-          const categoryCreatedA = rowA?.category?.created_at || '';
-          const categoryCreatedB = rowB?.category?.created_at || '';
+        if (categoryCreatedA !== categoryCreatedB) {
+          return categoryCreatedA.localeCompare(categoryCreatedB);
+        }
 
-          if (categoryCreatedA !== categoryCreatedB) {
-            return categoryCreatedA.localeCompare(categoryCreatedB);
-          }
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
 
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize;
+      const paginatedData = sortedData.slice(from, to);
+
+      const products = paginatedData.map(mapDbRowToProduct);
 
       set({
         products,
