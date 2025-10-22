@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Edit, Package, Plus, Search, Tag, Trash, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Box, Edit, Package, Plus, Search, Tag, Trash, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useProductStore } from '../../store/product-store';
 import { useAuthStore } from '../../store/auth-store';
 import { ProductDetailModal } from '../../components/products/ProductDetailModal';
+import { ProductCatalogDownloadModal } from '../../components/products/ProductCatalogDownloadModal';
+import { generateProductCatalogPDF } from '../../lib/pdf-generator';
 import { Product, UserRole } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Alert';
@@ -12,7 +14,7 @@ import { Badge } from '../../components/ui/Badge';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 export function ProductList() {
-  const { products, categories, totalProducts, getProducts, getCategories, deleteProduct, isLoading, error } = useProductStore();
+  const { products, categories, totalProducts, getProducts, getCategories, getAllProductsForCatalog, deleteProduct, isLoading, error } = useProductStore();
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -20,6 +22,9 @@ export function ProductList() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   
   const PRODUCTS_PER_PAGE = 10;
@@ -100,6 +105,45 @@ export function ProductList() {
     setSelectedProduct(null);
   };
 
+  const handleDownloadClick = () => {
+    setIsDownloadModalOpen(true);
+    setDownloadError(null);
+  };
+
+  const handleDownloadCatalog = async (withStock: boolean) => {
+    try {
+      setIsDownloading(true);
+      setDownloadError(null);
+
+      const allProducts = await getAllProductsForCatalog();
+
+      if (allProducts.length === 0) {
+        setDownloadError('No hay productos disponibles para generar el catálogo');
+        return;
+      }
+
+      await generateProductCatalogPDF(allProducts, withStock);
+
+      setIsDownloadModalOpen(false);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setDownloadError(
+        error instanceof Error
+          ? error.message
+          : 'Error al generar el catálogo PDF'
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleCloseDownloadModal = () => {
+    if (!isDownloading) {
+      setIsDownloadModalOpen(false);
+      setDownloadError(null);
+    }
+  };
+
   // Show loading screen during initial load
   if (isLoading) {
     return (
@@ -122,6 +166,13 @@ export function ProductList() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            icon={<Download size={18} />}
+            onClick={handleDownloadClick}
+          >
+            Descargar
+          </Button>
           <Link to="/products/categories">
             <Button variant="outline" icon={<Tag size={18} />}>
               Categorías
@@ -144,6 +195,12 @@ export function ProductList() {
       {deleteError && (
         <Alert variant="destructive" className="mb-6 animate-in fade-in duration-300">
           {deleteError}
+        </Alert>
+      )}
+
+      {downloadError && (
+        <Alert variant="destructive" className="mb-6 animate-in fade-in duration-300">
+          {downloadError}
         </Alert>
       )}
 
@@ -474,6 +531,13 @@ export function ProductList() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         categoryName={selectedProduct ? getCategoryName(selectedProduct.categoryId) : ''}
+      />
+
+      <ProductCatalogDownloadModal
+        isOpen={isDownloadModalOpen}
+        onClose={handleCloseDownloadModal}
+        onDownload={handleDownloadCatalog}
+        isDownloading={isDownloading}
       />
     </div>
   );

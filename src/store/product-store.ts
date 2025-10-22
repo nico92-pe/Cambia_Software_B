@@ -59,6 +59,7 @@ interface ProductState {
   
   // Product operations
   getProducts: (page?: number, pageSize?: number, searchTerm?: string, categoryFilter?: string) => Promise<void>;
+  getAllProductsForCatalog: () => Promise<Array<Product & { categoryName: string }>>;
   getProductsByCategory: (categoryId: string) => Promise<Product[]>;
   createProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Product>;
   updateProduct: (id: string, productData: Partial<Product>) => Promise<Product>;
@@ -288,21 +289,46 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
   },
   
+  getAllProductsForCatalog: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          category:categories(name)
+        `)
+        .order('category_id', { ascending: true })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      const productsWithCategory = data.map(row => ({
+        ...mapDbRowToProduct(row),
+        categoryName: row.category?.name || 'Sin Categoría'
+      }));
+
+      return productsWithCategory;
+    } catch (error) {
+      console.error('Error loading products for catalog:', error);
+      throw error;
+    }
+  },
+
   getProductsByCategory: async (categoryId) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('category_id', categoryId)
         .order('created_at', { ascending: false });
-        
+
       if (error) throw error;
-      
+
       const products = data.map(mapDbRowToProduct);
       set({ isLoading: false });
-      
+
       return products;
     } catch (error) {
       set({
