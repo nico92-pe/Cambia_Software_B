@@ -63,6 +63,7 @@ interface ProductState {
   // Product operations
   getProducts: (page?: number, pageSize?: number, searchTerm?: string, categoryFilter?: string) => Promise<void>;
   getAllProductsForCatalog: () => Promise<Array<Product & { categoryName: string }>>;
+  getAllProductsForBulkEdit: () => Promise<Array<{ id: string; code: string; name: string; categoryName: string; unitsPerBox: number; stock: number }>>;
   getProductsByCategory: (categoryId: string) => Promise<Product[]>;
   createProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Product>;
   updateProduct: (id: string, productData: Partial<Product>) => Promise<Product>;
@@ -317,7 +318,18 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const { data, error } = await supabase
         .from('products')
         .select(`
-          *,
+          id,
+          code,
+          name,
+          wholesale_price,
+          retail_price,
+          distributor_price,
+          units_per_box,
+          category_id,
+          stock,
+          image_url,
+          created_at,
+          updated_at,
           category:categories(name, display_order)
         `)
         .order('display_order', { foreignTable: 'category', ascending: true })
@@ -333,6 +345,37 @@ export const useProductStore = create<ProductState>((set, get) => ({
       return productsWithCategory;
     } catch (error) {
       console.error('Error loading products for catalog:', error);
+      throw error;
+    }
+  },
+
+  getAllProductsForBulkEdit: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          code,
+          name,
+          units_per_box,
+          stock,
+          category:categories!inner(name, display_order)
+        `)
+        .order('display_order', { foreignTable: 'category', ascending: true })
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      return data.map(row => ({
+        id: row.id,
+        code: row.code,
+        name: row.name,
+        categoryName: row.category?.name || 'Sin Categoría',
+        unitsPerBox: row.units_per_box,
+        stock: row.stock || 0,
+      }));
+    } catch (error) {
+      console.error('Error loading products for bulk edit:', error);
       throw error;
     }
   },

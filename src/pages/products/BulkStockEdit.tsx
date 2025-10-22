@@ -14,15 +14,20 @@ interface ProductEditRow {
   name: string;
   code: string;
   categoryName: string;
-  unitsPerBox: number;
-  stock: number;
+  unitsPerBox: number | string;
+  stock: number | string;
   originalUnitsPerBox: number;
   originalStock: number;
 }
 
+interface CategoryGroup {
+  categoryName: string;
+  products: ProductEditRow[];
+}
+
 export function BulkStockEdit() {
   const navigate = useNavigate();
-  const { categories, getCategories, getAllProductsForCatalog, bulkUpdateProducts, isLoading, error } = useProductStore();
+  const { categories, getCategories, getAllProductsForBulkEdit, bulkUpdateProducts, isLoading, error } = useProductStore();
 
   const [products, setProducts] = useState<ProductEditRow[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -38,7 +43,7 @@ export function BulkStockEdit() {
   const loadProducts = async () => {
     try {
       setLoadingData(true);
-      const allProducts = await getAllProductsForCatalog();
+      const allProducts = await getAllProductsForBulkEdit();
 
       const productRows: ProductEditRow[] = allProducts.map(product => ({
         id: product.id,
@@ -46,9 +51,9 @@ export function BulkStockEdit() {
         code: product.code,
         categoryName: product.categoryName,
         unitsPerBox: product.unitsPerBox,
-        stock: product.stock || 0,
+        stock: product.stock,
         originalUnitsPerBox: product.unitsPerBox,
-        originalStock: product.stock || 0,
+        originalStock: product.stock,
       }));
 
       setProducts(productRows);
@@ -60,7 +65,7 @@ export function BulkStockEdit() {
   };
 
   const handleUnitsPerBoxChange = (productId: string, value: string) => {
-    const numValue = parseInt(value) || 0;
+    const numValue = value === '' ? '' : parseInt(value) || 0;
     setProducts(prev =>
       prev.map(p =>
         p.id === productId ? { ...p, unitsPerBox: numValue } : p
@@ -69,7 +74,7 @@ export function BulkStockEdit() {
   };
 
   const handleStockChange = (productId: string, value: string) => {
-    const numValue = parseInt(value) || 0;
+    const numValue = value === '' ? '' : parseInt(value) || 0;
     setProducts(prev =>
       prev.map(p =>
         p.id === productId ? { ...p, stock: numValue } : p
@@ -78,17 +83,35 @@ export function BulkStockEdit() {
   };
 
   const hasChanges = () => {
-    return products.some(p =>
-      p.unitsPerBox !== p.originalUnitsPerBox ||
-      p.stock !== p.originalStock
-    );
+    return products.some(p => {
+      const unitsPerBox = typeof p.unitsPerBox === 'string' ? 0 : p.unitsPerBox;
+      const stock = typeof p.stock === 'string' ? 0 : p.stock;
+      return unitsPerBox !== p.originalUnitsPerBox || stock !== p.originalStock;
+    });
   };
 
   const getChangedProducts = () => {
-    return products.filter(p =>
-      p.unitsPerBox !== p.originalUnitsPerBox ||
-      p.stock !== p.originalStock
-    );
+    return products.filter(p => {
+      const unitsPerBox = typeof p.unitsPerBox === 'string' ? 0 : p.unitsPerBox;
+      const stock = typeof p.stock === 'string' ? 0 : p.stock;
+      return unitsPerBox !== p.originalUnitsPerBox || stock !== p.originalStock;
+    });
+  };
+
+  const groupProductsByCategory = (): CategoryGroup[] => {
+    const grouped = products.reduce((acc, product) => {
+      const category = product.categoryName;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(product);
+      return acc;
+    }, {} as Record<string, ProductEditRow[]>);
+
+    return Object.entries(grouped).map(([categoryName, products]) => ({
+      categoryName,
+      products
+    }));
   };
 
   const handleSaveClick = () => {
@@ -108,8 +131,8 @@ export function BulkStockEdit() {
       const changedProducts = getChangedProducts();
       const updates = changedProducts.map(p => ({
         id: p.id,
-        unitsPerBox: p.unitsPerBox,
-        stock: p.stock,
+        unitsPerBox: typeof p.unitsPerBox === 'string' ? 0 : p.unitsPerBox,
+        stock: typeof p.stock === 'string' ? 0 : p.stock,
       }));
 
       await bulkUpdateProducts(updates);
@@ -146,6 +169,7 @@ export function BulkStockEdit() {
   }
 
   const changedProducts = getChangedProducts();
+  const categoryGroups = groupProductsByCategory();
 
   return (
     <div>
@@ -198,76 +222,81 @@ export function BulkStockEdit() {
               </p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-muted">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Producto
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Categoría
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-32">
-                    Unidades/Caja
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-32">
-                    Stock
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => {
-                  const hasProductChanges =
-                    product.unitsPerBox !== product.originalUnitsPerBox ||
-                    product.stock !== product.originalStock;
+            <div className="space-y-6">
+              {categoryGroups.map((group, groupIndex) => (
+                <div key={group.categoryName}>
+                  <div className="bg-gray-100 px-6 py-3 border-b-2 border-gray-300">
+                    <h3 className="text-lg font-semibold text-gray-800">{group.categoryName}</h3>
+                  </div>
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Producto
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-32">
+                          Unidades/Caja
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-32">
+                          Stock
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {group.products.map((product) => {
+                        const unitsPerBox = typeof product.unitsPerBox === 'string' ? 0 : product.unitsPerBox;
+                        const stock = typeof product.stock === 'string' ? 0 : product.stock;
+                        const hasProductChanges =
+                          unitsPerBox !== product.originalUnitsPerBox ||
+                          stock !== product.originalStock;
 
-                  return (
-                    <tr
-                      key={product.id}
-                      className={`hover:bg-muted/30 ${hasProductChanges ? 'bg-blue-50' : ''}`}
-                    >
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Código: {product.code}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge>{product.categoryName}</Badge>
-                      </td>
-                      <td className="px-6 py-4">
-                        <input
-                          type="number"
-                          min="0"
-                          className={`input w-full ${
-                            product.unitsPerBox !== product.originalUnitsPerBox
-                              ? 'border-blue-500 ring-1 ring-blue-500'
-                              : ''
-                          }`}
-                          value={product.unitsPerBox}
-                          onChange={(e) => handleUnitsPerBoxChange(product.id, e.target.value)}
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <input
-                          type="number"
-                          min="0"
-                          className={`input w-full ${
-                            product.stock !== product.originalStock
-                              ? 'border-blue-500 ring-1 ring-blue-500'
-                              : ''
-                          }`}
-                          value={product.stock}
-                          onChange={(e) => handleStockChange(product.id, e.target.value)}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        return (
+                          <tr
+                            key={product.id}
+                            className={`hover:bg-muted/30 ${hasProductChanges ? 'bg-blue-50' : ''}`}
+                          >
+                            <td className="px-6 py-4">
+                              <div>
+                                <div className="font-medium">{product.name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Código: {product.code}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <input
+                                type="number"
+                                min="0"
+                                className={`input w-full ${
+                                  unitsPerBox !== product.originalUnitsPerBox
+                                    ? 'border-blue-500 ring-1 ring-blue-500'
+                                    : ''
+                                }`}
+                                value={product.unitsPerBox}
+                                onChange={(e) => handleUnitsPerBoxChange(product.id, e.target.value)}
+                              />
+                            </td>
+                            <td className="px-6 py-4">
+                              <input
+                                type="number"
+                                min="0"
+                                className={`input w-full ${
+                                  stock !== product.originalStock
+                                    ? 'border-blue-500 ring-1 ring-blue-500'
+                                    : ''
+                                }`}
+                                value={product.stock}
+                                onChange={(e) => handleStockChange(product.id, e.target.value)}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
