@@ -6,17 +6,51 @@ interface ProductWithCategory extends Product {
   categoryName?: string;
 }
 
+// Helper function to load image as base64
+async function loadImageAsBase64(imagePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/png');
+        resolve(dataURL);
+      } else {
+        reject(new Error('Could not get canvas context'));
+      }
+    };
+    img.onerror = reject;
+    img.src = imagePath;
+  });
+}
+
 export async function generateProductCatalogPDF(
   products: ProductWithCategory[],
   withStock: boolean
 ) {
   const doc = new jsPDF();
 
-  // Add logo (top right) - Using text fallback since SVG rendering can be unreliable
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 162, 225); // #00A2E1 - CAMBIA blue color
-  doc.text('CAMBIA', 155, 15);
+  // Add logo (top right)
+  try {
+    const logoBase64 = await loadImageAsBase64('/Logo Cambia.png');
+    // Add logo to PDF (top right corner)
+    // Adjust size to fit nicely in the header
+    const logoWidth = 40;
+    const logoHeight = 14; // Approximate height based on logo aspect ratio
+    doc.addImage(logoBase64, 'PNG', 155, 8, logoWidth, logoHeight);
+  } catch (error) {
+    console.error('Error loading logo:', error);
+    // Fallback to text if image fails to load
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 162, 225);
+    doc.text('CAMBIA', 155, 15);
+  }
 
   // Add title
   doc.setFontSize(18);
