@@ -167,8 +167,9 @@ Deno.serve(async (req) => {
         if (email) {
           const { error: emailError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
             email: email,
+            email_confirm: true,
           });
-          
+
           if (emailError) {
             throw new Error(`Failed to update email: ${emailError.message}`);
           }

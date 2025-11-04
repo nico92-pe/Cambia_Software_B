@@ -185,3 +185,15 @@ export async function updatePassword(newPassword: string) {
     throw new Error(error.message);
   }
 }
+
+export async function updateEmail(newEmail: string) {
+  const { error } = await supabase.auth.updateUser({
+    email: newEmail
+  }, {
+    emailRedirectTo: undefined
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}

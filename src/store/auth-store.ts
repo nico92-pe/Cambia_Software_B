@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { User, UserRole } from '../lib/types';
-import { signIn as supabaseSignIn, signOut as supabaseSignOut, getCurrentUser, updatePassword as supabaseUpdatePassword, supabase } from '../lib/supabase';
+import { signIn as supabaseSignIn, signOut as supabaseSignOut, getCurrentUser, updatePassword as supabaseUpdatePassword, updateEmail as supabaseUpdateEmail, supabase } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
@@ -135,6 +135,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         throw new Error('No hay usuario autenticado');
       }
 
+      if (userData.email && userData.email !== currentUser.email) {
+        await supabaseUpdateEmail(userData.email);
+      }
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .update({
@@ -152,6 +156,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set(state => ({
         user: state.user ? {
           ...state.user,
+          email: userData.email || state.user.email,
           fullName: profile.full_name,
           phone: profile.phone,
           birthday: profile.birthday,
