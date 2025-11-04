@@ -175,3 +175,13 @@ export async function adminDeleteUser(userId: string) {
 
   return response.json();
 }
+
+export async function updatePassword(newPassword: string) {
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}

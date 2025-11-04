@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { User, UserRole } from '../lib/types';
-import { signIn as supabaseSignIn, signOut as supabaseSignOut, getCurrentUser, supabase } from '../lib/supabase';
+import { signIn as supabaseSignIn, signOut as supabaseSignOut, getCurrentUser, updatePassword as supabaseUpdatePassword, supabase } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
@@ -10,6 +10,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
   initialize: () => Promise<void>;
 }
 
@@ -126,14 +127,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   
   updateProfile: async (userData) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const currentUser = await getCurrentUser();
-      
+
       if (!currentUser) {
         throw new Error('No hay usuario autenticado');
       }
-      
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .update({
@@ -145,11 +146,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         .eq('id', currentUser.id)
         .select()
         .single();
-        
+
       if (error) throw error;
-      
+
       set(state => ({
-        user: state.user ? { 
+        user: state.user ? {
           ...state.user,
           fullName: profile.full_name,
           phone: profile.phone,
@@ -158,11 +159,26 @@ export const useAuthStore = create<AuthState>((set) => ({
         } : null,
         isLoading: false
       }));
-      
+
     } catch (error) {
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Error al actualizar perfil'
+      });
+      throw error;
+    }
+  },
+
+  updatePassword: async (newPassword) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      await supabaseUpdatePassword(newPassword);
+      set({ isLoading: false });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Error al cambiar la contraseña'
       });
       throw error;
     }
