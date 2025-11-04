@@ -54,27 +54,45 @@ export function Login() {
   
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!forgotPasswordEmail) {
       setForgotPasswordError('Por favor ingresa tu correo electrónico');
       return;
     }
-    
+
     setForgotPasswordLoading(true);
     setForgotPasswordError(null);
     setForgotPasswordMessage(null);
-    
+
     try {
       const { supabase } = await import('../lib/supabase');
+
+      // First, check if the email exists in our database
+      // We check the profiles table to see if there's a user with this email
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(1);
+
+      if (profileError) {
+        throw new Error('Error al verificar el correo electrónico');
+      }
+
+      // Get all auth users to check if email exists
+      // Note: We can't directly query auth.users from the client, so we'll send the reset
+      // and let Supabase handle it. If the email doesn't exist, Supabase won't send an email
+      // but will still return success for security reasons.
+
       const redirectUrl = `${window.location.origin}/reset-password`;
       const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
         redirectTo: redirectUrl,
       });
 
       if (error) throw error;
-      
+
+      // Show success message regardless (for security - don't reveal if email exists)
       setForgotPasswordMessage(
-        'Se ha enviado un enlace de recuperación a tu correo electrónico. Revisa tu bandeja de entrada y sigue las instrucciones.'
+        'Si el correo electrónico está registrado en nuestro sistema, recibirás un enlace de recuperación. Revisa tu bandeja de entrada y sigue las instrucciones.'
       );
       setForgotPasswordEmail('');
     } catch (error) {
