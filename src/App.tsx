@@ -5,6 +5,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { LandingPage } from './pages/LandingPage';
 import { PublicProductCatalog } from './pages/PublicProductCatalog';
 import { Login } from './pages/Login';
+import { VerifyCode } from './pages/VerifyCode';
 import { ResetPassword } from './pages/ResetPassword';
 import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
@@ -42,6 +43,7 @@ function App() {
       
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/verify-code" element={<VerifyCode />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       
       {/* Protected routes */}
