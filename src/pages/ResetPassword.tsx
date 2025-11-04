@@ -19,6 +19,7 @@ export function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isValidToken, setIsValidToken] = useState(false);
 
   const {
     register,
@@ -30,20 +31,56 @@ export function ResetPassword() {
   const password = watch('password');
 
   useEffect(() => {
-    // Check if we have the required tokens
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    
-    if (!accessToken || !refreshToken) {
-      setError('Enlace de recuperación inválido o expirado');
-      return;
-    }
+    const initializePasswordReset = async () => {
+      // Check for errors in hash fragment (Supabase redirects errors here)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const errorCode = hashParams.get('error');
+      const errorDescription = hashParams.get('error_description');
 
-    // Set the session with the tokens
-    supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
+      if (errorCode) {
+        const errorMessage = errorDescription
+          ? decodeURIComponent(errorDescription.replace(/\+/g, ' '))
+          : 'Enlace de recuperación inválido o expirado';
+        setError(errorMessage);
+        setIsValidToken(false);
+        return;
+      }
+
+      // Check for tokens in hash fragment first (Supabase magic link format)
+      let accessToken = hashParams.get('access_token');
+      let refreshToken = hashParams.get('refresh_token');
+
+      // If not in hash, check query parameters
+      if (!accessToken) {
+        accessToken = searchParams.get('access_token');
+        refreshToken = searchParams.get('refresh_token');
+      }
+
+      if (!accessToken || !refreshToken) {
+        setError('Enlace de recuperación inválido o expirado. Por favor, solicita un nuevo enlace.');
+        setIsValidToken(false);
+        return;
+      }
+
+      try {
+        // Set the session with the tokens
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (sessionError) {
+          throw sessionError;
+        }
+
+        setIsValidToken(true);
+      } catch (err) {
+        setError('Error al validar el enlace de recuperación. Por favor, solicita uno nuevo.');
+        setIsValidToken(false);
+      }
+    };
+
+    initializePasswordReset();
   }, [searchParams]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
@@ -118,7 +155,16 @@ export function ResetPassword() {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {!isValidToken && error && (
+            <div className="text-center">
+              <Button onClick={() => navigate('/login')} className="w-full">
+                Volver al Inicio de Sesión
+              </Button>
+            </div>
+          )}
+
+          {isValidToken && (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-medium">
                 Nueva Contraseña
@@ -193,16 +239,19 @@ export function ResetPassword() {
               Actualizar Contraseña
             </Button>
           </form>
+          )}
 
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
-              className="text-primary hover:text-primary/80 text-sm font-medium"
-            >
-              ← Volver al inicio de sesión
-            </button>
-          </div>
+          {isValidToken && (
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="text-primary hover:text-primary/80 text-sm font-medium"
+              >
+                ← Volver al inicio de sesión
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
