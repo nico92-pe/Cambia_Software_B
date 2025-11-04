@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
       case 'PATCH': {
         const url = new URL(req.url);
         const userId = url.pathname.split('/').pop();
-        
+
         if (!userId) {
           throw new Error('User ID is required');
         }
@@ -163,15 +163,45 @@ Deno.serve(async (req) => {
           throw new Error('Profile data is required');
         }
 
-        // Update email in auth if provided
+        // Update email in auth if provided and different from current
         if (email) {
-          const { error: emailError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-            email: email,
-            email_confirm: true,
-          });
+          // First get current user to check if email is actually changing
+          const { data: currentUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
 
-          if (emailError) {
-            throw new Error(`Failed to update email: ${emailError.message}`);
+          if (getUserError) {
+            throw new Error(`Error al obtener usuario actual: ${getUserError.message}`);
+          }
+
+          // Only update if email is different
+          if (currentUser.user.email !== email) {
+            // Check if new email is already in use by another user
+            const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+
+            if (listError) {
+              throw new Error(`Error al verificar emails existentes: ${listError.message}`);
+            }
+
+            const emailExists = users.find(u => u.email === email && u.id !== userId);
+            if (emailExists) {
+              throw new Error(`El correo electrónico ${email} ya está en uso por otro usuario`);
+            }
+
+            // Update email in auth
+            const { error: emailError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+              email: email,
+              email_confirm: true,
+            });
+
+            if (emailError) {
+              // Provide more specific error messages
+              if (emailError.message.includes('already exists')) {
+                throw new Error(`El correo electrónico ${email} ya está registrado en el sistema`);
+              } else if (emailError.message.includes('invalid')) {
+                throw new Error(`El correo electrónico ${email} no es válido`);
+              } else {
+                throw new Error(`Error al actualizar correo: ${emailError.message}`);
+              }
+            }
           }
         }
 
@@ -187,7 +217,7 @@ Deno.serve(async (req) => {
           .single();
 
         if (updateError) {
-          throw new Error(`Failed to update profile: ${updateError.message}`);
+          throw new Error(`Error al actualizar perfil: ${updateError.message}`);
         }
 
         return new Response(
