@@ -65,39 +65,34 @@ export function Login() {
     setForgotPasswordMessage(null);
 
     try {
-      const { supabase } = await import('../lib/supabase');
+      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/password-recovery/request-code`;
 
-      // First, check if the email exists in our database
-      // We check the profiles table to see if there's a user with this email
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .limit(1);
-
-      if (profileError) {
-        throw new Error('Error al verificar el correo electrónico');
-      }
-
-      // Get all auth users to check if email exists
-      // Note: We can't directly query auth.users from the client, so we'll send the reset
-      // and let Supabase handle it. If the email doesn't exist, Supabase won't send an email
-      // but will still return success for security reasons.
-
-      const redirectUrl = `${window.location.origin}/reset-password`;
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
-        redirectTo: redirectUrl,
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email: forgotPasswordEmail }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
 
-      // Show success message regardless (for security - don't reveal if email exists)
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al enviar el código');
+      }
+
       setForgotPasswordMessage(
-        'Si el correo electrónico está registrado en nuestro sistema, recibirás un enlace de recuperación. Revisa tu bandeja de entrada y sigue las instrucciones.'
+        'Si el correo está registrado, recibirás un código de verificación en breve. Revisa tu bandeja de entrada.'
       );
-      setForgotPasswordEmail('');
+
+      // Redirect to verification page after 2 seconds
+      setTimeout(() => {
+        navigate(`/verify-code?email=${encodeURIComponent(forgotPasswordEmail)}`);
+      }, 2000);
     } catch (error) {
       setForgotPasswordError(
-        error instanceof Error ? error.message : 'Error al enviar el correo de recuperación'
+        error instanceof Error ? error.message : 'Error al enviar el código de recuperación'
       );
     } finally {
       setForgotPasswordLoading(false);
@@ -115,7 +110,7 @@ export function Login() {
               </div>
               <h1 className="text-2xl font-bold">Recuperar Contraseña</h1>
               <p className="text-muted-foreground mt-2">
-                Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
+                Ingresa tu correo electrónico y te enviaremos un código de verificación
               </p>
             </div>
             
@@ -153,7 +148,7 @@ export function Login() {
               </div>
               
               <Button type="submit" className="w-full" loading={forgotPasswordLoading}>
-                Enviar Enlace de Recuperación
+                Enviar Código de Verificación
               </Button>
             </form>
             
