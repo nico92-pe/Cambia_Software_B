@@ -1222,7 +1222,7 @@ export function OrderForm() {
                         </div>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-gray-500">Fecha de Vencimiento:</span>
+                            <span className="text-gray-500">Vencimiento:</span>
                             <span className="font-medium">{formatDateForDisplay(installment.dueDate)}</span>
                           </div>
                           <div className="flex justify-between items-center">
