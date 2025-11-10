@@ -107,21 +107,21 @@ export function OrderImageTemplate({ order }: OrderImageTemplateProps) {
           <table className="w-full border-collapse border-2 border-gray-300">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-6 py-5 text-left text-2xl font-bold">Código</th>
-                <th className="border border-gray-300 px-6 py-5 text-left text-2xl font-bold">Producto</th>
-                <th className="border border-gray-300 px-6 py-5 text-center text-2xl font-bold">Cant.</th>
-                <th className="border border-gray-300 px-6 py-5 text-right text-2xl font-bold">P. Unit.</th>
-                <th className="border border-gray-300 px-6 py-5 text-right text-2xl font-bold">Subtotal</th>
+                <th className="border border-gray-300 px-3 py-3 text-left text-2xl font-bold w-[12%]">Código</th>
+                <th className="border border-gray-300 px-3 py-3 text-left text-2xl font-bold w-[35%]">Producto</th>
+                <th className="border border-gray-300 px-3 py-3 text-center text-2xl font-bold w-[13%]">Cant.</th>
+                <th className="border border-gray-300 px-3 py-3 text-right text-2xl font-bold w-[20%]">P. Unit.</th>
+                <th className="border border-gray-300 px-3 py-3 text-right text-2xl font-bold w-[20%]">Subtotal</th>
               </tr>
             </thead>
             <tbody>
               {order.items.map((item, index) => (
                 <tr key={index}>
-                  <td className="border border-gray-300 px-6 py-5 text-2xl font-bold">{item.product?.code || 'N/A'}</td>
-                  <td className="border border-gray-300 px-6 py-5 text-2xl font-bold">{item.product?.name || 'Producto no disponible'}</td>
-                  <td className="border border-gray-300 px-6 py-5 text-center text-2xl font-bold">{item.quantity}</td>
-                  <td className="border border-gray-300 px-6 py-5 text-right text-2xl font-bold">{formatCurrency(item.unitPrice)}</td>
-                  <td className="border border-gray-300 px-6 py-5 text-right text-2xl font-bold">{formatCurrency(item.subtotal)}</td>
+                  <td className="border border-gray-300 px-3 py-3 text-2xl font-bold">{item.product?.code || 'N/A'}</td>
+                  <td className="border border-gray-300 px-3 py-3 text-2xl font-bold">{item.product?.name || 'Producto no disponible'}</td>
+                  <td className="border border-gray-300 px-3 py-3 text-center text-2xl font-bold">{item.quantity}</td>
+                  <td className="border border-gray-300 px-3 py-3 text-right text-2xl font-bold">{formatCurrency(item.unitPrice)}</td>
+                  <td className="border border-gray-300 px-3 py-3 text-right text-2xl font-bold">{formatCurrency(item.subtotal)}</td>
                 </tr>
               ))}
             </tbody>
