@@ -1401,7 +1401,7 @@ export function OrderForm() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="input resize-none"
-                  placeholder="Características adicionales."
+                  placeholder="Describir en caso de existir."
                   disabled={isReadOnly}
                 />
               </div>
