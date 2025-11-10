@@ -1394,7 +1394,7 @@ export function OrderForm() {
             )}
               <div className="space-y-2">
                 <label className="block text-sm font-medium mt-6">
-                  Observaciones
+                  Observaciones (Opcional)
                 </label>
                 <textarea
                   rows={4}
