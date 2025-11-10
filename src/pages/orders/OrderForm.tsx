@@ -850,7 +850,7 @@ export function OrderForm() {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                             <input
                               type="text"
-                              placeholder="Buscar por nombre o código..."
+                              placeholder="Buscar por nombre o código"
                               value={productSearchTerm}
                               onChange={(e) => handleProductSearch(e.target.value)}
                               className="input pl-10"
@@ -890,7 +890,7 @@ export function OrderForm() {
                                   <Package className="h-5 w-5 text-gray-400" />
                                   <div>
                                     <p className="font-medium">{product.name}</p>
-                                    <p className="text-sm text-gray-500">Código: {product.code}</p>
+                                    <p className="text-sm text-gray-500">{product.code}</p>
                                   </div>
                                 </div>
                                 <div className="text-right">
