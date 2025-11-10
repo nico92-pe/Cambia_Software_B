@@ -450,7 +450,7 @@ export function OrderDetail() {
 
       {/* Hidden Order Template for Image Generation */}
       {order && (
-        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px' }}>
+        <div style={{ position: 'fixed', left: 0, top: 0, visibility: 'hidden', width: '1200px', zIndex: -1 }}>
           <OrderImageTemplate order={order} />
         </div>
       )}

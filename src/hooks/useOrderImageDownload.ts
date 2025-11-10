@@ -20,26 +20,31 @@ export function useOrderImageDownload() {
         throw new Error('Order template not found');
       }
 
-      // Wait a bit for the DOM to be fully rendered
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for next animation frame to ensure DOM is ready
+      await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
 
-      // Configure html2canvas options for better quality
+      // Configure html2canvas options for better quality and performance
       const canvas = await html2canvas(element, {
-        scale: 2, // Higher resolution
+        scale: 2.5, // Higher resolution for better quality
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: '#ffffff',
-        width: 800,
-        height: Math.max(600, element.scrollHeight),
+        width: 1200,
+        height: element.scrollHeight,
+        windowWidth: 1200,
+        windowHeight: element.scrollHeight,
         scrollX: 0,
         scrollY: 0,
         logging: false,
+        imageTimeout: 0,
+        removeContainer: true,
         onclone: (clonedDoc) => {
           // Ensure all styles are applied in the cloned document
           const clonedElement = clonedDoc.getElementById(`order-template-${order.id}`);
           if (clonedElement) {
             clonedElement.style.display = 'block';
             clonedElement.style.visibility = 'visible';
+            clonedElement.style.position = 'relative';
           }
         }
       });
@@ -76,25 +81,30 @@ export function useOrderImageDownload() {
         throw new Error('Order template not found');
       }
 
-      // Wait a bit for the DOM to be fully rendered
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for next animation frame to ensure DOM is ready
+      await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 2.5, // Higher resolution for better quality
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: '#ffffff',
-        width: 800,
-        height: Math.max(600, element.scrollHeight),
+        width: 1200,
+        height: element.scrollHeight,
+        windowWidth: 1200,
+        windowHeight: element.scrollHeight,
         scrollX: 0,
         scrollY: 0,
         logging: false,
+        imageTimeout: 0,
+        removeContainer: true,
         onclone: (clonedDoc) => {
           // Ensure all styles are applied in the cloned document
           const clonedElement = clonedDoc.getElementById(`order-template-${order.id}`);
           if (clonedElement) {
             clonedElement.style.display = 'block';
             clonedElement.style.visibility = 'visible';
+            clonedElement.style.position = 'relative';
           }
         }
       });
