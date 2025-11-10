@@ -281,55 +281,96 @@ export function OrderDetail() {
           </div>
           <div className="card-content">
             {order.items && order.items.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-muted">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Producto
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Cantidad
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Precio Unit.
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Subtotal
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {order.items.map((item, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Package className="h-5 w-5 text-muted-foreground mr-3" />
-                            <div>
-                              <div className="font-medium">{item.product?.name || 'Producto no disponible'}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {item.product?.code || 'N/A'}
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Producto
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Cantidad
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Precio Unit.
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Subtotal
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {order.items.map((item, index) => (
+                        <tr key={index}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <Package className="h-5 w-5 text-muted-foreground mr-3" />
+                              <div>
+                                <div className="font-medium">{item.product?.name || 'Producto no disponible'}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {item.product?.code || 'N/A'}
+                                </div>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                            {item.quantity}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                            {formatCurrency(item.unitPrice)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                            {formatCurrency(item.subtotal)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="block md:hidden space-y-4">
+                  {order.items.map((item, index) => (
+                    <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-start gap-3 mb-4">
+                        <Package className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900">{item.product?.name || 'Producto no disponible'}</div>
+                          <div className="text-sm text-gray-500">{item.product?.code || 'N/A'}</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Cantidad
+                          </label>
+                          <div className="text-lg font-semibold text-gray-900">{item.quantity}</div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Precio Unitario
+                          </label>
+                          <div className="text-lg font-semibold text-gray-900">{formatCurrency(item.unitPrice)}</div>
+                        </div>
+
+                        <div className="pt-3 border-t border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-600">Subtotal</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(item.subtotal)}</span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
-                          {item.quantity}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
-                          {formatCurrency(item.unitPrice)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
-                          {formatCurrency(item.subtotal)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Totals */}
                 <div className="mt-6 flex justify-end">
-                  <div className="w-64 space-y-2">
+                  <div className="w-full md:w-64 space-y-2 bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span className="font-medium">{formatCurrency(order.subtotal)}</span>
@@ -344,7 +385,7 @@ export function OrderDetail() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </>
             ) : (
               <p className="text-muted-foreground">No hay productos en este pedido</p>
             )}
