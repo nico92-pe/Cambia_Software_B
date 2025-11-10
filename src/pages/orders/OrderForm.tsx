@@ -912,49 +912,139 @@ export function OrderForm() {
               </div>
             )}
 
-            {/* Order Items Table */}
+            {/* Order Items - Desktop Table View */}
             {items.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Producto
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Cantidad
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Precio Unit.
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Subtotal
-                      </th>
-                      {!isReadOnly && (
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Acciones
+              <>
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Producto
                         </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {items.map((item, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Package className="h-5 w-5 text-gray-400 mr-3" />
-                            <div>
-                              <div className="font-medium">{item.product?.name}</div>
-                              <div className="text-sm text-gray-500">Código: {item.product?.code}</div>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Cantidad
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Precio Unit.
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Subtotal
+                        </th>
+                        {!isReadOnly && (
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Acciones
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {items.map((item, index) => (
+                        <tr key={index}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <Package className="h-5 w-5 text-gray-400 mr-3" />
+                              <div>
+                                <div className="font-medium">{item.product?.name}</div>
+                                <div className="text-sm text-gray-500">Código: {item.product?.code}</div>
+                              </div>
                             </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {isReadOnly ? (
+                              <span className="font-medium">{item.quantity}</span>
+                            ) : (
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.quantity === 0 ? '' : item.quantity}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === '') {
+                                    updateItemQuantity(item.productId, 0);
+                                  } else {
+                                    updateItemQuantity(item.productId, parseInt(value) || 0);
+                                  }
+                                }}
+                                className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                              />
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {isReadOnly ? (
+                              <span className="font-medium">{formatCurrency(item.unitPrice)}</span>
+                            ) : (
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.unitPrice === 0 ? '' : item.unitPrice}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === '') {
+                                    updateItemPrice(item.productId, 0);
+                                  } else {
+                                    updateItemPrice(item.productId, parseFloat(value) || 0);
+                                  }
+                                }}
+                                className="w-24 text-center border border-gray-300 rounded px-2 py-1"
+                              />
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                            {formatCurrency(item.subtotal)}
+                          </td>
+                          {!isReadOnly && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<Trash2 size={16} />}
+                                onClick={() => removeItem(item.productId)}
+                                className="text-red-600 hover:text-red-700"
+                              />
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Order Items - Mobile Card View */}
+                <div className="block md:hidden space-y-4">
+                  {items.map((item, index) => (
+                    <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start gap-3 flex-1">
+                          <Package className="h-5 w-5 text-gray-400 mt-1 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900">{item.product?.name}</div>
+                            <div className="text-sm text-gray-500">Código: {item.product?.code}</div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                        </div>
+                        {!isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.productId)}
+                            className="text-red-600 hover:text-red-700 p-2 -mt-2 -mr-2"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Cantidad
+                          </label>
                           {isReadOnly ? (
-                            <span className="font-medium">{item.quantity}</span>
+                            <div className="text-lg font-semibold text-gray-900">{item.quantity}</div>
                           ) : (
                             <input
                               type="number"
+                              inputMode="numeric"
                               min="0"
                               value={item.quantity === 0 ? '' : item.quantity}
                               onChange={(e) => {
@@ -965,16 +1055,22 @@ export function OrderForm() {
                                   updateItemQuantity(item.productId, parseInt(value) || 0);
                                 }
                               }}
-                              className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                              className="w-full h-12 text-center text-lg border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-colors"
+                              placeholder="0"
                             />
                           )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Precio Unitario
+                          </label>
                           {isReadOnly ? (
-                            <span className="font-medium">{formatCurrency(item.unitPrice)}</span>
+                            <div className="text-lg font-semibold text-gray-900">{formatCurrency(item.unitPrice)}</div>
                           ) : (
                             <input
                               type="number"
+                              inputMode="decimal"
                               step="0.01"
                               min="0"
                               value={item.unitPrice === 0 ? '' : item.unitPrice}
@@ -986,32 +1082,26 @@ export function OrderForm() {
                                   updateItemPrice(item.productId, parseFloat(value) || 0);
                                 }
                               }}
-                              className="w-24 text-center border border-gray-300 rounded px-2 py-1"
+                              className="w-full h-12 text-center text-lg border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 transition-colors"
+                              placeholder="0.00"
                             />
                           )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
-                          {formatCurrency(item.subtotal)}
-                        </td>
-                        {!isReadOnly && (
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              icon={<Trash2 size={16} />}
-                              onClick={() => removeItem(item.productId)}
-                              className="text-red-600 hover:text-red-700"
-                            />
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+
+                        <div className="pt-3 border-t border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-600">Subtotal</span>
+                            <span className="text-lg font-bold text-gray-900">{formatCurrency(item.subtotal)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Totals */}
                 <div className="mt-6 flex justify-end">
-                  <div className="w-64 space-y-2 bg-gray-50 p-4 rounded-lg">
+                  <div className="w-full md:w-64 space-y-2 bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span className="font-medium">{formatCurrency(finalDisplayTotals.subtotal)}</span>
@@ -1026,7 +1116,7 @@ export function OrderForm() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </>
             ) : (
               <div className="text-center py-8 text-gray-500">
                 No hay productos agregados al pedido
