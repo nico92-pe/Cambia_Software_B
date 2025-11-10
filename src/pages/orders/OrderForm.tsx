@@ -946,7 +946,7 @@ export function OrderForm() {
                               <Package className="h-5 w-5 text-gray-400 mr-3" />
                               <div>
                                 <div className="font-medium">{item.product?.name}</div>
-                                <div className="text-sm text-gray-500">Código: {item.product?.code}</div>
+                                <div className="text-sm text-gray-500">{item.product?.code}</div>
                               </div>
                             </div>
                           </td>
