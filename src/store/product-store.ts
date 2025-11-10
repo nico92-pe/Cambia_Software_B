@@ -283,29 +283,26 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       let query = supabase
         .from('products')
-        .select(`
-          *,
-          category:categories(*)
-        `);
-      
+        .select('*');
+
       // Apply search filter
       if (searchTerm) {
         query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
       }
-      
+
       // Apply category filter
       if (categoryFilter) {
         query = query.eq('category_id', categoryFilter);
       }
-      
+
       const { data, error } = await query
-        .order('created_at', { ascending: true })
-        .limit(1000); // Reasonable limit to prevent performance issues
-      
+        .order('name', { ascending: true })
+        .limit(100);
+
       if (error) throw error;
-      
+
       const products = data.map(mapDbRowToProduct);
-      
+
       return products;
     } catch (error) {
       console.error('Error searching products:', error);

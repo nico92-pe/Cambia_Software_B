@@ -36,7 +36,7 @@ interface OrderInstallmentForm {
 
 export function OrderForm() {
   console.log('OrderForm: Componente renderizándose correctamente');
-  
+
   // Hooks
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -46,6 +46,9 @@ export function OrderForm() {
   const { categories, getCategories } = useProductStore();
   const { getUsersByRole } = useUserStore();
   const { getOrderById, createOrder, updateOrder, addOrderItem, updateOrderItem, removeOrderItem, saveOrderInstallments, isLoading, error } = useOrderStore();
+
+  // Ref for search timeout
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   
   // Determine if current user is salesperson
   const isCurrentUserSalesperson = user?.role === UserRole.ASESOR_VENTAS;
@@ -104,6 +107,31 @@ export function OrderForm() {
     return false;
   }, [isEditMode, order, user?.role]);
   
+  // Cleanup search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Reset search when modal closes
+  useEffect(() => {
+    if (!showProductSearch) {
+      setProductSearchTerm('');
+      setSearchResults([]);
+      setProductCategoryFilter('');
+      setIsSearching(false);
+
+      // Clear any pending search
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = null;
+      }
+    }
+  }, [showProductSearch]);
+
   // Use effect to load data
   useEffect(() => {
     // Prevent multiple loads
@@ -275,14 +303,22 @@ export function OrderForm() {
     setShowClientSearchResults(false);
   };
   
-  // Product search function
-  const searchProducts = async (searchTerm: string, categoryFilter: string) => {
-    // Always search, even with empty terms to show all products when no filters
-    // if (!searchTerm.trim() && !categoryFilter) {
-    //   setSearchResults([]);
-    //   return;
-    // }
-    
+  // Product search function with debouncing
+  const searchProducts = useCallback(async (searchTerm: string, categoryFilter: string) => {
+    // Only search if there's a search term or category filter
+    if (!searchTerm.trim() && !categoryFilter) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    // Require at least 2 characters for text search
+    if (searchTerm.trim() && searchTerm.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
     setIsSearching(true);
     try {
       const results = await useProductStore.getState().searchProductsForOrderForm(searchTerm, categoryFilter);
@@ -293,24 +329,39 @@ export function OrderForm() {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, []);
   
-  // Handle product search
-  const handleProductSearch = (term: string) => {
+  // Handle product search with proper debouncing
+  const handleProductSearch = useCallback((term: string) => {
     setProductSearchTerm(term);
-    // Add a small delay to prevent too many API calls while typing
-    const timeoutId = setTimeout(() => {
-      searchProducts(term, productCategoryFilter);
-    }, 300);
-    
+
     // Clear previous timeout
-    return () => clearTimeout(timeoutId);
-  };
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set loading state immediately for better UX
+    if (term.trim()) {
+      setIsSearching(true);
+    }
+
+    // Debounce the search
+    searchTimeoutRef.current = setTimeout(() => {
+      searchProducts(term, productCategoryFilter);
+    }, 500);
+  }, [productCategoryFilter, searchProducts]);
   
-  const handleCategoryFilter = (categoryId: string) => {
+  const handleCategoryFilter = useCallback((categoryId: string) => {
     setProductCategoryFilter(categoryId);
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Search immediately when category changes
     searchProducts(productSearchTerm, categoryId);
-  };
+  }, [productSearchTerm, searchProducts]);
   
   // Add product to order
   const addProductToOrder = (product: Product) => {
@@ -337,10 +388,17 @@ export function OrderForm() {
       setItems([...items, newItem]);
     }
 
-    // Clear search
+    // Clear search and close modal
     setProductSearchTerm('');
     setSearchResults([]);
+    setProductCategoryFilter('');
     setShowProductSearch(false);
+
+    // Clear any pending search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = null;
+    }
   };
   
   // Update item quantity
@@ -875,15 +933,16 @@ export function OrderForm() {
                       
                       <div className="max-h-96 overflow-y-auto">
                         {isSearching ? (
-                          <div className="flex justify-center py-8">
-                            <Loader />
+                          <div className="flex flex-col items-center justify-center py-12">
+                            <Loader size="lg" />
+                            <p className="text-sm text-gray-500 mt-3">Buscando productos...</p>
                           </div>
                         ) : searchResults.length > 0 ? (
                           <div className="space-y-2">
                             {searchResults.map((product) => (
                               <div
                                 key={product.id}
-                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                                 onClick={() => addProductToOrder(product)}
                               >
                                 <div className="flex items-center gap-3">
@@ -899,10 +958,27 @@ export function OrderForm() {
                                 </div>
                               </div>
                             ))}
+                            {searchResults.length === 100 && (
+                              <div className="text-center py-2 text-sm text-amber-600 bg-amber-50 rounded">
+                                Se muestran los primeros 100 resultados. Refina tu búsqueda para ver más.
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div className="text-center py-8 text-gray-500">
-                            {productSearchTerm || productCategoryFilter ? 'No se encontraron productos' : 'Busca productos para agregar al pedido'}
+                          <div className="text-center py-12 text-gray-500">
+                            {productSearchTerm || productCategoryFilter ? (
+                              <div>
+                                <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                                <p className="font-medium">No se encontraron productos</p>
+                                <p className="text-sm mt-1">Intenta con otros términos de búsqueda</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <Search className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                                <p className="font-medium">Busca productos</p>
+                                <p className="text-sm mt-1">Escribe al menos 2 caracteres o selecciona una categoría</p>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
