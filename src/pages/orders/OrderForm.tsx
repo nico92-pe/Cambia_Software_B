@@ -1207,46 +1207,28 @@ export function OrderForm() {
             {/* Installments Table */}
             {paymentType === 'credito' && installments.length > 0 && finalDisplayTotals.total > 0 && (
               <div className="mt-6">
-                <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium mb-4">Detalle de Cuotas</h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cuota
-                        </th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Monto
-                        </th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Fecha de Vencimiento
-                        </th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Días
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {installments.map((installment, index) => (
-                        <tr key={installment.installmentNumber}>
-                          <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
-                            {installment.installmentNumber}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="font-medium text-gray-900">
-                              {formatCurrency(installment.amount)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="font-medium text-gray-900">
-                              {formatDateForDisplay(installment.dueDate)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
+
+                {/* Mobile Card View */}
+                <div className="block sm:hidden">
+                  <div className="space-y-4">
+                    {installments.map((installment, index) => (
+                      <div key={installment.installmentNumber} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-medium text-gray-900">Cuota {installment.installmentNumber}</h4>
+                          <span className="text-lg font-bold text-blue-600">
+                            {formatCurrency(installment.amount)}
+                          </span>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Fecha de Vencimiento:</span>
+                            <span className="font-medium">{formatDateForDisplay(installment.dueDate)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Días:</span>
                             {isReadOnly ? (
-                              <span className="font-medium text-gray-600">{installment.daysDue} días</span>
+                              <span className="font-medium">{installment.daysDue} días</span>
                             ) : (
                               <input
                                 type="number"
@@ -1260,14 +1242,77 @@ export function OrderForm() {
                                     updateInstallment(index, 'daysDue', parseInt(value) || 0);
                                   }
                                 }}
-                                className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                                className="w-24 text-center border border-gray-300 rounded px-3 py-1.5 font-medium"
                               />
                             )}
-                          </td>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Cuota
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Monto
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Fecha de Vencimiento
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Días
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {installments.map((installment, index) => (
+                          <tr key={installment.installmentNumber}>
+                            <td className="px-6 py-4 whitespace-nowrap text-center font-medium">
+                              {installment.installmentNumber}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="font-medium text-gray-900">
+                                {formatCurrency(installment.amount)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="font-medium text-gray-900">
+                                {formatDateForDisplay(installment.dueDate)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              {isReadOnly ? (
+                                <span className="font-medium text-gray-600">{installment.daysDue} días</span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={installment.daysDue === 0 ? '' : installment.daysDue}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === '') {
+                                      updateInstallment(index, 'daysDue', 0);
+                                    } else {
+                                      updateInstallment(index, 'daysDue', parseInt(value) || 0);
+                                    }
+                                  }}
+                                  className="w-20 text-center border border-gray-300 rounded px-2 py-1"
+                                />
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
