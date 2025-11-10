@@ -132,8 +132,21 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   getOrders: async (page = 1, pageSize = 10, searchTerm = '', statusFilter = '', monthFilter = '', yearFilter = '', salespersonFilter = '') => {
     set({ isLoading: true, error: null });
-    
+
     try {
+      // Get current user to apply role-based filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
+      // Get user profile to check role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
       // Build the query with filters
       let query = supabase
         .from('orders')
@@ -191,8 +204,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         query = query.eq('status', statusFilter);
       }
       
-      // Apply salesperson filter
-      if (salespersonFilter && salespersonFilter !== 'all') {
+      // Apply role-based filtering for asesor_ventas
+      if (profile.role === 'asesor_ventas') {
+        query = query.eq('salesperson_id', user.id);
+      } else if (salespersonFilter && salespersonFilter !== 'all') {
+        // Apply salesperson filter only for admin and super_admin
         query = query.eq('salesperson_id', salespersonFilter);
       }
       
