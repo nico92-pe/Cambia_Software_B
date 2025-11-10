@@ -308,7 +308,7 @@ export function OrderDetail() {
                             <div>
                               <div className="font-medium">{item.product?.name || 'Producto no disponible'}</div>
                               <div className="text-sm text-muted-foreground">
-                                Código: {item.product?.code || 'N/A'}
+                                {item.product?.code || 'N/A'}
                               </div>
                             </div>
                           </div>
