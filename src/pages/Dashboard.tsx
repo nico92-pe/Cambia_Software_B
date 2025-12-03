@@ -113,38 +113,43 @@ export function Dashboard() {
       </header>
 
       {/* Filters */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-gray-400" />
-            <label className="text-sm font-medium text-gray-700">Año:</label>
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border animate-in fade-in duration-500" style={{ animationDelay: '100ms' }}>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-2 text-gray-400">
+            <Calendar className="h-5 w-5" />
           </div>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            {yearOptions.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
 
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Mes:</label>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 flex-1">
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Año:</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="flex-1 sm:flex-initial px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Mes:</label>
+              <select
+                value={selectedMonth || ''}
+                onChange={(e) => setSelectedMonth(e.target.value ? parseInt(e.target.value) : null)}
+                className="flex-1 sm:flex-initial px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                {monthOptions.map((month) => (
+                  <option key={month.label} value={month.value || ''}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <select
-            value={selectedMonth || ''}
-            onChange={(e) => setSelectedMonth(e.target.value ? parseInt(e.target.value) : null)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            {monthOptions.map((month) => (
-              <option key={month.label} value={month.value || ''}>
-                {month.label}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
