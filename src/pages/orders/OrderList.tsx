@@ -531,27 +531,26 @@ export default function OrderList() {
                             onClick={() => handleDeleteClick(order.id)}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={<Download size={16} />}
-                            onClick={() => handleDownloadOrder(order.id)}
-                            
-                            loading={downloadingOrder === order.id}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            title="Descargar como imagen"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={<Share size={16} />}
-                            onClick={() => handleShareOrder(order.id)}
-                            loading={sharingOrder === order.id}
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            title="Compartir"
-                          />
                         </>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<Download size={16} />}
+                        onClick={() => handleDownloadOrder(order.id)}
+                        loading={downloadingOrder === order.id}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        title="Descargar como imagen"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<Share size={16} />}
+                        onClick={() => handleShareOrder(order.id)}
+                        loading={sharingOrder === order.id}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        title="Compartir"
+                      />
                     </div>
                   </div>
                 ))
