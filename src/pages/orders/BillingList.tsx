@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Save, X, Search, Filter, ChevronDown } from 'lucide-react';
+import { FileText, Save, Search, Filter, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { Order, OrderStatus } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
@@ -24,15 +24,18 @@ const statusLabels = {
   despachado: 'Despachado',
 };
 
+const ITEMS_PER_PAGE = 20;
+
 export default function BillingList() {
   const { orders, totalOrders, isLoading, error, getOrders, updateInvoiceNumber } = useOrderStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'with_invoice' | 'without_invoice'>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
-  const [editingInvoiceNumber, setEditingInvoiceNumber] = useState('');
+  const [invoiceNumbers, setInvoiceNumbers] = useState<Record<string, string>>({});
   const [savingInvoiceId, setSavingInvoiceId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -40,16 +43,19 @@ export default function BillingList() {
     getOrders(1, 1000);
   }, [getOrders]);
 
-  const handleEditInvoice = (order: Order) => {
-    setEditingOrderId(order.id);
-    setEditingInvoiceNumber(order.invoiceNumber || '');
-    setSaveError(null);
-  };
+  useEffect(() => {
+    const initialValues: Record<string, string> = {};
+    orders.forEach(order => {
+      initialValues[order.id] = order.invoiceNumber || '';
+    });
+    setInvoiceNumbers(initialValues);
+  }, [orders]);
 
-  const handleCancelEdit = () => {
-    setEditingOrderId(null);
-    setEditingInvoiceNumber('');
-    setSaveError(null);
+  const handleInvoiceChange = (orderId: string, value: string) => {
+    setInvoiceNumbers(prev => ({
+      ...prev,
+      [orderId]: value
+    }));
   };
 
   const handleSaveInvoice = async (orderId: string) => {
@@ -57,9 +63,7 @@ export default function BillingList() {
     setSaveError(null);
 
     try {
-      await updateInvoiceNumber(orderId, editingInvoiceNumber);
-      setEditingOrderId(null);
-      setEditingInvoiceNumber('');
+      await updateInvoiceNumber(orderId, invoiceNumbers[orderId] || '');
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Error al guardar');
     } finally {
@@ -76,8 +80,22 @@ export default function BillingList() {
 
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesInvoice =
+      invoiceFilter === 'all' ||
+      (invoiceFilter === 'with_invoice' && order.invoiceNumber) ||
+      (invoiceFilter === 'without_invoice' && !order.invoiceNumber);
+
+    return matchesSearch && matchesStatus && matchesInvoice;
   });
+
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, invoiceFilter]);
 
   if (isLoading && orders.length === 0) {
     return (
@@ -153,6 +171,20 @@ export default function BillingList() {
                   <option value={OrderStatus.DESPACHADO}>Despachado</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Número de Factura
+                </label>
+                <select
+                  value={invoiceFilter}
+                  onChange={(e) => setInvoiceFilter(e.target.value as 'all' | 'with_invoice' | 'without_invoice')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Todos los pedidos</option>
+                  <option value="without_invoice">Sin número de factura</option>
+                  <option value="with_invoice">Con número de factura</option>
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -164,7 +196,7 @@ export default function BillingList() {
             Pedidos
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Total de {filteredOrders.length} pedidos
+            Mostrando {startIndex + 1} - {Math.min(endIndex, filteredOrders.length)} de {filteredOrders.length} pedidos
           </p>
         </div>
 
@@ -193,7 +225,7 @@ export default function BillingList() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.length === 0 ? (
+              {paginatedOrders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -201,7 +233,7 @@ export default function BillingList() {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
+                paginatedOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
@@ -232,53 +264,27 @@ export default function BillingList() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {editingOrderId === order.id ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editingInvoiceNumber}
-                            onChange={(e) => setEditingInvoiceNumber(e.target.value)}
-                            placeholder="Número de factura"
-                            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            autoFocus
-                            disabled={savingInvoiceId === order.id}
-                          />
-                          <Button
-                            size="sm"
-                            onClick={() => handleSaveInvoice(order.id)}
-                            disabled={savingInvoiceId === order.id}
-                          >
-                            {savingInvoiceId === order.id ? (
-                              <Loader size="sm" />
-                            ) : (
-                              <Save className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={handleCancelEdit}
-                            disabled={savingInvoiceId === order.id}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() => handleEditInvoice(order)}
-                          className="cursor-pointer px-3 py-1.5 text-sm border border-transparent hover:border-gray-300 rounded transition-colors"
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={invoiceNumbers[order.id] || ''}
+                          onChange={(e) => handleInvoiceChange(order.id, e.target.value)}
+                          placeholder="Número de factura"
+                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          disabled={savingInvoiceId === order.id}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveInvoice(order.id)}
+                          disabled={savingInvoiceId === order.id || invoiceNumbers[order.id] === order.invoiceNumber}
                         >
-                          {order.invoiceNumber ? (
-                            <span className="text-gray-900 font-medium">
-                              {order.invoiceNumber}
-                            </span>
+                          {savingInvoiceId === order.id ? (
+                            <Loader size="sm" />
                           ) : (
-                            <span className="text-gray-400 italic">
-                              Click para agregar
-                            </span>
+                            <Save className="h-4 w-4" />
                           )}
-                        </div>
-                      )}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -286,6 +292,32 @@ export default function BillingList() {
             </tbody>
           </table>
         </div>
+
+        {filteredOrders.length > 0 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Página {currentPage} de {totalPages}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
