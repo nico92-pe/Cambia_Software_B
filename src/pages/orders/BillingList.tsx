@@ -36,7 +36,8 @@ export default function BillingList() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [invoiceNumbers, setInvoiceNumbers] = useState<Record<string, string>>({});
-  const [savingInvoiceId, setSavingInvoiceId] = useState<string | null>(null);
+  const [modifiedOrders, setModifiedOrders] = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function BillingList() {
       initialValues[order.id] = order.invoiceNumber || '';
     });
     setInvoiceNumbers(initialValues);
+    setModifiedOrders(new Set());
   }, [orders]);
 
   const handleInvoiceChange = (orderId: string, value: string) => {
@@ -56,18 +58,32 @@ export default function BillingList() {
       ...prev,
       [orderId]: value
     }));
+
+    const order = orders.find(o => o.id === orderId);
+    if (order && value !== order.invoiceNumber) {
+      setModifiedOrders(prev => new Set(prev).add(orderId));
+    } else {
+      setModifiedOrders(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(orderId);
+        return newSet;
+      });
+    }
   };
 
-  const handleSaveInvoice = async (orderId: string) => {
-    setSavingInvoiceId(orderId);
+  const handleSaveAllInvoices = async () => {
+    setIsSaving(true);
     setSaveError(null);
 
     try {
-      await updateInvoiceNumber(orderId, invoiceNumbers[orderId] || '');
+      for (const orderId of modifiedOrders) {
+        await updateInvoiceNumber(orderId, invoiceNumbers[orderId] || '');
+      }
+      setModifiedOrders(new Set());
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Error al guardar');
     } finally {
-      setSavingInvoiceId(null);
+      setIsSaving(false);
     }
   };
 
@@ -191,19 +207,40 @@ export default function BillingList() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">
-            Pedidos
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Mostrando {startIndex + 1} - {Math.min(endIndex, filteredOrders.length)} de {filteredOrders.length} pedidos
-          </p>
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">
+              Pedidos
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Mostrando {startIndex + 1} - {Math.min(endIndex, filteredOrders.length)} de {filteredOrders.length} pedidos
+            </p>
+          </div>
+          <Button
+            onClick={handleSaveAllInvoices}
+            disabled={modifiedOrders.size === 0 || isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader size="sm" className="mr-2" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Guardar Cambios {modifiedOrders.size > 0 && `(${modifiedOrders.size})`}
+              </>
+            )}
+          </Button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                  #
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cliente
                 </th>
@@ -227,14 +264,17 @@ export default function BillingList() {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500">No se encontraron pedidos</p>
                   </td>
                 </tr>
               ) : (
-                paginatedOrders.map((order) => (
+                paginatedOrders.map((order, index) => (
                   <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 text-center text-sm text-gray-500 font-medium">
+                      {startIndex + index + 1}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
                         {order.client?.commercialName}
@@ -264,27 +304,14 @@ export default function BillingList() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={invoiceNumbers[order.id] || ''}
-                          onChange={(e) => handleInvoiceChange(order.id, e.target.value)}
-                          placeholder="Número de factura"
-                          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          disabled={savingInvoiceId === order.id}
-                        />
-                        <Button
-                          size="sm"
-                          onClick={() => handleSaveInvoice(order.id)}
-                          disabled={savingInvoiceId === order.id || invoiceNumbers[order.id] === order.invoiceNumber}
-                        >
-                          {savingInvoiceId === order.id ? (
-                            <Loader size="sm" />
-                          ) : (
-                            <Save className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
+                      <input
+                        type="text"
+                        value={invoiceNumbers[order.id] || ''}
+                        onChange={(e) => handleInvoiceChange(order.id, e.target.value)}
+                        placeholder="Número de factura"
+                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={isSaving}
+                      />
                     </td>
                   </tr>
                 ))
