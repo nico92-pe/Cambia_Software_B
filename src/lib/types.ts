@@ -116,6 +116,13 @@ export type OrderStatusLog = {
   createdByUser?: User;
 };
 
+export enum PaymentDocumentStatus {
+  PENDIENTE = 'pendiente',
+  VENCIDA = 'vencida',
+  PAGADA_PARCIAL = 'pagada_parcial',
+  PAGADA = 'pagada',
+}
+
 export type OrderInstallment = {
   id: string;
   orderId: string;
@@ -123,5 +130,16 @@ export type OrderInstallment = {
   amount: number;
   dueDate: string;
   daysDue: number;
+  status: PaymentDocumentStatus;
+  paidAmount: number;
+  paymentDate?: string;
+  notes?: string;
   createdAt: string;
+  updatedAt: string;
+};
+
+export type PaymentDocument = OrderInstallment & {
+  order?: Order;
+  client?: Client;
+  salesperson?: User;
 };

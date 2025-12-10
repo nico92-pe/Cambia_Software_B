@@ -421,7 +421,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           amount: parseFloat(inst.amount),
           dueDate: inst.due_date,
           daysDue: inst.days_due,
+          status: inst.status,
+          paidAmount: parseFloat(inst.paid_amount || 0),
+          paymentDate: inst.payment_date,
+          notes: inst.notes,
           createdAt: inst.created_at,
+          updatedAt: inst.updated_at,
         }));
       }
       

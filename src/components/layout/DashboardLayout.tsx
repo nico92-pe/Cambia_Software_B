@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { 
+import {
   ChevronDown,
-  Home, 
-  LogOut, 
-  Menu, 
-  Package, 
-  ShoppingCart, 
-  User, 
+  DollarSign,
+  Home,
+  LogOut,
+  Menu,
+  Package,
+  ShoppingCart,
+  User,
   Users,
   UserPlus,
   X
@@ -49,6 +50,7 @@ export function DashboardLayout() {
     { icon: <Users size={20} />, label: 'Clientes', path: '/clients' },
     { icon: <Package size={20} />, label: 'Productos', path: '/products' },
     { icon: <ShoppingCart size={20} />, label: 'Pedidos', path: '/orders' },
+    { icon: <DollarSign size={20} />, label: 'Letras y Cobros', path: '/payments' },
   ];
 
   // Add Users management for Super Admin only
