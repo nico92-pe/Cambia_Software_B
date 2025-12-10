@@ -7,6 +7,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Loader } from '../../components/ui/Loader';
 import { Alert } from '../../components/ui/Alert';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import { OrderBillingModal } from '../../components/orders/OrderBillingModal';
 
 const statusColors = {
   borrador: 'bg-gray-100 text-gray-800',
@@ -27,7 +28,7 @@ const statusLabels = {
 const ITEMS_PER_PAGE = 20;
 
 export default function BillingList() {
-  const { orders, totalOrders, isLoading, error, getOrders, updateInvoiceNumber } = useOrderStore();
+  const { orders, totalOrders, isLoading, error, getOrders, getOrderById, updateInvoiceNumber } = useOrderStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
@@ -38,6 +39,10 @@ export default function BillingList() {
   const [modifiedOrders, setModifiedOrders] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
 
   useEffect(() => {
     getOrders(1, 1000);
@@ -84,6 +89,26 @@ export default function BillingList() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleRowClick = async (orderId: string) => {
+    setIsLoadingOrder(true);
+    try {
+      const order = await getOrderById(orderId);
+      if (order) {
+        setSelectedOrder(order);
+        setIsModalOpen(true);
+      }
+    } catch (err) {
+      console.error('Error al cargar el pedido:', err);
+    } finally {
+      setIsLoadingOrder(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedOrder(null);
   };
 
   const filteredOrders = orders.filter(order => {
@@ -257,7 +282,15 @@ export default function BillingList() {
                 </tr>
               ) : (
                 paginatedOrders.map((order, index) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
+                  <tr
+                    key={order.id}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).tagName !== 'INPUT') {
+                        handleRowClick(order.id);
+                      }
+                    }}
+                  >
                     <td className="px-4 py-4 text-center text-sm text-gray-500 font-medium">
                       {startIndex + index + 1}
                     </td>
@@ -289,7 +322,7 @@ export default function BillingList() {
                         {order.createdAt ? formatDate(new Date(order.createdAt)) : '-'}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="text"
                         value={invoiceNumbers[order.id] || ''}
@@ -332,6 +365,18 @@ export default function BillingList() {
           </div>
         )}
       </div>
+
+      <OrderBillingModal
+        order={selectedOrder}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
+
+      {isLoadingOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Loader size="lg" />
+        </div>
+      )}
     </div>
   );
 }
