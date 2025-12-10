@@ -305,27 +305,38 @@ export function PaymentDocumentList() {
 
       {/* Documents Table */}
       <div className="bg-white rounded-lg shadow-sm border animate-in fade-in duration-500">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">
+            Lista de Cuotas por Cobrar
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Total de {filteredDocuments.length} cuotas
+          </p>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pedido
+                  Documento
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Cliente
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tipo Crédito
+                </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cuota
+                  N° Cuota
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Monto
+                  Monto Cuota
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Pagado
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Saldo
+                  Por Cobrar
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Vencimiento
@@ -341,9 +352,9 @@ export function PaymentDocumentList() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredDocuments.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
+                  <td colSpan={10} className="px-6 py-12 text-center">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No se encontraron documentos</p>
+                    <p className="text-gray-500">No se encontraron cuotas</p>
                   </td>
                 </tr>
               ) : (
@@ -354,11 +365,16 @@ export function PaymentDocumentList() {
                   return (
                     <tr key={doc.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {doc.order?.id.substring(0, 8).toUpperCase()}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(doc.order?.createdAt || '').toLocaleDateString('es-PE')}
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              Pedido #{doc.order?.id.substring(0, 8).toUpperCase()}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(doc.order?.createdAt || '').toLocaleDateString('es-PE')}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -369,32 +385,40 @@ export function PaymentDocumentList() {
                           RUC: {doc.client?.ruc}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="text-sm font-medium text-gray-900">
-                          {doc.installmentNumber}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-900 capitalize">
+                          {doc.order?.creditType || '-'}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
+                          {doc.installmentNumber}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          de {doc.order?.installments || '-'}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-semibold text-gray-900">
                           {formatCurrency(doc.amount)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <span className="text-sm text-gray-900">
+                        <span className="text-sm text-green-600 font-medium">
                           {formatCurrency(doc.paidAmount)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-bold text-red-600">
                           {formatCurrency(remaining)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm font-medium text-gray-900">
                           {new Date(doc.dueDate).toLocaleDateString('es-PE')}
                         </div>
                         {doc.status !== PaymentDocumentStatus.PAGADA && (
-                          <div className={`text-xs ${daysUntilDue < 0 ? 'text-red-600' : daysUntilDue <= 7 ? 'text-yellow-600' : 'text-gray-500'}`}>
+                          <div className={`text-xs font-medium ${daysUntilDue < 0 ? 'text-red-600' : daysUntilDue <= 7 ? 'text-yellow-600' : 'text-gray-500'}`}>
                             {daysUntilDue < 0
                               ? `Vencido hace ${Math.abs(daysUntilDue)} días`
                               : `Vence en ${daysUntilDue} días`}
@@ -403,6 +427,11 @@ export function PaymentDocumentList() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {getStatusBadge(doc.status)}
+                        {doc.paymentDate && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Pagado: {new Date(doc.paymentDate).toLocaleDateString('es-PE')}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {doc.status !== PaymentDocumentStatus.PAGADA && (
