@@ -288,14 +288,24 @@ export default function OrderList() {
           <h1 className="text-2xl font-bold text-gray-900">Pedidos</h1>
           <p className="text-gray-600">Gestiona los pedidos del sistema</p>
         </div>
-        {canCreateOrder && (
-          <Link to="/orders/new">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Pedido
-            </Button>
-          </Link>
-        )}
+        <div className="flex gap-3">
+          {(user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN) && (
+            <Link to="/orders/billing">
+              <Button variant="secondary">
+                <FileText className="w-4 h-4 mr-2" />
+                Facturación
+              </Button>
+            </Link>
+          )}
+          {canCreateOrder && (
+            <Link to="/orders/new">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Pedido
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {error && (

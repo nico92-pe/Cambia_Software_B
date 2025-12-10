@@ -15,6 +15,7 @@ const mapDbRowToOrder = (row: any): Order => ({
   paymentType: row.payment_type || 'contado',
   creditType: row.credit_type,
   installments: row.installments,
+  invoiceNumber: row.invoice_number,
   createdBy: row.created_by,
   createdAt: row.created_at || '',
   updatedAt: row.updated_at || '',
@@ -88,27 +89,28 @@ interface OrderState {
   salesStats: SalesStats | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Order operations
   getOrders: (page?: number, pageSize?: number, searchTerm?: string, statusFilter?: string, monthFilter?: string, yearFilter?: string, salespersonFilter?: string) => Promise<void>;
   getOrderById: (id: string) => Promise<Order | undefined>;
   createOrder: (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'subtotal' | 'igv' | 'total' | 'items'>) => Promise<Order>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<Order>;
   updateOrderStatus: (id: string, status: OrderStatus, observations?: string, hasObservations?: boolean) => Promise<Order>;
+  updateInvoiceNumber: (id: string, invoiceNumber: string) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
-  
+
   // Order item operations
   addOrderItem: (orderId: string, item: Omit<OrderItem, 'id' | 'orderId' | 'subtotal' | 'createdAt'>) => Promise<OrderItem>;
   updateOrderItem: (id: string, itemData: Partial<OrderItem>) => Promise<OrderItem>;
   removeOrderItem: (id: string) => Promise<void>;
-  
+
   // Status log operations
   getOrderStatusLogs: (orderId: string) => Promise<OrderStatusLog[]>;
-  
+
   // Utility
   clearCurrentOrder: () => void;
   setCurrentOrder: (order: Order | null) => void;
-  
+
   // Installments operations
   saveOrderInstallments: (orderId: string, installments: Array<{
     installmentNumber: number;
@@ -116,7 +118,7 @@ interface OrderState {
     dueDate: string;
     daysDue: number;
   }>) => Promise<void>;
-  
+
   // Dashboard operations
   getSalesDashboardData: (year: number, month?: number) => Promise<void>;
 }
@@ -161,6 +163,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           payment_type,
           credit_type,
           installments,
+          invoice_number,
           observations,
           created_by,
           created_at,
@@ -509,12 +512,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   
   updateOrderStatus: async (id, status, observations, hasObservations = false) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
-      
+
       // Update order status
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
@@ -522,9 +525,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .eq('id', id)
         .select()
         .single();
-        
+
       if (orderError) throw orderError;
-      
+
       // Log status change
       const { error: logError } = await supabase
         .from('order_status_logs')
@@ -535,24 +538,43 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           has_observations: hasObservations,
           created_by: user.id,
         });
-        
+
       if (logError) throw logError;
-      
+
       const updatedOrder = mapDbRowToOrder(orderData);
-      
+
       set(state => ({
-        orders: state.orders.map(order => 
+        orders: state.orders.map(order =>
           order.id === id ? { ...order, status } : order
         ),
         isLoading: false
       }));
-      
+
       return updatedOrder;
     } catch (error) {
       set({
         isLoading: false,
         error: error instanceof Error ? error.message : 'Error al actualizar estado del pedido'
       });
+      throw error;
+    }
+  },
+
+  updateInvoiceNumber: async (id, invoiceNumber) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ invoice_number: invoiceNumber })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set(state => ({
+        orders: state.orders.map(order =>
+          order.id === id ? { ...order, invoiceNumber } : order
+        ),
+      }));
+    } catch (error) {
       throw error;
     }
   },

@@ -81,6 +81,7 @@ export type Order = {
   paymentType: 'contado' | 'credito';
   creditType?: 'factura' | 'letras';
   installments?: number;
+  invoiceNumber?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

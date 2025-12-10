@@ -21,6 +21,7 @@ import OrderList from './pages/orders/OrderList';
 import { OrderForm } from './pages/orders/OrderForm';
 import { OrderDetail } from './pages/orders/OrderDetail';
 import { OrderEdit } from './pages/orders/OrderEdit';
+import BillingList from './pages/orders/BillingList';
 import { PaymentDocumentList } from './pages/payments/PaymentDocumentList';
 import { useAuthStore } from './store/auth-store';
 import { useProductStore } from './store/product-store';
@@ -75,6 +76,7 @@ function App() {
           <Route path="/orders/new" element={<OrderForm />} />
           <Route path="/orders/edit/:id" element={<OrderForm />} />
           <Route path="/orders/detail/:id" element={<OrderDetail />} />
+          <Route path="/orders/billing" element={<BillingList />} />
 
           {/* Payment routes */}
           <Route path="/payments" element={<PaymentDocumentList />} />
