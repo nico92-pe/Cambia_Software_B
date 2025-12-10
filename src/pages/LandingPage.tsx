@@ -142,11 +142,11 @@ export function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="animate-in fade-in duration-700">
               <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
-                Griferías y Accesorios de 
+                Repuestos Sanitarios de
                 <span className="text-primary"> Calidad Premium</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Especialistas en griferías, accesorios de baño y cocina. 
+                Especialistas en válvulas, repuestos y accesorios sanitarios.
                 Más de 15 años brindando soluciones de calidad para tu hogar y negocio.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -156,17 +156,19 @@ export function LandingPage() {
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="text-lg px-8 py-4">
-                  <Phone className="mr-2 h-5 w-5" />
-                  Contactar Ahora
-                </Button>
+                <a href="#contacto">
+                  <Button variant="outline" size="lg" className="text-lg px-8 py-4">
+                    <Phone className="mr-2 h-5 w-5" />
+                    Contactar Ahora
+                  </Button>
+                </a>
               </div>
             </div>
-            
+
             <div className="animate-in fade-in duration-700" style={{ animationDelay: '200ms' }}>
-              <img 
-                src="https://images.pexels.com/photos/1358912/pexels-photo-1358912.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop" 
-                alt="Griferías de calidad" 
+              <img
+                src="https://images.pexels.com/photos/1358914/pexels-photo-1358914.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop"
+                alt="Repuestos sanitarios de calidad"
                 className="rounded-lg shadow-2xl w-full"
               />
             </div>
@@ -174,15 +176,73 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Featured Product Section */}
       <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Producto Destacado
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              La válvula más confiable del mercado peruano
+            </p>
+          </div>
+
+          <div className="max-w-5xl mx-auto bg-gradient-to-br from-blue-50 to-gray-50 rounded-2xl shadow-xl overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center p-8 lg:p-12">
+              <div className="order-2 lg:order-1">
+                <div className="inline-block px-4 py-2 bg-primary text-white rounded-full text-sm font-semibold mb-4">
+                  PRODUCTO PREMIUM
+                </div>
+                <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+                  Válvula de Ingreso 7/8"
+                </h3>
+                <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                  La solución profesional para sistemas de agua potable. Fabricada con materiales de alta calidad,
+                  garantiza durabilidad y funcionamiento óptimo por años.
+                </p>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-start">
+                    <Shield className="h-6 w-6 text-primary mt-1 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Garantía extendida de 2 años</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Droplets className="h-6 w-6 text-primary mt-1 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Sellado hermético anti-fugas</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Award className="h-6 w-6 text-primary mt-1 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">Certificación de calidad internacional</span>
+                  </li>
+                </ul>
+                <Link to="/catalog">
+                  <Button size="lg" className="text-lg px-8 py-4">
+                    Ver en Catálogo
+                    <ChevronRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+              <div className="order-1 lg:order-2">
+                <img
+                  src="https://images.pexels.com/photos/1571461/pexels-photo-1571461.jpeg?auto=compress&cs=tinysrgb&w=600&h=600&fit=crop"
+                  alt="Válvula de Ingreso 7/8"
+                  className="rounded-lg shadow-lg w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
               ¿Por qué elegir Griferías Cambia?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Somos líderes en el mercado peruano ofreciendo productos de la más alta calidad
+              Somos líderes en repuestos sanitarios en el mercado peruano
             </p>
           </div>
 
@@ -190,28 +250,28 @@ export function LandingPage() {
             {[
               {
                 icon: <Shield className="h-12 w-12 text-primary" />,
-                title: "Garantía de Calidad",
-                description: "Todos nuestros productos cuentan con garantía extendida"
+                title: "Productos Originales",
+                description: "100% originales con certificados de calidad"
               },
               {
                 icon: <Users className="h-12 w-12 text-primary" />,
-                title: "Atención Personalizada",
-                description: "Asesoría especializada para cada proyecto"
+                title: "Asesoría Especializada",
+                description: "Personal capacitado para ayudarte a elegir"
               },
               {
                 icon: <Award className="h-12 w-12 text-primary" />,
                 title: "15+ Años de Experiencia",
-                description: "Respaldados por años de experiencia en el mercado"
+                description: "Respaldados por años de trayectoria"
               },
               {
                 icon: <Wrench className="h-12 w-12 text-primary" />,
-                title: "Servicio Técnico",
-                description: "Instalación y mantenimiento especializado"
+                title: "Envíos a Todo el Perú",
+                description: "Despacho rápido y seguro a nivel nacional"
               }
             ].map((feature, index) => (
-              <div 
+              <div
                 key={index}
-                className="text-center p-6 rounded-lg hover:shadow-lg transition-shadow animate-in fade-in duration-500"
+                className="text-center p-6 bg-white rounded-lg hover:shadow-lg transition-shadow animate-in fade-in duration-500"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex justify-center mb-4">
@@ -230,14 +290,14 @@ export function LandingPage() {
       </section>
 
       {/* Products Section */}
-      <section id="productos" className="py-20 bg-gray-50">
+      <section id="productos" className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Nuestros Productos
+              Nuestras Categorías
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Amplio catálogo de griferías y accesorios para baño y cocina
+              Amplio catálogo de repuestos sanitarios y accesorios de primera calidad
             </p>
           </div>
 
@@ -247,14 +307,14 @@ export function LandingPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {categories.slice(0, 3).map((category, index) => (
-                <div 
+              {categories.slice(0, 6).map((category, index) => (
+                <div
                   key={category.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow animate-in fade-in duration-500"
+                  className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl hover:border-primary transition-all animate-in fade-in duration-500"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <img 
-                    src={getCategoryImage(category.name)} 
+                  <img
+                    src={getCategoryImage(category.name)}
                     alt={category.name}
                     className="w-full h-48 object-cover"
                   />
@@ -263,11 +323,11 @@ export function LandingPage() {
                       {category.name}
                     </h3>
                     <p className="text-gray-600 mb-4">
-                      Descubre nuestra selección de {category.name.toLowerCase()} de alta calidad
+                      {category.description || `Descubre nuestra selección de ${category.name.toLowerCase()} de alta calidad`}
                     </p>
                     <Link to="/catalog">
                       <Button variant="outline" className="w-full">
-                        Ver Más
+                        Ver Productos
                       </Button>
                     </Link>
                   </div>
@@ -275,50 +335,64 @@ export function LandingPage() {
               ))}
             </div>
           )}
+
+          <div className="text-center mt-12">
+            <Link to="/catalog">
+              <Button size="lg" className="text-lg px-8 py-4">
+                Ver Catálogo Completo
+                <ChevronRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section id="servicios" className="py-20 bg-white">
+      <section id="servicios" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Nuestros Servicios
+              Servicios para Profesionales
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Servicios integrales para satisfacer todas tus necesidades
+              Soluciones integrales para gasfiteros, contratistas y constructoras
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="animate-in fade-in duration-700">
-              <img 
-                src="https://images.pexels.com/photos/1358914/pexels-photo-1358914.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop" 
-                alt="Servicios profesionales" 
+              <img
+                src="https://images.pexels.com/photos/585419/pexels-photo-585419.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop"
+                alt="Servicios profesionales"
                 className="rounded-lg shadow-lg w-full"
               />
             </div>
-            
+
             <div className="animate-in fade-in duration-700" style={{ animationDelay: '200ms' }}>
               <div className="space-y-6">
                 {[
                   {
                     icon: <Wrench className="h-8 w-8 text-primary" />,
-                    title: "Instalación Profesional",
-                    description: "Instalación especializada de griferías y accesorios"
+                    title: "Venta al Por Mayor",
+                    description: "Precios especiales para gasfiteros y contratistas con volúmenes de compra"
                   },
                   {
                     icon: <Droplets className="h-8 w-8 text-primary" />,
-                    title: "Mantenimiento",
-                    description: "Servicio de mantenimiento preventivo y correctivo"
+                    title: "Asesoría Técnica",
+                    description: "Personal especializado para ayudarte a elegir el repuesto correcto"
                   },
                   {
                     icon: <Users className="h-8 w-8 text-primary" />,
-                    title: "Asesoría Técnica",
-                    description: "Consultoría especializada para tu proyecto"
+                    title: "Entrega Inmediata",
+                    description: "Stock permanente de productos para entrega el mismo día"
+                  },
+                  {
+                    icon: <Shield className="h-8 w-8 text-primary" />,
+                    title: "Garantía Respaldada",
+                    description: "Respaldo en todos nuestros productos con garantía del fabricante"
                   }
                 ].map((service, index) => (
-                  <div key={index} className="flex items-start space-x-4">
+                  <div key={index} className="flex items-start space-x-4 p-4 bg-white rounded-lg hover:shadow-md transition-shadow">
                     <div className="flex-shrink-0">
                       {service.icon}
                     </div>
@@ -347,13 +421,13 @@ export function LandingPage() {
                 Sobre Griferías Cambia
               </h2>
               <p className="text-xl mb-6 opacity-90">
-                Somos una empresa peruana especializada en la importación y distribución 
-                de griferías y accesorios de baño y cocina de la más alta calidad.
+                Somos una empresa peruana especializada en la importación y distribución
+                de repuestos sanitarios, válvulas y accesorios de la más alta calidad.
               </p>
               <p className="text-lg mb-8 opacity-80">
-                Con más de 15 años en el mercado, nos hemos consolidado como líderes 
-                en el sector, ofreciendo productos innovadores y un servicio excepcional 
-                a nuestros clientes en todo el Perú.
+                Con más de 15 años en el mercado, nos hemos consolidado como el socio
+                confiable de gasfiteros, contratistas y constructoras en todo el Perú,
+                ofreciendo productos originales respaldados por garantía del fabricante.
               </p>
               <div className="mb-8">
                 <Link to="/catalog">
@@ -363,22 +437,26 @@ export function LandingPage() {
                   </Button>
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-3 gap-6">
                 <div className="text-center">
                   <div className="text-3xl font-bold mb-2">15+</div>
-                  <div className="opacity-80">Años de Experiencia</div>
+                  <div className="opacity-80">Años</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold mb-2">1000+</div>
-                  <div className="opacity-80">Clientes Satisfechos</div>
+                  <div className="text-3xl font-bold mb-2">5000+</div>
+                  <div className="opacity-80">Productos</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold mb-2">100%</div>
+                  <div className="opacity-80">Originales</div>
                 </div>
               </div>
             </div>
-            
+
             <div className="animate-in fade-in duration-700" style={{ animationDelay: '200ms' }}>
-              <img 
-                src="https://images.pexels.com/photos/1571461/pexels-photo-1571461.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop" 
-                alt="Sobre nosotros" 
+              <img
+                src="https://images.pexels.com/photos/834892/pexels-photo-834892.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop"
+                alt="Sobre nosotros"
                 className="rounded-lg shadow-lg w-full"
               />
             </div>
@@ -560,7 +638,7 @@ export function LandingPage() {
                 </svg>
               </div>
               <p className="text-gray-400 mb-4">
-                Especialistas en griferías y accesorios de calidad premium para tu hogar.
+                Especialistas en repuestos sanitarios y válvulas de calidad premium.
               </p>
               <div className="flex space-x-4">
                 <Facebook className="h-5 w-5 text-gray-400 hover:text-white cursor-pointer" />
@@ -568,24 +646,24 @@ export function LandingPage() {
                 <Twitter className="h-5 w-5 text-gray-400 hover:text-white cursor-pointer" />
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-semibold mb-4">Productos</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Griferías de Cocina</a></li>
-                <li><a href="#" className="hover:text-white">Griferías de Baño</a></li>
-                <li><a href="#" className="hover:text-white">Accesorios</a></li>
-                <li><a href="#" className="hover:text-white">Repuestos</a></li>
+                <li><a href="#productos" className="hover:text-white">Válvulas</a></li>
+                <li><a href="#productos" className="hover:text-white">Repuestos</a></li>
+                <li><a href="#productos" className="hover:text-white">Accesorios</a></li>
+                <li><Link to="/catalog" className="hover:text-white">Ver Catálogo</Link></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-semibold mb-4">Servicios</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Instalación</a></li>
-                <li><a href="#" className="hover:text-white">Mantenimiento</a></li>
-                <li><a href="#" className="hover:text-white">Asesoría</a></li>
-                <li><a href="#" className="hover:text-white">Garantía</a></li>
+                <li><a href="#servicios" className="hover:text-white">Venta al Por Mayor</a></li>
+                <li><a href="#servicios" className="hover:text-white">Asesoría Técnica</a></li>
+                <li><a href="#servicios" className="hover:text-white">Entrega Inmediata</a></li>
+                <li><a href="#servicios" className="hover:text-white">Garantía</a></li>
               </ul>
             </div>
             
