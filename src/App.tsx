@@ -20,7 +20,6 @@ import { BulkStockEdit } from './pages/products/BulkStockEdit';
 import OrderList from './pages/orders/OrderList';
 import { OrderForm } from './pages/orders/OrderForm';
 import { OrderDetail } from './pages/orders/OrderDetail';
-import { OrderEdit } from './pages/orders/OrderEdit';
 import BillingList from './pages/orders/BillingList';
 import { PaymentDocumentList } from './pages/payments/PaymentDocumentList';
 import { useAuthStore } from './store/auth-store';
