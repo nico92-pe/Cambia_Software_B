@@ -228,7 +228,7 @@ export default function BillingList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="text-sm text-gray-900">
-                        {formatDate(order.createdAt)}
+                        {order.createdAt ? formatDate(new Date(order.createdAt)) : '-'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
