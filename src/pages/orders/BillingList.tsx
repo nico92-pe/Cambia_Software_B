@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Save, Search, Filter, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Save, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useOrderStore } from '../../store/order-store';
 import { Order, OrderStatus } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
@@ -32,7 +32,6 @@ export default function BillingList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'with_invoice' | 'without_invoice'>('all');
-  const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const [invoiceNumbers, setInvoiceNumbers] = useState<Record<string, string>>({});
@@ -145,8 +144,8 @@ export default function BillingList() {
       )}
 
       <div className="bg-white rounded-lg shadow-sm border p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="flex flex-col gap-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
@@ -157,53 +156,40 @@ export default function BillingList() {
             />
           </div>
 
-          <Button
-            variant="secondary"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtros
-            <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-          </Button>
-        </div>
-
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado del Pedido
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">Todos los estados</option>
-                  <option value={OrderStatus.BORRADOR}>Borrador</option>
-                  <option value={OrderStatus.TOMADO}>Tomado</option>
-                  <option value={OrderStatus.CONFIRMADO}>Confirmado</option>
-                  <option value={OrderStatus.EN_PREPARACION}>En Preparación</option>
-                  <option value={OrderStatus.DESPACHADO}>Despachado</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de Factura
-                </label>
-                <select
-                  value={invoiceFilter}
-                  onChange={(e) => setInvoiceFilter(e.target.value as 'all' | 'with_invoice' | 'without_invoice')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">Todos los pedidos</option>
-                  <option value="without_invoice">Sin número de factura</option>
-                  <option value="with_invoice">Con número de factura</option>
-                </select>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Estado del Pedido
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Todos los estados</option>
+                <option value={OrderStatus.BORRADOR}>Borrador</option>
+                <option value={OrderStatus.TOMADO}>Tomado</option>
+                <option value={OrderStatus.CONFIRMADO}>Confirmado</option>
+                <option value={OrderStatus.EN_PREPARACION}>En Preparación</option>
+                <option value={OrderStatus.DESPACHADO}>Despachado</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Número de Factura
+              </label>
+              <select
+                value={invoiceFilter}
+                onChange={(e) => setInvoiceFilter(e.target.value as 'all' | 'with_invoice' | 'without_invoice')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Todos los pedidos</option>
+                <option value="without_invoice">Sin número de factura</option>
+                <option value="with_invoice">Con número de factura</option>
+              </select>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border">

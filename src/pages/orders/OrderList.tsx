@@ -291,7 +291,7 @@ export default function OrderList() {
         <div className="flex gap-3">
           {(user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN) && (
             <Link to="/orders/billing">
-              <Button variant="secondary">
+              <Button>
                 <FileText className="w-4 h-4 mr-2" />
                 Facturación
               </Button>
